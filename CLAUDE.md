@@ -37,6 +37,13 @@ Backend FastAPI du projet Tout Pris. Soit extrêmement concis.
 - `make lint` / `make fmt` : ruff check+format (vérification / correction)
 - `make install` : installe les dépendances en local (`pip install -e ".[dev]"`)
 
+## Sans Docker (fallback)
+
+- Si et seulement si tu ne peux pas démarrer de conteneur (déjà dans un conteneur, Docker indisponible), ignore les cibles Docker du Makefile et installe un environnement local
+- Setup : `python3.12 -m venv .venv && .venv/bin/pip install -e ".[dev]"`
+- Puis utilise les binaires du venv : `.venv/bin/pytest`, `.venv/bin/ruff check .`, `.venv/bin/ruff format .`, `.venv/bin/uvicorn app.main:app --reload`
+- Dans tous les autres cas, passe par le Makefile
+
 ## Style de code
 
 - Privilégie la simplicité et la lisibilité
