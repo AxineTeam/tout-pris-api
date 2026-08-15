@@ -21,7 +21,11 @@ RUN groupadd --system --gid 999 nonroot \
 
 COPY --from=builder --chown=nonroot:nonroot /app /app
 
+RUN mkdir /data && chown nonroot:nonroot /data
+VOLUME /data
+
 ENV PATH="/app/.venv/bin:$PATH" PYTHONUNBUFFERED=1
+ENV DATABASE_URL=sqlite:////data/tout_pris.db
 
 USER nonroot
 WORKDIR /app
