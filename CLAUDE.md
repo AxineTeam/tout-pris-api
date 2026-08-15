@@ -40,8 +40,8 @@ Backend FastAPI du projet Tout Pris. Soit extrêmement concis.
 ## Sans Docker (fallback)
 
 - Si et seulement si tu ne peux pas démarrer de conteneur (déjà dans un conteneur, Docker indisponible), ignore les cibles Docker du Makefile et installe un environnement local
-- Setup : `python3.12 -m venv .venv && .venv/bin/pip install -e ".[dev]"`
-- Puis utilise les binaires du venv : `.venv/bin/pytest`, `.venv/bin/ruff check .`, `.venv/bin/ruff format .`, `.venv/bin/uvicorn app.main:app --reload`
+- Utilise uv autant que possible : `uv venv --python 3.12 && uv pip install -e ".[dev]"`, puis `uv run pytest`, `uv run ruff check .`, `uv run ruff format .`, `uv run uvicorn app.main:app --reload`
+- Sans uv, replie-toi sur : `python3.12 -m venv .venv && .venv/bin/pip install -e ".[dev]"`, puis les binaires du venv (`.venv/bin/pytest`, etc.)
 - Dans tous les autres cas, passe par le Makefile
 
 ## Style de code
