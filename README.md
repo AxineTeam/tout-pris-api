@@ -26,8 +26,10 @@ The production image is built from `Dockerfile.prod` (multi-stage, [uv recommend
 
 ```bash
 docker build -f Dockerfile.prod -t tout-pris-back .
-docker run -p 8000:8000 tout-pris-back
+docker run -p 8000:8000 -v tout_pris_data:/data tout-pris-back
 ```
+
+The production database lives in the `/data` volume (`DATABASE_URL=sqlite:////data/tout_pris.db`), separate from the dev database (`tout_pris.db` at the repo root).
 
 ## API
 
