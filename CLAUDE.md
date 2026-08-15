@@ -21,6 +21,7 @@ Backend FastAPI du projet Tout Pris. Soit extrêmement concis.
 - Dépendances gérées par uv (`uv sync`, groupe `dev` dans `pyproject.toml`, lock dans `uv.lock`)
 - pytest + httpx pour les tests, ruff pour lint et format
 - Docker + docker compose, devcontainer basé sur le service `api`
+- Deux Dockerfiles (pratiques uv officielles) : `Dockerfile` dev (uv, deps dev, reload, monté sur `/app`), `Dockerfile.prod` multistage (image finale sans uv ni pip, non-root, base dans le volume `/data`)
 
 ## Structure
 

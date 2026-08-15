@@ -20,6 +20,15 @@ make fmt     # ruff autofix + format
 
 A devcontainer is provided (`.devcontainer/`) based on the compose `api` service.
 
+## Production image
+
+The production image is built from `Dockerfile.prod` (multi-stage, [uv recommended practices](https://github.com/astral-sh/uv-docker-example)): uv builds the venv from `uv.lock` in a builder stage, and the final image contains neither uv nor pip and runs as a non-root user. This is the image published to Docker Hub on tags.
+
+```bash
+docker build -f Dockerfile.prod -t tout-pris-back .
+docker run -p 8000:8000 tout-pris-back
+```
+
 ## API
 
 - `GET /health`
