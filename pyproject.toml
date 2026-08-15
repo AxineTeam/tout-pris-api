@@ -8,6 +8,7 @@ dependencies = [
     "uvicorn[standard]>=0.32",
     "sqlalchemy>=2.0",
     "pydantic>=2.9",
+    "alembic>=1.13",
 ]
 
 [dependency-groups]
@@ -33,3 +34,6 @@ target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "W", "B", "UP"]
+
+[tool.ruff.lint.isort]
+known-third-party = ["alembic"]

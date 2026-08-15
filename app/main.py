@@ -1,15 +1,16 @@
 from contextlib import asynccontextmanager
 from importlib.metadata import version
 
+from alembic import command
+from alembic.config import Config
 from fastapi import FastAPI
 
-from app.database import Base, engine
 from app.routers import stufflists
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    Base.metadata.create_all(bind=engine)
+    command.upgrade(Config("alembic.ini"), "head")
     yield
 
 

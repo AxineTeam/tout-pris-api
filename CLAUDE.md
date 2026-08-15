@@ -17,18 +17,20 @@ Backend FastAPI du projet Tout Pris. Soit extrêmement concis.
 ## Stack
 
 - Python 3.12 (épinglé dans `.python-version`), FastAPI, SQLAlchemy 2.0 (SQLite par défaut, `DATABASE_URL` pour changer)
+- Alembic pour les migrations de schéma, exécutées automatiquement au démarrage de l'app (lifespan)
 - Dépendances gérées par uv (`uv sync`, groupe `dev` dans `pyproject.toml`, lock dans `uv.lock`)
 - pytest + httpx pour les tests, ruff pour lint et format
 - Docker + docker compose, devcontainer basé sur le service `api`
 
 ## Structure
 
-- `app/main.py` : création de l'app, lifespan (création des tables), routes
+- `app/main.py` : création de l'app, lifespan (migrations Alembic), routes
 - `app/database.py` : engine, session, `Base`, dépendance `get_db`
 - `app/models.py` : modèles SQLAlchemy (table `stufflist`)
 - `app/schemas.py` : schémas Pydantic
 - `app/routers/` : un fichier par ressource
 - `tests/` : fixtures dans `conftest.py` (client avec SQLite in-memory)
+- `alembic/` : migrations (`env.py`, `versions/`), config dans `alembic.ini`
 
 ## Commandes
 
@@ -37,12 +39,20 @@ Backend FastAPI du projet Tout Pris. Soit extrêmement concis.
 - `make test` : pytest
 - `make lint` / `make fmt` : ruff check+format (vérification / correction)
 - `make openapi` : régénère `openapi.json` (obligatoire après tout changement de routes ou de schémas, la CI vérifie qu'il est à jour)
+- `make migration m="description"` : génère une migration Alembic (autogenerate), relis toujours le fichier généré
+- `make migrate` : applique les migrations sans démarrer le serveur
 
 ## Sans Docker (fallback)
 
 - Si et seulement si tu ne peux pas démarrer de conteneur (déjà dans un conteneur, Docker indisponible), ignore les cibles Docker du Makefile et installe un environnement local
 - Utilise uv, c'est uv ou rien : `uv sync`, puis `uv run pytest`, `uv run ruff check .`, `uv run ruff format .`, `uv run uvicorn app.main:app --reload`
 - Dans tous les autres cas, passe par le Makefile
+
+## Migrations
+
+- Tout changement de modèle SQLAlchemy exige une migration Alembic dans la même PR (`make migration` puis relecture du fichier)
+- Ne modifie jamais une migration déjà mergée : crée-en une nouvelle
+- Chaque migration doit avoir un `downgrade` fonctionnel
 
 ## Style de code
 
