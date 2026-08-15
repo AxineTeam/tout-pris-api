@@ -2,10 +2,10 @@
   "name": "tout-pris-back",
   "dockerComposeFile": "../docker-compose.yml",
   "service": "api",
-  "workspaceFolder": "/workspace",
+  "workspaceFolder": "/app",
   "overrideCommand": true,
   "forwardPorts": [8000],
-  "postCreateCommand": "pip install uv && uv sync",
+  "postCreateCommand": "uv sync",
   "customizations": {
     "vscode": {
       "extensions": [
@@ -13,7 +13,7 @@
         "charliermarsh.ruff"
       ],
       "settings": {
-        "python.defaultInterpreterPath": "/workspace/.venv/bin/python",
+        "python.defaultInterpreterPath": "/app/.venv/bin/python",
         "[python]": {
           "editor.defaultFormatter": "charliermarsh.ruff",
           "editor.formatOnSave": true
