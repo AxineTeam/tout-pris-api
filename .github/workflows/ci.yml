@@ -8,10 +8,6 @@ on:
       - '*'
   workflow_dispatch:
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
-
 jobs:
   lint-and-test:
     name: Lint & Test
@@ -21,9 +17,7 @@ jobs:
 
       - uses: astral-sh/setup-uv@v6
 
-      - run: uv venv --python 3.12
-
-      - run: uv pip install -e ".[dev]"
+      - run: uv sync
 
       - run: uv run ruff check .
 
