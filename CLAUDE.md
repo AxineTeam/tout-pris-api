@@ -79,6 +79,7 @@ Backend FastAPI du projet Tout Pris. Soit extrêmement concis.
 - Lance toute la suite (`make test`) une fois que tu penses avoir fini
 - Utilise la TDD quand c'est pertinent, demande si nécessaire
 - Les tests utilisent une SQLite in-memory via l'override de `get_db` : ne touche jamais à la vraie base dans les tests
+- Couverture de 100 % exigée sur `app/` (pytest-cov, seuil dans `pyproject.toml`) : `make test` échoue en dessous, en local comme en CI
 
 ## Sécurité
 
