@@ -29,3 +29,9 @@ A devcontainer is provided (`.devcontainer/`) based on the compose `api` service
 - `DELETE /stufflists/{id}` — delete one
 
 Data is stored in SQLite (`tout_pris.db` by default, override with `DATABASE_URL`).
+
+## OpenAPI
+
+FastAPI generates the OpenAPI schema automatically. With the server running it is served at `/openapi.json`, with interactive docs at `/docs` (Swagger UI) and `/redoc` (ReDoc).
+
+The schema is also committed as [`openapi.json`](openapi.json) and regenerated with `make openapi`. CI fails if the committed file drifts from the code, so regenerate it whenever routes or schemas change.

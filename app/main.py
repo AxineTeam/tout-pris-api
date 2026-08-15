@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+from importlib.metadata import version
 
 from fastapi import FastAPI
 
@@ -12,10 +13,15 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="Tout Pris API", lifespan=lifespan)
+app = FastAPI(
+    title="Tout Pris API",
+    description="Backend API of the Tout Pris project: manage stufflists.",
+    version=version("tout-pris-back"),
+    lifespan=lifespan,
+)
 app.include_router(stufflists.router)
 
 
-@app.get("/health")
+@app.get("/health", summary="Health check", tags=["monitoring"])
 def health():
     return {"status": "ok"}

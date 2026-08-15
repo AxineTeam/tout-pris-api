@@ -1,4 +1,4 @@
-.PHONY: build up down logs test lint fmt
+.PHONY: build up down logs test lint fmt openapi
 
 build:
 	docker compose build
@@ -22,3 +22,6 @@ lint:
 fmt:
 	uv run ruff check --fix .
 	uv run ruff format .
+
+openapi:
+	uv run python -c "import json; from app.main import app; print(json.dumps(app.openapi(), indent=2))" > openapi.json

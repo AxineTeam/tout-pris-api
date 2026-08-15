@@ -13,7 +13,7 @@ router = APIRouter(prefix="/stufflists", tags=["stufflists"])
 DbSession = Annotated[Session, Depends(get_db)]
 
 
-@router.post("", response_model=StuffListRead, status_code=201)
+@router.post("", response_model=StuffListRead, status_code=201, summary="Create a stufflist")
 def create_stufflist(payload: StuffListCreate, db: DbSession):
     stufflist = StuffList(name=payload.name)
     db.add(stufflist)
@@ -22,12 +22,12 @@ def create_stufflist(payload: StuffListCreate, db: DbSession):
     return stufflist
 
 
-@router.get("", response_model=list[StuffListRead])
+@router.get("", response_model=list[StuffListRead], summary="List all stufflists")
 def list_stufflists(db: DbSession):
     return db.scalars(select(StuffList)).all()
 
 
-@router.get("/{stufflist_id}", response_model=StuffListRead)
+@router.get("/{stufflist_id}", response_model=StuffListRead, summary="Get a stufflist by id")
 def get_stufflist(stufflist_id: int, db: DbSession):
     stufflist = db.get(StuffList, stufflist_id)
     if stufflist is None:
@@ -35,7 +35,7 @@ def get_stufflist(stufflist_id: int, db: DbSession):
     return stufflist
 
 
-@router.delete("/{stufflist_id}", status_code=204)
+@router.delete("/{stufflist_id}", status_code=204, summary="Delete a stufflist")
 def delete_stufflist(stufflist_id: int, db: DbSession):
     stufflist = db.get(StuffList, stufflist_id)
     if stufflist is None:
