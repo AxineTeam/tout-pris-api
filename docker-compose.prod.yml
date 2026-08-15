@@ -1,0 +1,14 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: sqlite:////data/tout_pris.db
+    volumes:
+      - tout_pris_data:/data
+
+volumes:
+  tout_pris_data:

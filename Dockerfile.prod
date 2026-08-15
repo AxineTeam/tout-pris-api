@@ -31,13 +31,11 @@ RUN groupadd --system --gid 999 nonroot \
 # Copy the ready-made venv and app from the builder; no install step needed here.
 COPY --from=builder --chown=nonroot:nonroot /app /app
 
-# Persist the SQLite database outside the image in a dedicated volume.
+# Writable mount point for the SQLite volume declared in docker-compose.prod.yml.
 RUN mkdir /data && chown nonroot:nonroot /data
-VOLUME /data
 
 # Put the venv on PATH so the CMD can call uvicorn directly (uv is absent here).
 ENV PATH="/app/.venv/bin:$PATH" PYTHONUNBUFFERED=1
-ENV DATABASE_URL=sqlite:////data/tout_pris.db
 
 USER nonroot
 WORKDIR /app
