@@ -35,13 +35,11 @@ Backend FastAPI du projet Tout Pris. Soit extrêmement concis.
 - `make build` : build l'image Docker
 - `make test` : pytest
 - `make lint` / `make fmt` : ruff check+format (vérification / correction)
-- `make install` : installe les dépendances en local (`pip install -e ".[dev]"`)
 
 ## Sans Docker (fallback)
 
 - Si et seulement si tu ne peux pas démarrer de conteneur (déjà dans un conteneur, Docker indisponible), ignore les cibles Docker du Makefile et installe un environnement local
-- Utilise uv autant que possible : `uv venv --python 3.12 && uv pip install -e ".[dev]"`, puis `uv run pytest`, `uv run ruff check .`, `uv run ruff format .`, `uv run uvicorn app.main:app --reload`
-- Sans uv, replie-toi sur : `python3.12 -m venv .venv && .venv/bin/pip install -e ".[dev]"`, puis les binaires du venv (`.venv/bin/pytest`, etc.)
+- Utilise uv, c'est uv ou rien : `uv venv --python 3.12 && uv pip install -e ".[dev]"`, puis `uv run pytest`, `uv run ruff check .`, `uv run ruff format .`, `uv run uvicorn app.main:app --reload`
 - Dans tous les autres cas, passe par le Makefile
 
 ## Style de code

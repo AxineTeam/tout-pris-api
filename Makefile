@@ -1,4 +1,4 @@
-.PHONY: build up down logs install test lint fmt
+.PHONY: build up down logs test lint fmt
 
 build:
 	docker compose build
@@ -11,9 +11,6 @@ down:
 
 logs:
 	docker compose logs -f api
-
-install:
-	pip install -e ".[dev]"
 
 test:
 	pytest
