@@ -13,12 +13,12 @@ logs:
 	docker compose logs -f api
 
 test:
-	pytest
+	uv run pytest
 
 lint:
-	ruff check .
-	ruff format --check .
+	uv run ruff check .
+	uv run ruff format --check .
 
 fmt:
-	ruff check --fix .
-	ruff format .
+	uv run ruff check --fix .
+	uv run ruff format .
