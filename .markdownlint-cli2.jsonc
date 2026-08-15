@@ -2,5 +2,5 @@
   "config": {
     "line-length": false
   },
-  "ignores": [".venv/**"]
+  "ignores": [".venv/**", ".claude/skills/**"]
 }
