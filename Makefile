@@ -1,4 +1,4 @@
-.PHONY: build up down logs test lint fmt openapi
+.PHONY: build up down logs test lint fmt openapi migrate migration
 
 build:
 	docker compose build
@@ -25,3 +25,9 @@ fmt:
 
 openapi:
 	uv run python -c "import json; from app.main import app; print(json.dumps(app.openapi(), indent=2))" > openapi.json
+
+migrate:
+	uv run alembic upgrade head
+
+migration:
+	uv run alembic revision --autogenerate -m "$(m)"

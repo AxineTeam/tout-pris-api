@@ -35,3 +35,7 @@ Data is stored in SQLite (`tout_pris.db` by default, override with `DATABASE_URL
 FastAPI generates the OpenAPI schema automatically. With the server running it is served at `/openapi.json`, with interactive docs at `/docs` (Swagger UI) and `/redoc` (ReDoc).
 
 The schema is also committed as [`openapi.json`](openapi.json) and regenerated with `make openapi`. CI fails if the committed file drifts from the code, so regenerate it whenever routes or schemas change.
+
+## Migrations
+
+Schema migrations are managed with [Alembic](https://alembic.sqlalchemy.org) and run automatically when the app starts. After changing a SQLAlchemy model, generate a migration with `make migration m="describe the change"` and review the generated file; `make migrate` applies migrations without starting the server.
