@@ -40,6 +40,11 @@ def test_delete_stufflist(client):
     assert client.get(f"/stufflists/{created['id']}").status_code == 404
 
 
+def test_delete_stufflist_not_found(client):
+    response = client.delete("/stufflists/999")
+    assert response.status_code == 404
+
+
 def test_create_stufflist_requires_name(client):
     response = client.post("/stufflists", json={})
     assert response.status_code == 422
