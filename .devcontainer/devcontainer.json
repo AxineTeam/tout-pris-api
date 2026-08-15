@@ -5,7 +5,7 @@
   "workspaceFolder": "/workspace",
   "overrideCommand": true,
   "forwardPorts": [8000],
-  "postCreateCommand": "pip install -e '.[dev]'",
+  "postCreateCommand": "pip install uv && uv sync",
   "customizations": {
     "vscode": {
       "extensions": [
@@ -13,7 +13,7 @@
         "charliermarsh.ruff"
       ],
       "settings": {
-        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "python.defaultInterpreterPath": "/workspace/.venv/bin/python",
         "[python]": {
           "editor.defaultFormatter": "charliermarsh.ruff",
           "editor.formatOnSave": true

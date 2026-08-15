@@ -16,7 +16,8 @@ Backend FastAPI du projet Tout Pris. Soit extrêmement concis.
 
 ## Stack
 
-- Python 3.12, FastAPI, SQLAlchemy 2.0 (SQLite par défaut, `DATABASE_URL` pour changer)
+- Python 3.12 (épinglé dans `.python-version`), FastAPI, SQLAlchemy 2.0 (SQLite par défaut, `DATABASE_URL` pour changer)
+- Dépendances gérées par uv (`uv sync`, groupe `dev` dans `pyproject.toml`, lock dans `uv.lock`)
 - pytest + httpx pour les tests, ruff pour lint et format
 - Docker + docker compose, devcontainer basé sur le service `api`
 
@@ -39,7 +40,7 @@ Backend FastAPI du projet Tout Pris. Soit extrêmement concis.
 ## Sans Docker (fallback)
 
 - Si et seulement si tu ne peux pas démarrer de conteneur (déjà dans un conteneur, Docker indisponible), ignore les cibles Docker du Makefile et installe un environnement local
-- Utilise uv, c'est uv ou rien : `uv venv --python 3.12 && uv pip install -e ".[dev]"`, puis `uv run pytest`, `uv run ruff check .`, `uv run ruff format .`, `uv run uvicorn app.main:app --reload`
+- Utilise uv, c'est uv ou rien : `uv sync`, puis `uv run pytest`, `uv run ruff check .`, `uv run ruff format .`, `uv run uvicorn app.main:app --reload`
 - Dans tous les autres cas, passe par le Makefile
 
 ## Style de code
