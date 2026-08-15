@@ -69,6 +69,7 @@ Backend FastAPI du projet Tout Pris. Soit extrêmement concis.
 - Ne committe jamais des fichiers que tu n'as ni écrits ni modifiés : c'est peut-être le travail d'un autre agent
 - Titre de commit en anglais, au présent impératif ; le corps doit être assez explicite et détaillé pour comprendre le changement sans contexte
 - Préfère les commits atomiques (un changement logique = un commit)
+- Résous les conflits de PR par rebase sur `main`, jamais en mergeant `main` dans la branche : le repo merge en rebase-merge, qui jette les commits de merge et leurs résolutions (« Unable to merge » sinon)
 
 ## Tests
 
