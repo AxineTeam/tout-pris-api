@@ -10,13 +10,6 @@ make up      # start the API on http://localhost:8000 (docs at /docs)
 make down    # stop it
 ```
 
-Local development without Docker:
-
-```bash
-make install # pip install -e ".[dev]"
-uvicorn app.main:app --reload
-```
-
 ## Development
 
 ```bash
