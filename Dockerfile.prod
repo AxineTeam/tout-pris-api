@@ -1,29 +1,41 @@
+# Production image: multi-stage build. The builder holds uv and compiles the venv;
+# the final stage ships only Python + the venv (no uv, no pip), running as non-root.
+
+# --- Builder: resolve and install the locked dependencies + project into /app/.venv ---
 FROM ghcr.io/astral-sh/uv:python3.12-trixie-slim AS builder
 
 WORKDIR /app
 
+# UV_NO_DEV: exclude the dev dependency group from the production venv.
+# UV_PYTHON_DOWNLOADS=0: never fetch a Python at build time, use the image's interpreter.
 ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy UV_NO_DEV=1 UV_PYTHON_DOWNLOADS=0
 
+# Layer 1 — dependencies only, cached until the lock changes (see Dockerfile for the rationale).
 RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=uv.lock,target=uv.lock \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
     uv sync --locked --no-install-project
 
+# Layer 2 — install the project itself on top of the cached dependency layer.
 COPY . /app
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --locked
 
 
+# --- Runtime: minimal image, no build tooling, non-root ---
 FROM python:3.12-slim-trixie
 
 RUN groupadd --system --gid 999 nonroot \
  && useradd --system --gid 999 --uid 999 --create-home nonroot
 
+# Copy the ready-made venv and app from the builder; no install step needed here.
 COPY --from=builder --chown=nonroot:nonroot /app /app
 
+# Persist the SQLite database outside the image in a dedicated volume.
 RUN mkdir /data && chown nonroot:nonroot /data
 VOLUME /data
 
+# Put the venv on PATH so the CMD can call uvicorn directly (uv is absent here).
 ENV PATH="/app/.venv/bin:$PATH" PYTHONUNBUFFERED=1
 ENV DATABASE_URL=sqlite:////data/tout_pris.db
 
