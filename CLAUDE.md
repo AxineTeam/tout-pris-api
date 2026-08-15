@@ -72,6 +72,7 @@ Backend FastAPI du projet Tout Pris. Soit extrêmement concis.
 
 ## Workflow
 
+- Quand je te demande de traiter une issue ou une PR, souscris par défaut aux notifications de la PR concernée (`subscribe_pr_activity`) et suis-la jusqu'au merge
 - Lis toujours le code existant avant de proposer des modifications
 - Utilise les outils dédiés (Read, Edit, Grep, Glob) plutôt que bash quand possible
 - Après tout changement de code : `make lint` puis `make test`
