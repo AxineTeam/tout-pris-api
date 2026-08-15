@@ -6,3 +6,5 @@ services:
     volumes:
       - .:/app
       - /app/.venv
+    environment:
+      DATABASE_URL: sqlite:///./tout_pris.db
