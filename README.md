@@ -25,11 +25,10 @@ A devcontainer is provided (`.devcontainer/`) based on the compose `api` service
 The production image is built from `Dockerfile.prod` (multi-stage, [uv recommended practices](https://github.com/astral-sh/uv-docker-example)): uv builds the venv from `uv.lock` in a builder stage, and the final image contains neither uv nor pip and runs as a non-root user. This is the image published to Docker Hub on tags.
 
 ```bash
-docker build -f Dockerfile.prod -t tout-pris-back .
-docker run -p 8000:8000 -v tout_pris_data:/data tout-pris-back
+docker compose -f docker-compose.prod.yml up -d
 ```
 
-The production database lives in the `/data` volume (`DATABASE_URL=sqlite:////data/tout_pris.db`), separate from the dev database (`tout_pris.db` at the repo root).
+The production settings live in `docker-compose.prod.yml`: the database is stored in the `tout_pris_data` named volume mounted on `/data` (`DATABASE_URL=sqlite:////data/tout_pris.db`), separate from the dev database (`tout_pris.db` at the repo root).
 
 ## API
 
