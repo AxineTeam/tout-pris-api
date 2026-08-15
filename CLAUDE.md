@@ -36,6 +36,7 @@ Backend FastAPI du projet Tout Pris. Soit extrêmement concis.
 - `make build` : build l'image Docker
 - `make test` : pytest
 - `make lint` / `make fmt` : ruff check+format (vérification / correction)
+- `make openapi` : régénère `openapi.json` (obligatoire après tout changement de routes ou de schémas, la CI vérifie qu'il est à jour)
 
 ## Sans Docker (fallback)
 

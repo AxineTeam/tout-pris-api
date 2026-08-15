@@ -25,6 +25,10 @@ jobs:
 
       - run: uv run pytest
 
+      - run: make openapi
+
+      - run: git diff --exit-code openapi.json
+
       - uses: DavidAnson/markdownlint-cli2-action@v19
         with:
           globs: '**/*.md'
