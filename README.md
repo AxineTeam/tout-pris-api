@@ -49,3 +49,16 @@ The schema is also committed as [`openapi.json`](openapi.json) and regenerated w
 ## Migrations
 
 Schema migrations are managed with [Alembic](https://alembic.sqlalchemy.org) and run automatically when the app starts. After changing a SQLAlchemy model, generate a migration with `make migration m="describe the change"` and review the generated file; `make migrate` applies migrations without starting the server.
+
+## Dev database lifecycle
+
+The database is never versioned in git — rebuild it at will, Rails style:
+
+```bash
+make db-init   # create the database and apply migrations
+make db-seed   # fill it with factory data (polyfactory on the Pydantic schemas)
+make db-reset  # drop + init + seed
+make db-drop   # delete the SQLite file and its WAL sidecars
+```
+
+Seeding is reproducible (fixed random seed) and reuses the factories from `app/factories.py`.

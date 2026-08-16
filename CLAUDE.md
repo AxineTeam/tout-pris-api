@@ -20,6 +20,7 @@ Backend FastAPI du projet Tout Pris. Soit extrêmement concis.
 - Alembic pour les migrations de schéma, exécutées automatiquement au démarrage de l'app (lifespan)
 - Dépendances gérées par uv (`uv sync`, groupe `dev` dans `pyproject.toml`, lock dans `uv.lock`)
 - pytest + httpx pour les tests, ruff pour lint et format
+- polyfactory sur les schémas Pydantic pour les factories (seed et tests) — choix aligné avec l'arrivée prévue de PydanticAI, pas de factory_boy
 - Docker + docker compose, devcontainer basé sur le service `api`
 - Deux Dockerfiles (pratiques uv officielles) : `Dockerfile` dev (uv, deps dev, reload, monté sur `/app`), `Dockerfile.prod` multistage (image finale sans uv ni pip, non-root, base dans le volume `/data`)
 
@@ -29,6 +30,8 @@ Backend FastAPI du projet Tout Pris. Soit extrêmement concis.
 - `app/database.py` : engine, session, `Base`, dépendance `get_db`
 - `app/models.py` : modèles SQLAlchemy (table `stufflist`)
 - `app/schemas.py` : schémas Pydantic
+- `app/factories.py` : factories polyfactory construites sur les schémas Pydantic
+- `app/seed.py` : seed reproductible de la base de dev via les factories
 - `app/routers/` : un fichier par ressource
 - `tests/` : fixtures dans `conftest.py` (client avec SQLite in-memory)
 - `alembic/` : migrations (`env.py`, `versions/`), config dans `alembic.ini`
@@ -42,6 +45,8 @@ Backend FastAPI du projet Tout Pris. Soit extrêmement concis.
 - `make openapi` : régénère `openapi.json` (obligatoire après tout changement de routes ou de schémas, la CI vérifie qu'il est à jour)
 - `make migration m="description"` : génère une migration Alembic (autogenerate), relis toujours le fichier généré
 - `make migrate` : applique les migrations sans démarrer le serveur
+- `make db-init` / `make db-seed` / `make db-reset` / `make db-drop` : cycle de vie de la base de dev (équivalents `rails db:*`)
+- La base n'est jamais versionnée dans git (`*.db` et sidecars WAL `*.db-*` ignorés) : une base de dev se reconstruit avec `make db-reset`
 
 ## Sans Docker (fallback)
 
