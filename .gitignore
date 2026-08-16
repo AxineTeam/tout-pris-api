@@ -7,4 +7,5 @@ venv/
 .ruff_cache/
 .coverage
 *.db
+*.db-*
 .env

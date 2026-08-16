@@ -1,4 +1,4 @@
-.PHONY: help build up down logs test lint fmt openapi migrate migration
+.PHONY: help build up down logs test lint fmt openapi migrate migration db-init db-seed db-drop db-reset
 
 .DEFAULT_GOAL := help
 
@@ -36,3 +36,14 @@ migrate: ## Apply Alembic migrations
 
 migration: ## Generate a migration (make migration m="description")
 	uv run alembic revision --autogenerate -m "$(m)"
+
+db-init: ## Create the dev database and apply migrations
+	uv run alembic upgrade head
+
+db-seed: ## Fill the dev database with factory data
+	uv run python -m app.seed
+
+db-drop: ## Delete the dev database and its WAL sidecars
+	rm -f tout_pris.db tout_pris.db-wal tout_pris.db-shm
+
+db-reset: db-drop db-init db-seed ## Drop, recreate, migrate and seed the dev database
