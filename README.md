@@ -22,7 +22,9 @@ A devcontainer is provided (`.devcontainer/`) based on the compose `api` service
 
 ## Production image
 
-The production image is built from `Dockerfile.prod` (multi-stage, [uv recommended practices](https://github.com/astral-sh/uv-docker-example)): uv builds the venv from `uv.lock` in a builder stage, and the final image contains neither uv nor pip and runs as a non-root user. This is the image published to Docker Hub on tags.
+The production image is built from `Dockerfile.prod` (multi-stage, [uv recommended practices](https://github.com/astral-sh/uv-docker-example)): uv builds the venv from `uv.lock` in a builder stage, and the final image contains neither uv nor pip and runs as a non-root user.
+
+CI publishes it to Docker Hub: every merge on `main` pushes the `dev` tag, and every git tag pushes the matching semver tags plus `latest`.
 
 ```bash
 docker compose -f docker-compose.prod.yml up -d
