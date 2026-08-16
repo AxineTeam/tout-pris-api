@@ -43,6 +43,7 @@ Backend FastAPI du projet Tout Pris. Soit extrêmement concis.
 - `make test` : pytest
 - `make lint` / `make fmt` : ruff check+format (vérification / correction)
 - `make openapi` : régénère `openapi.json` (obligatoire après tout changement de routes ou de schémas, la CI vérifie qu'il est à jour)
+- `make erd` : régénère le diagramme ER du README (obligatoire après tout changement de modèle, la CI vérifie qu'il est à jour)
 - `make migration m="description"` : génère une migration Alembic (autogenerate), relis toujours le fichier généré
 - `make migrate` : applique les migrations sans démarrer le serveur
 - `make db-init` / `make db-seed` / `make db-reset` / `make db-drop` : cycle de vie de la base de dev (équivalents `rails db:*`)
@@ -53,6 +54,15 @@ Backend FastAPI du projet Tout Pris. Soit extrêmement concis.
 - Si et seulement si tu ne peux pas démarrer de conteneur (déjà dans un conteneur, Docker indisponible), ignore les cibles Docker du Makefile et installe un environnement local
 - Utilise uv, c'est uv ou rien : `uv sync`, puis `uv run pytest`, `uv run ruff check .`, `uv run ruff format .`, `uv run uvicorn app.main:app --reload`
 - Dans tous les autres cas, passe par le Makefile
+
+## Documentation du schéma
+
+- Le diagramme ER du README est généré par paracelsus depuis les métadonnées SQLAlchemy : régénère-le avec `make erd` après tout changement de modèle, la CI échoue s'il dérive
+- Toute colonne doit porter son `comment=` dans `mapped_column` : c'est la source unique des descriptions, reprise telle quelle dans le diagramme
+- Une relation n'a pas de commentaire propre : documente-la sur la colonne de clé étrangère (paracelsus étiquette la flèche avec le nom de la FK)
+- Un `__table_args__ = {"comment": ...}` documente la table dans les métadonnées, mais paracelsus ne l'affiche pas dans le diagramme
+- Sur SQLite les commentaires ne sont pas persistés : `alembic check` ne les voit pas et un changement de `comment` seul ne génère donc pas de migration (ce serait le cas sur Postgres)
+- La prose qui dépasse le schéma (sémantique métier des relations) va dans le README autour du diagramme, jamais dans la zone générée entre les marqueurs
 
 ## Migrations
 

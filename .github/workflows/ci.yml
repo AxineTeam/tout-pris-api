@@ -29,6 +29,8 @@ jobs:
 
       - run: git diff --exit-code openapi.json
 
+      - run: uv run paracelsus inject README.md --check
+
       - uses: DavidAnson/markdownlint-cli2-action@v19
         with:
           globs: '**/*.md'

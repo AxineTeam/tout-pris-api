@@ -50,6 +50,22 @@ The schema is also committed as [`openapi.json`](openapi.json) and regenerated w
 
 Schema migrations are managed with [Alembic](https://alembic.sqlalchemy.org) and run automatically when the app starts. After changing a SQLAlchemy model, generate a migration with `make migration m="describe the change"` and review the generated file; `make migrate` applies migrations without starting the server.
 
+## Database schema
+
+Generated from the SQLAlchemy models with [paracelsus](https://github.com/tedivm/paracelsus); regenerate with `make erd` after any model change (CI fails if it drifts). Column descriptions come from the `comment=` metadata on the models.
+
+<!-- BEGIN_SQLALCHEMY_DOCS -->
+```mermaid
+erDiagram
+  stufflist {
+    INTEGER id PK "Surrogate primary key"
+    VARCHAR name "Display name given by the user,indexed"
+  }
+
+
+```
+<!-- END_SQLALCHEMY_DOCS -->
+
 ## Dev database lifecycle
 
 The database is never versioned in git — rebuild it at will, Rails style:
