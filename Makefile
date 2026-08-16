@@ -1,4 +1,4 @@
-.PHONY: help build up down logs test lint fmt openapi migrate migration db-init db-seed db-drop db-reset
+.PHONY: help build up down logs test lint fmt erd openapi migrate migration db-init db-seed db-drop db-reset
 
 .DEFAULT_GOAL := help
 
@@ -27,6 +27,9 @@ lint: ## Check lint and formatting
 fmt: ## Fix lint and format the code
 	uv run ruff check --fix .
 	uv run ruff format .
+
+erd: ## Regenerate the ER diagram in the README
+	uv run paracelsus inject README.md
 
 openapi: ## Regenerate openapi.json
 	uv run python -c "import json; from app.main import app; print(json.dumps(app.openapi(), indent=2))" > openapi.json
