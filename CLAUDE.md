@@ -28,12 +28,12 @@ Backend FastAPI du projet Tout Pris. Soit extrêmement concis.
 
 - `app/main.py` : création de l'app, lifespan (migrations Alembic), routes
 - `app/database.py` : engine, session, `Base`, dépendance `get_db`
-- `app/models.py` : modèles SQLAlchemy (table `stufflist`)
+- `app/models/` : modèles SQLAlchemy, un fichier par domaine, tous réexportés par `__init__.py` — un module oublié disparaîtrait des métadonnées et le prochain autogenerate générerait un `drop_table`
 - `app/schemas.py` : schémas Pydantic
 - `app/factories.py` : factories polyfactory construites sur les schémas Pydantic
 - `app/seed.py` : seed reproductible de la base de dev via les factories
 - `app/routers/` : un fichier par ressource
-- `tests/` : fixtures dans `conftest.py` (client avec SQLite in-memory)
+- `tests/` : fixtures dans `conftest.py` (client et session, SQLite in-memory)
 - `alembic/` : migrations (`env.py`, `versions/`), config dans `alembic.ini`
 
 ## Commandes
