@@ -9,12 +9,15 @@ engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
 
-@event.listens_for(engine, "connect")
-def enable_sqlite_wal_mode(dbapi_connection, connection_record):
+def enable_sqlite_pragmas(dbapi_connection, connection_record):
     cursor = dbapi_connection.cursor()
     cursor.execute("PRAGMA journal_mode=WAL")
     cursor.execute("PRAGMA synchronous=NORMAL")
+    cursor.execute("PRAGMA foreign_keys=ON")
     cursor.close()
+
+
+event.listen(engine, "connect", enable_sqlite_pragmas)
 
 
 class Base(DeclarativeBase):
