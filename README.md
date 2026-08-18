@@ -59,14 +59,46 @@ Generated from the SQLAlchemy models with [paracelsus](https://github.com/tedivm
 <!-- BEGIN_SQLALCHEMY_DOCS -->
 ```mermaid
 erDiagram
+  household_members {
+    INTEGER id PK "Surrogate primary key"
+    INTEGER household_id FK "Household the membership grants access to,indexed"
+    INTEGER user_id FK "Account granted access to the household,indexed"
+    ENUM role "Reserved for a later differentiation of rights"
+  }
+
+  households {
+    INTEGER id PK "Surrogate primary key"
+    DATETIME created_at "Creation timestamp"
+    VARCHAR name "Display name given by the members"
+  }
+
+  persons {
+    INTEGER id PK "Surrogate primary key"
+    INTEGER household_id FK "Household the person belongs to,indexed"
+    INTEGER user_id FK "Account of the person when they have one,nullable,indexed"
+    VARCHAR name "Display name shown in every 'who is it for' picker"
+  }
+
   stufflist {
     INTEGER id PK "Surrogate primary key"
     VARCHAR name "Display name given by the user,indexed"
   }
 
+  users {
+    INTEGER id PK "Surrogate primary key"
+    DATETIME created_at "Signup timestamp"
+    VARCHAR email UK "Login address used to sign in,indexed"
+  }
+
+  households ||--o{ household_members : household_id
+  users ||--o{ household_members : user_id
+  households ||--o{ persons : household_id
+  users ||--o{ persons : user_id
 
 ```
 <!-- END_SQLALCHEMY_DOCS -->
+
+The functional need behind each table — what a household is for, why a person may exist without an account — is documented in [`docs/model/`](docs/model/).
 
 ## Dev database lifecycle
 
