@@ -41,6 +41,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: docker/setup-qemu-action@v3
+
       - uses: docker/setup-buildx-action@v3
 
       - name: Build dev image
@@ -56,6 +58,7 @@ jobs:
         with:
           context: .
           file: Dockerfile.prod
+          platforms: linux/amd64,linux/arm64
           push: false
           cache-from: type=gha,scope=prod
           cache-to: type=gha,mode=max,scope=prod
@@ -69,6 +72,8 @@ jobs:
       IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/tout-pris-back
     steps:
       - uses: actions/checkout@v4
+
+      - uses: docker/setup-qemu-action@v3
 
       - uses: docker/setup-buildx-action@v3
 
@@ -93,6 +98,7 @@ jobs:
         with:
           context: .
           file: Dockerfile.prod
+          platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
