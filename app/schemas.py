@@ -15,17 +15,6 @@ DisplayName = Annotated[
 NormalizedEmail = Annotated[EmailStr, StringConstraints(to_lower=True)]
 
 
-class StuffListCreate(BaseModel):
-    name: str
-
-
-class StuffListRead(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: int
-    name: str
-
-
 class UserCreate(BaseModel):
     email: NormalizedEmail
     password: str = Field(min_length=PASSWORD_MIN_LENGTH, max_length=PASSWORD_MAX_LENGTH)

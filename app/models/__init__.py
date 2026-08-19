@@ -1,6 +1,5 @@
 from app.models.household import Household, HouseholdMember, HouseholdRole, Person, User
 from app.models.identity import Identity, IdentityProvider, RefreshToken
-from app.models.stufflist import StuffList
 
 __all__ = [
     "Household",
@@ -10,6 +9,5 @@ __all__ = [
     "IdentityProvider",
     "Person",
     "RefreshToken",
-    "StuffList",
     "User",
 ]

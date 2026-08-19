@@ -5,7 +5,7 @@ from alembic import command
 from alembic.config import Config
 from fastapi import FastAPI
 
-from app.routers import auth, households, persons, stufflists
+from app.routers import auth, households, persons
 
 
 @asynccontextmanager
@@ -16,14 +16,13 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Tout Pris API",
-    description="Backend API of the Tout Pris project: manage stufflists.",
+    description="Backend API of the Tout Pris project: manage households and their persons.",
     version=version("tout-pris-back"),
     lifespan=lifespan,
 )
 app.include_router(auth.router)
 app.include_router(households.router)
 app.include_router(persons.router)
-app.include_router(stufflists.router)
 
 
 @app.get("/health", summary="Health check", tags=["monitoring"])

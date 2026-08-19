@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Tout Pris API",
-    "description": "Backend API of the Tout Pris project: manage stufflists.",
+    "description": "Backend API of the Tout Pris project: manage households and their persons.",
     "version": "0.1.0"
   },
   "paths": {
@@ -676,145 +676,6 @@
         }
       }
     },
-    "/stufflists": {
-      "get": {
-        "tags": [
-          "stufflists"
-        ],
-        "summary": "List all stufflists",
-        "operationId": "list_stufflists_stufflists_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/StuffListRead"
-                  },
-                  "type": "array",
-                  "title": "Response List Stufflists Stufflists Get"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "stufflists"
-        ],
-        "summary": "Create a stufflist",
-        "operationId": "create_stufflist_stufflists_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/StuffListCreate"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/StuffListRead"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/stufflists/{stufflist_id}": {
-      "get": {
-        "tags": [
-          "stufflists"
-        ],
-        "summary": "Get a stufflist by id",
-        "operationId": "get_stufflist_stufflists__stufflist_id__get",
-        "parameters": [
-          {
-            "name": "stufflist_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Stufflist Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/StuffListRead"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "stufflists"
-        ],
-        "summary": "Delete a stufflist",
-        "operationId": "delete_stufflist_stufflists__stufflist_id__delete",
-        "parameters": [
-          {
-            "name": "stufflist_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Stufflist Id"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Successful Response"
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/health": {
       "get": {
         "tags": [
@@ -989,37 +850,6 @@
           "refresh_token"
         ],
         "title": "RefreshTokenRequest"
-      },
-      "StuffListCreate": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name"
-        ],
-        "title": "StuffListCreate"
-      },
-      "StuffListRead": {
-        "properties": {
-          "id": {
-            "type": "integer",
-            "title": "Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "name"
-        ],
-        "title": "StuffListRead"
       },
       "TokenPair": {
         "properties": {

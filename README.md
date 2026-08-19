@@ -50,10 +50,6 @@ The production settings live in `docker-compose.prod.yml`: the database is store
 - `GET /households/{household_id}/persons/{person_id}` — read one
 - `PATCH /households/{household_id}/persons/{person_id}` — rename one
 - `DELETE /households/{household_id}/persons/{person_id}` — remove one
-- `POST /stufflists` — create a stufflist (`{"name": "..."}`)
-- `GET /stufflists` — list stufflists
-- `GET /stufflists/{id}` — get one
-- `DELETE /stufflists/{id}` — delete one
 
 Data is stored in SQLite (`tout_pris.db` by default, override with `DATABASE_URL`).
 
@@ -128,11 +124,6 @@ erDiagram
     VARCHAR token_hash UK "SHA-256 hex digest of the token, the token itself is never stored,indexed"
   }
 
-  stufflist {
-    INTEGER id PK "Surrogate primary key"
-    VARCHAR name "Display name given by the user,indexed"
-  }
-
   users {
     INTEGER id PK "Surrogate primary key"
     DATETIME created_at "Signup timestamp"
@@ -162,4 +153,4 @@ make db-reset  # drop + init + seed
 make db-drop   # delete the SQLite file and its WAL sidecars
 ```
 
-Seeding is reproducible (fixed random seed) and reuses the factories from `app/factories.py`.
+Seeding is reproducible (fixed random seed) and reuses the factories from `app/factories.py`. It creates one account with its password identity, one household it owns, and a handful of persons; `make db-seed` prints the credentials to sign in with. They are development-only values, never meant to reach a deployed database.
