@@ -55,7 +55,9 @@ def test_send_email_logs_api_errors_instead_of_raising(brevo, monkeypatch, caplo
     assert "invitee@example.com" in caplog.text
 
 
-def test_settings_default_to_a_disabled_brevo_client():
+def test_settings_default_to_a_disabled_brevo_client(monkeypatch):
+    monkeypatch.delenv("BREVO_API_KEY", raising=False)
+
     assert Settings().brevo_api_key == ""
 
 
