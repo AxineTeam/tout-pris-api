@@ -45,6 +45,29 @@ def test_register_rejects_an_email_already_taken(client, user):
     assert response.json()["detail"] == "Email already registered"
 
 
+def test_register_rejects_an_email_already_taken_in_another_case(client, user, db):
+    response = client.post(
+        "/auth/register", json={"email": user.email.upper(), "password": "another-one"}
+    )
+
+    assert response.status_code == 409
+    assert db.scalars(select(User)).all() == [user]
+
+
+def test_register_lowercases_the_stored_email(client, db):
+    client.post("/auth/register", json={**NEW_ACCOUNT, "email": "NewComer@Example.com"})
+
+    assert db.scalar(select(User).where(User.email == "newcomer@example.com")) is not None
+
+
+def test_login_ignores_the_case_of_the_email(client, user, credentials):
+    response = client.post(
+        "/auth/login", json={**credentials, "email": credentials["email"].upper()}
+    )
+
+    assert response.status_code == 200
+
+
 def test_register_rejects_a_short_password(client):
     response = client.post(
         "/auth/register", json={"email": "short@example.com", "password": "1234"}

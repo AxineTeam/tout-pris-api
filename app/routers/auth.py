@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import CurrentUser, DbSession
@@ -42,9 +43,6 @@ def find_password_identity(db: Session, email: str) -> Identity | None:
     summary="Create an account from an email and a password",
 )
 def register(payload: UserCreate, db: DbSession) -> TokenPair:
-    if find_password_identity(db, payload.email) is not None:
-        raise HTTPException(status_code=409, detail="Email already registered")
-
     user = User(email=payload.email)
     user.identities.append(
         Identity(
@@ -54,7 +52,11 @@ def register(payload: UserCreate, db: DbSession) -> TokenPair:
         )
     )
     db.add(user)
-    db.flush()
+    try:
+        db.flush()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=409, detail="Email already registered") from None
     tokens = issue_token_pair(db, user)
     db.commit()
     return tokens

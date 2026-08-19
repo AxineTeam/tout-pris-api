@@ -1,10 +1,12 @@
 from datetime import datetime
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, StringConstraints
 
 PASSWORD_MIN_LENGTH = 8
 PASSWORD_MAX_LENGTH = 128
+
+NormalizedEmail = Annotated[EmailStr, StringConstraints(to_lower=True)]
 
 
 class StuffListCreate(BaseModel):
@@ -19,12 +21,12 @@ class StuffListRead(BaseModel):
 
 
 class UserCreate(BaseModel):
-    email: EmailStr
+    email: NormalizedEmail
     password: str = Field(min_length=PASSWORD_MIN_LENGTH, max_length=PASSWORD_MAX_LENGTH)
 
 
 class UserLogin(BaseModel):
-    email: EmailStr
+    email: NormalizedEmail
     password: str = Field(max_length=PASSWORD_MAX_LENGTH)
 
 
