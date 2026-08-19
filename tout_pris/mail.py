@@ -6,8 +6,7 @@ from brevo.transactional_emails import (
     SendTransacEmailRequestSender,
     SendTransacEmailRequestToItem,
 )
-
-from app.config import settings
+from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
@@ -15,17 +14,17 @@ BREVO_TIMEOUT_SECONDS = 10
 
 
 def send_email(to: str, subject: str, html_content: str) -> None:
-    if not settings.brevo_api_key:
+    if not settings.BREVO_API_KEY:
         logger.info("BREVO_API_KEY is not set, skipping email %r to %s", subject, to)
         return
 
     try:
         with httpx.Client(timeout=BREVO_TIMEOUT_SECONDS) as http_client:
-            client = Brevo(api_key=settings.brevo_api_key, httpx_client=http_client)
+            client = Brevo(api_key=settings.BREVO_API_KEY, httpx_client=http_client)
             client.transactional_emails.send_transac_email(
                 sender=SendTransacEmailRequestSender(
-                    email=settings.mail_from_email,
-                    name=settings.mail_from_name,
+                    email=settings.MAIL_FROM_EMAIL,
+                    name=settings.MAIL_FROM_NAME,
                 ),
                 to=[SendTransacEmailRequestToItem(email=to)],
                 subject=subject,
