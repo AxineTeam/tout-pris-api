@@ -50,6 +50,10 @@ Le SHA-256 suffit ici, là où le mot de passe exige argon2 : un jeton de 256 bi
 
 La limitation de débit sur `/auth/login`, la détection de réutilisation d'un jeton de rafraîchissement déjà tourné (révocation de toute la famille), la vérification d'email et la réinitialisation de mot de passe ne sont pas implémentées. Elles viendront dans leurs propres lots.
 
+`/auth/refresh` ne verrouille pas la ligne qu'il fait tourner : deux appels simultanés portant le même jeton peuvent réussir tous les deux et repartir avec deux paires valides. C'est le même trou que la détection de réutilisation doit couvrir, et il se ferme au même endroit — un `SELECT ... FOR UPDATE` ou une révocation conditionnelle rendant la rotation atomique.
+
+`refresh_tokens` ne se purge jamais : chaque connexion et chaque rotation ajoute une ligne, révoquée mais conservée. De l'ordre de quelques dizaines de milliers de lignes par an et par compte actif, ce que l'index sur `token_hash` absorbe sans peine. C'est de l'hygiène à traiter un jour, pas un problème de tenue en charge.
+
 `SECRET_KEY` n'a **aucune valeur par défaut dans l'application** : `Settings()` lève `Field required` au démarrage si la variable d'environnement est absente. Une clé de signature publiée dans le dépôt serait exploitable par quiconque lit le code, quel que soit le mode de déploiement. Les deux fichiers compose et le `Makefile` fournissent un placeholder `change-me-...` pour le développement et les tests ; en production la variable doit porter au moins 32 octets aléatoires, longueur en dessous de laquelle PyJWT émet un avertissement.
 
 ## Pourquoi pas fastapi-users

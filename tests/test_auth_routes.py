@@ -3,6 +3,7 @@ from datetime import UTC, datetime, timedelta
 from sqlalchemy import select
 
 from app.auth.tokens import create_access_token, hash_refresh_token
+from app.config import settings
 from app.models import Identity, IdentityProvider, RefreshToken, User
 
 NEW_ACCOUNT = {"email": "newcomer@example.com", "password": "a-long-enough-password"}
@@ -21,6 +22,12 @@ def test_register_returns_a_token_pair_and_creates_a_password_identity(client, d
     assert identity.provider is IdentityProvider.password
     assert identity.provider_uid == NEW_ACCOUNT["email"]
     assert identity.secret != NEW_ACCOUNT["password"]
+
+
+def test_register_reports_the_access_token_lifetime(client):
+    response = client.post("/auth/register", json=NEW_ACCOUNT)
+
+    assert response.json()["expires_in"] == settings.access_token_ttl_minutes * 60
 
 
 def test_register_does_not_create_a_household(client, db):

@@ -46,3 +46,4 @@ class TokenPair(BaseModel):
     access_token: str
     refresh_token: str
     token_type: Literal["bearer"] = "bearer"
+    expires_in: int

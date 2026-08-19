@@ -11,6 +11,7 @@ from app.auth.tokens import (
     find_usable_refresh_token,
     revoke_refresh_token,
 )
+from app.config import settings
 from app.models import Identity, IdentityProvider, User
 from app.schemas import RefreshTokenRequest, TokenPair, UserCreate, UserLogin, UserRead
 
@@ -24,6 +25,7 @@ def issue_token_pair(db: Session, user: User) -> TokenPair:
     return TokenPair(
         access_token=create_access_token(user.id),
         refresh_token=create_refresh_token(db, user),
+        expires_in=settings.access_token_ttl_minutes * 60,
     )
 
 
