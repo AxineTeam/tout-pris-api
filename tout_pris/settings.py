@@ -1,4 +1,5 @@
 import os
+from importlib.metadata import version
 from pathlib import Path
 
 import dj_database_url
@@ -19,7 +20,8 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django_extensions",
-    "ninja",
+    "rest_framework",
+    "drf_spectacular",
     "accounts",
 ]
 
@@ -80,3 +82,14 @@ BREVO_API_KEY = os.environ.get("BREVO_API_KEY", "")
 MAIL_FROM_EMAIL = os.environ.get("MAIL_FROM_EMAIL", "no-reply@tout-pris.app")
 
 MAIL_FROM_NAME = os.environ.get("MAIL_FROM_NAME", "Tout Pris")
+
+REST_FRAMEWORK = {
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Tout Pris API",
+    "DESCRIPTION": "Backend API of the Tout Pris project.",
+    "VERSION": version("tout-pris-back"),
+    "SERVE_INCLUDE_SCHEMA": False,
+}

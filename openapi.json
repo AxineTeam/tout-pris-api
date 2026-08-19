@@ -1,50 +1,66 @@
 {
-  "openapi": "3.1.0",
-  "info": {
-    "title": "Tout Pris API",
-    "version": "0.1.0",
-    "description": "Backend API of the Tout Pris project."
-  },
-  "paths": {
-    "/api/health": {
-      "get": {
-        "operationId": "tout_pris_api_health",
-        "summary": "Health check",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HealthSchema"
+    "openapi": "3.0.3",
+    "info": {
+        "title": "Tout Pris API",
+        "version": "0.1.0",
+        "description": "Backend API of the Tout Pris project."
+    },
+    "paths": {
+        "/api/health/": {
+            "get": {
+                "operationId": "health_retrieve",
+                "summary": "Health check",
+                "tags": [
+                    "monitoring"
+                ],
+                "security": [
+                    {
+                        "cookieAuth": []
+                    },
+                    {
+                        "basicAuth": []
+                    },
+                    {}
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Health"
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
                 }
-              }
             }
-          }
+        }
+    },
+    "components": {
+        "schemas": {
+            "Health": {
+                "type": "object",
+                "properties": {
+                    "status": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "status"
+                ]
+            }
         },
-        "tags": [
-          "monitoring"
-        ]
-      }
+        "securitySchemes": {
+            "basicAuth": {
+                "type": "http",
+                "scheme": "basic"
+            },
+            "cookieAuth": {
+                "type": "apiKey",
+                "in": "cookie",
+                "name": "sessionid"
+            }
+        }
     }
-  },
-  "components": {
-    "schemas": {
-      "HealthSchema": {
-        "properties": {
-          "status": {
-            "title": "Status",
-            "type": "string"
-          }
-        },
-        "required": [
-          "status"
-        ],
-        "title": "HealthSchema",
-        "type": "object"
-      }
-    }
-  },
-  "servers": []
 }

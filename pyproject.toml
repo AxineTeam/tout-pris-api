@@ -5,7 +5,8 @@ description = "Tout Pris backend API"
 requires-python = ">=3.12"
 dependencies = [
     "django>=6.1",
-    "django-ninja>=1.6.3",
+    "djangorestframework>=3.18",
+    "drf-spectacular>=0.30",
     "django-extensions>=4.1",
     "dj-database-url>=3.0",
     "gunicorn>=23.0",
