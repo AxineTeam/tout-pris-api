@@ -1,10 +1,14 @@
 import enum
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import DateTime, Enum, ForeignKey, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
+
+if TYPE_CHECKING:
+    from app.models.identity import Identity, RefreshToken
 
 
 class HouseholdRole(enum.StrEnum):
@@ -25,6 +29,12 @@ class User(Base):
     )
 
     memberships: Mapped[list["HouseholdMember"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
+    identities: Mapped[list["Identity"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
+    refresh_tokens: Mapped[list["RefreshToken"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
 

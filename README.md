@@ -84,11 +84,29 @@ erDiagram
     VARCHAR name "Display name given by the members"
   }
 
+  identities {
+    INTEGER id PK "Surrogate primary key"
+    INTEGER user_id FK "Account the identity signs in as,indexed"
+    DATETIME created_at "Link timestamp"
+    ENUM provider "Authentication provider vouching for the identity"
+    VARCHAR provider_uid "Email address for the password provider, provider account id otherwise"
+    VARCHAR secret "Argon2 hash of the password for the password provider, NULL otherwise,nullable"
+  }
+
   persons {
     INTEGER id PK "Surrogate primary key"
     INTEGER household_id FK "Household the person belongs to,indexed"
     INTEGER user_id FK "Account of the person when they have one,nullable,indexed"
     VARCHAR name "Display name shown in every 'who is it for' picker"
+  }
+
+  refresh_tokens {
+    INTEGER id PK "Surrogate primary key"
+    INTEGER user_id FK "Account whose session the token extends,indexed"
+    DATETIME created_at "Issue timestamp"
+    DATETIME expires_at "Moment past which the token is refused"
+    DATETIME revoked_at "Moment the token was rotated or logged out, NULL while it is usable,nullable"
+    VARCHAR token_hash UK "SHA-256 hex digest of the token, the token itself is never stored,indexed"
   }
 
   stufflist {
@@ -104,8 +122,10 @@ erDiagram
 
   households ||--o{ household_members : household_id
   users ||--o{ household_members : user_id
+  users ||--o{ identities : user_id
   households ||--o{ persons : household_id
   users ||--o{ persons : user_id
+  users ||--o{ refresh_tokens : user_id
 
 ```
 <!-- END_SQLALCHEMY_DOCS -->
