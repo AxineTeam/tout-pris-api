@@ -8,10 +8,19 @@ from app.auth.passwords import hash_password
 from app.auth.tokens import create_access_token
 from app.database import Base, enable_sqlite_pragmas, get_db
 from app.main import app
-from app.models import Identity, IdentityProvider, User
+from app.models import (
+    Household,
+    HouseholdMember,
+    HouseholdRole,
+    Identity,
+    IdentityProvider,
+    Person,
+    User,
+)
 
 DEFAULT_EMAIL = "member@example.com"
 DEFAULT_PASSWORD = "correct-horse-battery"
+OTHER_EMAIL = "outsider@example.com"
 
 
 @pytest.fixture
@@ -82,3 +91,62 @@ def credentials():
 def authenticated_client(client, user):
     client.headers["Authorization"] = f"Bearer {create_access_token(user.id)}"
     return client
+
+
+@pytest.fixture
+def other_user(create_user):
+    return create_user(email=OTHER_EMAIL)
+
+
+@pytest.fixture
+def create_household(db):
+    def factory(owner: User, name: str) -> Household:
+        household = Household(name=name)
+        household.members.append(HouseholdMember(user_id=owner.id, role=HouseholdRole.owner))
+        db.add(household)
+        db.commit()
+        db.refresh(household)
+        return household
+
+    return factory
+
+
+@pytest.fixture
+def create_person(db):
+    def factory(household: Household, name: str) -> Person:
+        person = Person(household_id=household.id, name=name)
+        db.add(person)
+        db.commit()
+        db.refresh(person)
+        return person
+
+    return factory
+
+
+@pytest.fixture
+def household(create_household, user):
+    return create_household(user, "Maison")
+
+
+@pytest.fixture
+def other_household(create_household, other_user):
+    return create_household(other_user, "Chez les autres")
+
+
+@pytest.fixture
+def person(create_person, household):
+    return create_person(household, "Alice")
+
+
+@pytest.fixture
+def other_person(create_person, other_household):
+    return create_person(other_household, "Bob")
+
+
+@pytest.fixture
+def stored(db):
+    def load(model, primary_key):
+        db.expire_all()
+        return db.get(model, primary_key)
+
+    return load

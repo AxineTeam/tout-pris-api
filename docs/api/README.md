@@ -26,6 +26,34 @@ Un schéma Pydantic par opération : `XCreate`, `XUpdate`, `XRead`. Jamais un sc
 
 Les collections sont renvoyées comme des tableaux JSON nus, sans enveloppe ni pagination. C'est volontairement provisoire : aucune collection actuelle ne peut croître sans borne (les personnes d'un foyer, ses voyages). La pagination sera ajoutée quand une collection le justifiera — vraisemblablement les objets d'une liste — et pas avant, pour ne pas imposer dès maintenant une enveloppe à tous les appelants.
 
+## Ressources et verbes
+
+Une ressource est nommée au pluriel et n'est jamais un verbe : `/households`, `/households/{household_id}/persons`. Une ressource qui n'existe que dans un foyer est imbriquée sous lui, jamais exposée à la racine avec un identifiant global : `/persons/{person_id}` obligerait chaque route à retrouver le foyer pour vérifier l'accès, alors que l'imbrication le confie à `get_current_household` une fois pour toutes. L'imbrication s'arrête à deux niveaux ; une ressource plus profonde sera rattachée au foyer directement plutôt qu'enchaînée.
+
+| Verbe | Chemin | Succès |
+| --- | --- | --- |
+| `POST` | collection | `201` avec la ressource créée |
+| `GET` | collection | `200` avec un tableau |
+| `GET` | élément | `200` avec la ressource |
+| `PATCH` | élément | `200` avec la ressource à jour |
+| `DELETE` | élément | `204` sans corps |
+
+`PATCH` et non `PUT` : le client mobile modifie un champ à la fois, et un `PUT` l'obligerait à renvoyer une représentation complète — donc à écraser les champs qu'il ne connaît pas encore. Un champ absent du corps laisse la valeur inchangée, un champ à `null` aussi : aucun champ modifiable n'est actuellement effaçable, et un corps vide est une requête valide qui ne change rien.
+
+L'identifiant d'une ressource et son foyer de rattachement ne sont jamais lus dans le corps : ils viennent du chemin. `POST /households/{household_id}/persons` avec un `household_id` dans le corps l'ignore. C'est ce qui rend le cloisonnement infalsifiable côté client.
+
+## Foyers et personnes
+
+- `POST /households` — crée le foyer **et** la ligne `household_members` de l'appelant avec le rôle `owner`. C'est aujourd'hui le seul moyen d'entrer dans un foyer : l'inscription n'en crée aucun et il n'existe pas encore d'invitation.
+- `GET /households` — ne renvoie que les foyers dont l'appelant est membre. Un compte sans foyer reçoit `[]`, jamais `404` : la collection existe, elle est vide.
+- `GET`, `PATCH`, `DELETE /households/{household_id}` — passent par `get_current_household`, donc `404` sur un foyer inconnu comme sur un foyer dont l'appelant n'est pas membre.
+- `DELETE /households/{household_id}` — supprime le foyer, ses membres et ses personnes en cascade.
+- `/households/{household_id}/persons` — les cinq opérations passent d'abord par le foyer. Une personne dont l'identifiant existe mais qui appartient à un autre foyer répond `404 Person not found`, exactement comme un identifiant inexistant.
+
+Le rôle `owner` n'ouvre aujourd'hui aucun droit particulier : n'importe quel membre peut renommer ou supprimer le foyer. La colonne est posée pour une différenciation ultérieure des droits, elle n'est pas encore appliquée.
+
+Une personne n'est pas rattachable à un compte par l'API : `PersonCreate` et `PersonUpdate` n'acceptent que `name`. Accepter un `user_id` fourni par le client laisserait rattacher n'importe quel compte à une personne de son propre foyer, et l'échec ou le succès de la clé étrangère révélerait quels identifiants de compte existent. Le rattachement viendra avec le flux d'invitation, qui sera consenti par le compte invité.
+
 ## Authentification
 
 L'accès est un jeton porteur : `Authorization: Bearer <access_token>`.

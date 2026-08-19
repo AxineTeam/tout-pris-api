@@ -40,6 +40,16 @@ The production settings live in `docker-compose.prod.yml`: the database is store
 - `POST /auth/refresh` — rotate a refresh token
 - `POST /auth/logout` — revoke a refresh token
 - `GET /auth/me` — read the authenticated account (bearer required)
+- `POST /households` — create a household, the caller becomes its owner (`{"name": "..."}`)
+- `GET /households` — list the households the caller belongs to
+- `GET /households/{household_id}` — read one
+- `PATCH /households/{household_id}` — rename one
+- `DELETE /households/{household_id}` — delete one with its members and its persons
+- `GET /households/{household_id}/persons` — list the persons of a household
+- `POST /households/{household_id}/persons` — add a person (`{"name": "..."}`)
+- `GET /households/{household_id}/persons/{person_id}` — read one
+- `PATCH /households/{household_id}/persons/{person_id}` — rename one
+- `DELETE /households/{household_id}/persons/{person_id}` — remove one
 - `POST /stufflists` — create a stufflist (`{"name": "..."}`)
 - `GET /stufflists` — list stufflists
 - `GET /stufflists/{id}` — get one
