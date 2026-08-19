@@ -2,255 +2,49 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Tout Pris API",
-    "description": "Backend API of the Tout Pris project: manage stufflists.",
-    "version": "0.1.0"
+    "version": "0.1.0",
+    "description": "Backend API of the Tout Pris project."
   },
   "paths": {
-    "/stufflists": {
+    "/api/health": {
       "get": {
-        "tags": [
-          "stufflists"
-        ],
-        "summary": "List all stufflists",
-        "operationId": "list_stufflists_stufflists_get",
+        "operationId": "tout_pris_api_health",
+        "summary": "Health check",
+        "parameters": [],
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "OK",
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/StuffListRead"
-                  },
-                  "type": "array",
-                  "title": "Response List Stufflists Stufflists Get"
+                  "$ref": "#/components/schemas/HealthSchema"
                 }
               }
             }
           }
-        }
-      },
-      "post": {
-        "tags": [
-          "stufflists"
-        ],
-        "summary": "Create a stufflist",
-        "operationId": "create_stufflist_stufflists_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/StuffListCreate"
-              }
-            }
-          },
-          "required": true
         },
-        "responses": {
-          "201": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/StuffListRead"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/stufflists/{stufflist_id}": {
-      "get": {
-        "tags": [
-          "stufflists"
-        ],
-        "summary": "Get a stufflist by id",
-        "operationId": "get_stufflist_stufflists__stufflist_id__get",
-        "parameters": [
-          {
-            "name": "stufflist_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Stufflist Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/StuffListRead"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "stufflists"
-        ],
-        "summary": "Delete a stufflist",
-        "operationId": "delete_stufflist_stufflists__stufflist_id__delete",
-        "parameters": [
-          {
-            "name": "stufflist_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Stufflist Id"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Successful Response"
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/health": {
-      "get": {
         "tags": [
           "monitoring"
-        ],
-        "summary": "Health check",
-        "operationId": "health_health_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        }
+        ]
       }
     }
   },
   "components": {
     "schemas": {
-      "HTTPValidationError": {
+      "HealthSchema": {
         "properties": {
-          "detail": {
-            "items": {
-              "$ref": "#/components/schemas/ValidationError"
-            },
-            "type": "array",
-            "title": "Detail"
+          "status": {
+            "title": "Status",
+            "type": "string"
           }
         },
-        "type": "object",
-        "title": "HTTPValidationError"
-      },
-      "StuffListCreate": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          }
-        },
-        "type": "object",
         "required": [
-          "name"
+          "status"
         ],
-        "title": "StuffListCreate"
-      },
-      "StuffListRead": {
-        "properties": {
-          "id": {
-            "type": "integer",
-            "title": "Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "name"
-        ],
-        "title": "StuffListRead"
-      },
-      "ValidationError": {
-        "properties": {
-          "loc": {
-            "items": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "integer"
-                }
-              ]
-            },
-            "type": "array",
-            "title": "Location"
-          },
-          "msg": {
-            "type": "string",
-            "title": "Message"
-          },
-          "type": {
-            "type": "string",
-            "title": "Error Type"
-          },
-          "input": {
-            "title": "Input"
-          },
-          "ctx": {
-            "type": "object",
-            "title": "Context"
-          }
-        },
-        "type": "object",
-        "required": [
-          "loc",
-          "msg",
-          "type"
-        ],
-        "title": "ValidationError"
+        "title": "HealthSchema",
+        "type": "object"
       }
     }
-  }
+  },
+  "servers": []
 }
