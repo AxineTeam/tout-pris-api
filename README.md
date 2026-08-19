@@ -35,12 +35,21 @@ The production settings live in `docker-compose.prod.yml`: the database is store
 ## API
 
 - `GET /health`
+- `POST /auth/register` — create an account (`{"email": "...", "password": "..."}`)
+- `POST /auth/login` — exchange credentials for an access and a refresh token
+- `POST /auth/refresh` — rotate a refresh token
+- `POST /auth/logout` — revoke a refresh token
+- `GET /auth/me` — read the authenticated account (bearer required)
 - `POST /stufflists` — create a stufflist (`{"name": "..."}`)
 - `GET /stufflists` — list stufflists
 - `GET /stufflists/{id}` — get one
 - `DELETE /stufflists/{id}` — delete one
 
 Data is stored in SQLite (`tout_pris.db` by default, override with `DATABASE_URL`).
+
+The HTTP conventions (status codes, household scoping, pagination) and the rationale behind the authentication stack are documented in [`docs/api/`](docs/api/README.md).
+
+Authentication settings are read from the environment: `SECRET_KEY` (**required**, no default), `ACCESS_TOKEN_TTL_MINUTES` (15) and `REFRESH_TOKEN_TTL_DAYS` (30).
 
 ## Transactional emails
 
