@@ -16,7 +16,8 @@ Backend Django du projet Tout Pris. Soit extrêmement concis.
 
 ## Stack
 
-- Python 3.12 (épinglé dans `.python-version`), Django 6.1, Django REST Framework pour l'API, drf-spectacular pour l'OpenAPI générée
+- Python 3.12 (épinglé dans `.python-version`), Django 6.1, Django REST Framework pour l'API, drf-spectacular pour l'OpenAPI générée, drf-pydantic pour dériver un serializer d'un modèle Pydantic
+- Deux façons de déclarer un schéma : `ModelSerializer` quand il y a une table derrière, Pydantic via `drf-pydantic` quand il n'y en a pas (sortie d'un modèle de langage, réponse calculée)
 - ORM et migrations Django (SQLite par défaut, `DATABASE_URL` lu par dj-database-url), migrations appliquées par l'entrypoint Docker, jamais par le code applicatif
 - django-extensions pour `shell_plus`, `runserver_plus` et `reset_db`
 - Dépendances gérées par uv (`uv sync`, groupe `dev` dans `pyproject.toml`, lock dans `uv.lock`)
