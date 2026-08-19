@@ -7,6 +7,9 @@ services:
       - "8000:8000"
     environment:
       DATABASE_URL: sqlite:////data/tout_pris.db
+      SECRET_KEY: ${SECRET_KEY:?SECRET_KEY is required in production}
+      ACCESS_TOKEN_TTL_MINUTES: ${ACCESS_TOKEN_TTL_MINUTES:-15}
+      REFRESH_TOKEN_TTL_DAYS: ${REFRESH_TOKEN_TTL_DAYS:-30}
       BREVO_API_KEY: ${BREVO_API_KEY:-}
       MAIL_FROM_EMAIL: ${MAIL_FROM_EMAIL:-no-reply@tout-pris.app}
       MAIL_FROM_NAME: ${MAIL_FROM_NAME:-Tout Pris}

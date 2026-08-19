@@ -30,7 +30,7 @@ Un compte ne peut être rattaché qu'à une seule personne par foyer. La contrai
 
 ## User restera nu
 
-Une brique d'authentification externe, équivalente à OmniAuth, est prévue. Les identités — fournisseur, identifiant chez le fournisseur, jetons — arriveront dans leurs propres tables reliées à `User`.
+Les identités — fournisseur, identifiant chez le fournisseur, secret — vivent dans la table `identities` reliée à `User`, et les sessions dans `refresh_tokens` : `User` ne porte donc aucune colonne d'authentification.
 
 `User` ne porte donc **aucune colonne d'authentification** : ni mot de passe, ni fournisseur, ni jeton. C'est ce qui permettra de brancher cette brique par ajout de tables, sans migration destructive.
 
