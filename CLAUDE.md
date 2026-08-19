@@ -90,6 +90,8 @@ Backend Django du projet Tout Pris. Soit extrêmement concis.
 - Lance uniquement les tests pertinents, pas toute la suite
 - Lance toute la suite (`uv run pytest`) une fois que tu penses avoir fini
 - Utilise la TDD quand c'est pertinent, demande si nécessaire
+- Tout bug que tu parviens à reproduire devient un cas de test **avant** d'être corrigé : le test doit d'abord échouer sur le bug, puis passer avec le correctif, et il reste dans la suite. C'est à la fois le garde-fou anti-régression et la documentation du bug — une reproduction dans un script jetable ne laisse aucune trace
+- Le nom du test décrit le comportement attendu, pas le numéro de l'issue : c'est lui qu'on lira le jour où il repassera au rouge
 - Django crée une base de test isolée : ne touche jamais à la base de dev dans les tests
 - Couverture de 100 % exigée sur le code applicatif (pytest-cov, seuil dans `pyproject.toml`) : `uv run pytest` échoue en dessous, en local comme en CI
 
