@@ -1,6 +1,6 @@
 # tout-pris-back
 
-Backend FastAPI du projet Tout Pris. Soit extrêmement concis.
+Backend Django du projet Tout Pris. Soit extrêmement concis.
 
 ## Langue
 
@@ -16,59 +16,52 @@ Backend FastAPI du projet Tout Pris. Soit extrêmement concis.
 
 ## Stack
 
-- Python 3.12 (épinglé dans `.python-version`), FastAPI, SQLAlchemy 2.0 (SQLite par défaut, `DATABASE_URL` pour changer)
-- Alembic pour les migrations de schéma, exécutées automatiquement au démarrage de l'app (lifespan)
+- Python 3.12 (épinglé dans `.python-version`), Django 6.1, django-ninja pour l'API (Pydantic, OpenAPI générée)
+- ORM et migrations Django (SQLite par défaut, `DATABASE_URL` lu par dj-database-url), migrations appliquées par l'entrypoint Docker, jamais par le code applicatif
+- django-extensions pour `shell_plus`, `runserver_plus` et `reset_db`
 - Dépendances gérées par uv (`uv sync`, groupe `dev` dans `pyproject.toml`, lock dans `uv.lock`)
-- pytest + httpx pour les tests, ruff pour lint et format
-- polyfactory sur les schémas Pydantic pour les factories (seed et tests) — choix aligné avec l'arrivée prévue de PydanticAI, pas de factory_boy
+- pytest-django pour les tests, ruff pour lint et format
 - Docker + docker compose, devcontainer basé sur le service `api`
-- Deux Dockerfiles (pratiques uv officielles) : `Dockerfile` dev (uv, deps dev, reload, monté sur `/app`), `Dockerfile.prod` multistage (image finale sans uv ni pip, non-root, base dans le volume `/data`)
+- Deux Dockerfiles (pratiques uv officielles) : `Dockerfile` dev (uv, deps dev, `runserver`, monté sur `/app`), `Dockerfile.prod` multistage (image finale sans uv ni pip, non-root, gunicorn, base dans le volume `/data`)
 
 ## Structure
 
-- `app/main.py` : création de l'app, lifespan (migrations Alembic), routes
-- `app/database.py` : engine, session, `Base`, dépendance `get_db`
-- `app/models/` : modèles SQLAlchemy, un fichier par domaine, tous réexportés par `__init__.py` — un module oublié disparaîtrait des métadonnées et le prochain autogenerate générerait un `drop_table`
-- `app/schemas.py` : schémas Pydantic
-- `app/factories.py` : factories polyfactory construites sur les schémas Pydantic
-- `app/seed.py` : seed reproductible de la base de dev via les factories
-- `app/routers/` : un fichier par ressource
-- `tests/` : fixtures dans `conftest.py` (client et session, SQLite in-memory)
-- `alembic/` : migrations (`env.py`, `versions/`), config dans `alembic.ini`
+- `manage.py` : point d'entrée Django, équivalent de `rails`/`rake`
+- `tout_pris/settings.py` : configuration, lue depuis l'environnement
+- `tout_pris/urls.py` : URLconf racine, admin sur `/admin/` et API ninja sur `/api/`
+- `tout_pris/api.py` : instance `NinjaAPI` et endpoint `/health`
+- `tout_pris/mail.py` : envoi transactionnel via Brevo
+- `accounts/` : app du `User` custom, référencé par `AUTH_USER_MODEL` dès la migration initiale
+- `tests/` : suite pytest-django, une base de test isolée fournie par Django
+- Une app Django par domaine, comme des engines Rails
 
 ## Commandes
 
-- `make up` / `make down` : démarre/arrête le serveur (docker compose, port 8000)
-- `make build` : build l'image Docker
-- `make test` : pytest
-- `make lint` / `make fmt` : ruff check+format (vérification / correction)
-- `make openapi` : régénère `openapi.json` (obligatoire après tout changement de routes ou de schémas, la CI vérifie qu'il est à jour)
-- `make erd` : régénère le diagramme ER du README (obligatoire après tout changement de modèle, la CI vérifie qu'il est à jour)
-- `make migration m="description"` : génère une migration Alembic (autogenerate), relis toujours le fichier généré
-- `make migrate` : applique les migrations sans démarrer le serveur
-- `make db-init` / `make db-seed` / `make db-reset` / `make db-drop` : cycle de vie de la base de dev (équivalents `rails db:*`)
-- La base n'est jamais versionnée dans git (`*.db` et sidecars WAL `*.db-*` ignorés) : une base de dev se reconstruit avec `make db-reset`
+- Pas de Makefile ni de remplaçant : le README liste toutes les commandes, c'est la référence unique
+- `docker compose build` / `up -d` / `down` / `logs -f api` : cycle de vie du serveur (port 8000)
+- `docker compose exec api <commande>` : même commande dans le conteneur
+- `uv run python manage.py runserver 0.0.0.0:8000` : serveur de dev
+- `uv run python manage.py migrate` / `makemigrations` / `showmigrations` / `sqlmigrate` : migrations
+- `uv run python manage.py reset_db` puis `migrate` : reconstruit la base de dev (jamais versionnée, `*.db` ignoré)
+- `uv run python manage.py shell_plus` / `createsuperuser` / `check`
+- `uv run pytest` : tests, échec sous 100 % de couverture
+- `uv run ruff check .` / `ruff check --fix .` / `ruff format .` / `ruff format --check .`
+- `uv run python manage.py export_openapi_schema --api tout_pris.api.api --output openapi.json --indent 2` : régénère `openapi.json` (obligatoire après tout changement de routes ou de schémas, la CI vérifie qu'il est à jour)
+- `npx markdownlint-cli2 "**/*.md"` : lint markdown, comme la CI
+- `docker compose -f docker-compose.prod.yml up -d` : image de production
 
 ## Sans Docker (fallback)
 
-- Si et seulement si tu ne peux pas démarrer de conteneur (déjà dans un conteneur, Docker indisponible), ignore les cibles Docker du Makefile et installe un environnement local
-- Utilise uv, c'est uv ou rien : `uv sync`, puis `uv run pytest`, `uv run ruff check .`, `uv run ruff format .`, `uv run uvicorn app.main:app --reload`
-- Dans tous les autres cas, passe par le Makefile
-
-## Documentation du schéma
-
-- Le diagramme ER du README est généré par paracelsus depuis les métadonnées SQLAlchemy : régénère-le avec `make erd` après tout changement de modèle, la CI échoue s'il dérive
-- Toute colonne doit porter son `comment=` dans `mapped_column` : c'est la source unique des descriptions, reprise telle quelle dans le diagramme
-- Une relation n'a pas de commentaire propre : documente-la sur la colonne de clé étrangère (paracelsus étiquette la flèche avec le nom de la FK)
-- Un `__table_args__ = {"comment": ...}` documente la table dans les métadonnées, mais paracelsus ne l'affiche pas dans le diagramme
-- Sur SQLite les commentaires ne sont pas persistés : `alembic check` ne les voit pas et un changement de `comment` seul ne génère donc pas de migration (ce serait le cas sur Postgres)
-- La prose qui dépasse le schéma (sémantique métier des relations) va dans le README autour du diagramme, jamais dans la zone générée entre les marqueurs
+- Si et seulement si tu ne peux pas démarrer de conteneur (déjà dans un conteneur, Docker indisponible), ignore les commandes Docker et installe un environnement local
+- Utilise uv, c'est uv ou rien : `uv sync`, puis les commandes `uv run` ci-dessus
+- Dans tous les autres cas, passe par docker compose
 
 ## Migrations
 
-- Tout changement de modèle SQLAlchemy exige une migration Alembic dans la même PR (`make migration` puis relecture du fichier)
+- Tout changement de modèle Django exige une migration dans la même PR (`makemigrations` puis relecture du fichier, `sqlmigrate` pour lire le SQL) ; la CI échoue sur un modèle sans migration
+- Reformate les migrations générées avec `uv run ruff format .` : Django les écrit avec son propre style
 - Ne modifie jamais une migration déjà mergée : crée-en une nouvelle
-- Chaque migration doit avoir un `downgrade` fonctionnel
+- Le `User` custom est lié au schéma dès la migration initiale : changer `AUTH_USER_MODEL` après coup impose de repartir de zéro
 
 ## Style de code
 
@@ -92,10 +85,10 @@ Backend FastAPI du projet Tout Pris. Soit extrêmement concis.
 ## Tests
 
 - Lance uniquement les tests pertinents, pas toute la suite
-- Lance toute la suite (`make test`) une fois que tu penses avoir fini
+- Lance toute la suite (`uv run pytest`) une fois que tu penses avoir fini
 - Utilise la TDD quand c'est pertinent, demande si nécessaire
-- Les tests utilisent une SQLite in-memory via l'override de `get_db` : ne touche jamais à la vraie base dans les tests
-- Couverture de 100 % exigée sur `app/` (pytest-cov, seuil dans `pyproject.toml`) : `make test` échoue en dessous, en local comme en CI
+- Django crée une base de test isolée : ne touche jamais à la base de dev dans les tests
+- Couverture de 100 % exigée sur le code applicatif (pytest-cov, seuil dans `pyproject.toml`) : `uv run pytest` échoue en dessous, en local comme en CI
 
 ## Sécurité
 
@@ -108,4 +101,4 @@ Backend FastAPI du projet Tout Pris. Soit extrêmement concis.
 - Avant de démarrer le traitement d'une issue, si tu as des objections sur ce qui est demandé, commente-les sur l'issue et attends une réponse avant de commencer
 - Lis toujours le code existant avant de proposer des modifications
 - Utilise les outils dédiés (Read, Edit, Grep, Glob) plutôt que bash quand possible
-- Après tout changement de code : `make lint` puis `make test`
+- Après tout changement de code : `uv run ruff check .`, `uv run ruff format .` puis `uv run pytest`
