@@ -1,58 +1,82 @@
+import json
 import logging
-from unittest.mock import MagicMock
 
 import httpx
 import pytest
-from brevo.core.api_error import ApiError
 
 from app import mail
 from app.config import Settings
 
+BREVO_ENDPOINT = "https://api.brevo.com/v3/smtp/email"
+ACCEPTED_RESPONSE = {"messageId": "<202608191600.12345@smtp-relay.brevo.com>"}
+REJECTED_RESPONSE = {"code": "invalid_parameter", "message": "sender is not valid"}
+
 
 @pytest.fixture
-def brevo(monkeypatch):
-    client_class = MagicMock()
-    monkeypatch.setattr(mail, "Brevo", client_class)
-    return client_class
+def brevo_responds():
+    def install(monkeypatch, handler):
+        requests = []
+
+        def handle_request(
+            transport: httpx.HTTPTransport, request: httpx.Request
+        ) -> httpx.Response:
+            requests.append(request)
+            return handler(request)
+
+        monkeypatch.setattr(httpx.HTTPTransport, "handle_request", handle_request)
+        return requests
+
+    return install
 
 
-def test_send_email_is_a_logged_no_op_without_api_key(brevo, monkeypatch, caplog):
+def accepted(request: httpx.Request) -> httpx.Response:
+    return httpx.Response(201, json=ACCEPTED_RESPONSE)
+
+
+def test_send_email_is_a_logged_no_op_without_api_key(brevo_responds, monkeypatch, caplog):
+    requests = brevo_responds(monkeypatch, accepted)
     monkeypatch.setattr(mail.settings, "brevo_api_key", "")
 
     with caplog.at_level(logging.INFO, logger=mail.logger.name):
         mail.send_email("invitee@example.com", "Welcome", "<p>Hello</p>")
 
-    brevo.assert_not_called()
+    assert requests == []
     assert "invitee@example.com" in caplog.text
 
 
-def test_send_email_calls_brevo_with_the_configured_sender(brevo, monkeypatch):
+def test_send_email_posts_the_documented_payload_to_brevo(brevo_responds, monkeypatch):
+    requests = brevo_responds(monkeypatch, accepted)
     monkeypatch.setattr(mail.settings, "brevo_api_key", "test-key")
     monkeypatch.setattr(mail.settings, "mail_from_email", "hello@tout-pris.app")
     monkeypatch.setattr(mail.settings, "mail_from_name", "Tout Pris")
 
     mail.send_email("invitee@example.com", "Welcome", "<p>Hello</p>")
 
-    brevo.assert_called_once()
-    http_client = brevo.call_args.kwargs["httpx_client"]
-    assert brevo.call_args.kwargs["api_key"] == "test-key"
-    assert http_client.timeout.read == mail.BREVO_TIMEOUT_SECONDS
-    assert http_client.is_closed
-    send = brevo.return_value.transactional_emails.send_transac_email
-    send.assert_called_once()
-    payload = send.call_args.kwargs
-    assert payload["sender"].email == "hello@tout-pris.app"
-    assert payload["sender"].name == "Tout Pris"
-    assert [item.email for item in payload["to"]] == ["invitee@example.com"]
-    assert payload["subject"] == "Welcome"
-    assert payload["html_content"] == "<p>Hello</p>"
+    assert len(requests) == 1
+    request = requests[0]
+    assert request.method == "POST"
+    assert str(request.url) == BREVO_ENDPOINT
+    assert request.headers["api-key"] == "test-key"
+    assert json.loads(request.content) == {
+        "sender": {"email": "hello@tout-pris.app", "name": "Tout Pris"},
+        "to": [{"email": "invitee@example.com"}],
+        "subject": "Welcome",
+        "htmlContent": "<p>Hello</p>",
+    }
 
 
-def test_send_email_logs_api_errors_instead_of_raising(brevo, monkeypatch, caplog):
+def test_send_email_applies_the_timeout_to_the_request(brevo_responds, monkeypatch):
+    requests = brevo_responds(monkeypatch, accepted)
     monkeypatch.setattr(mail.settings, "brevo_api_key", "test-key")
-    brevo.return_value.transactional_emails.send_transac_email.side_effect = ApiError(
-        status_code=400, body="invalid sender"
-    )
+
+    mail.send_email("invitee@example.com", "Welcome", "<p>Hello</p>")
+
+    assert requests[0].extensions["timeout"]["read"] == mail.BREVO_TIMEOUT_SECONDS
+
+
+def test_send_email_logs_a_rejection_instead_of_raising(brevo_responds, monkeypatch, caplog):
+    brevo_responds(monkeypatch, lambda request: httpx.Response(400, json=REJECTED_RESPONSE))
+    monkeypatch.setattr(mail.settings, "brevo_api_key", "test-key")
 
     with caplog.at_level(logging.ERROR, logger=mail.logger.name):
         mail.send_email("invitee@example.com", "Welcome", "<p>Hello</p>")
@@ -60,11 +84,26 @@ def test_send_email_logs_api_errors_instead_of_raising(brevo, monkeypatch, caplo
     assert "invitee@example.com" in caplog.text
 
 
-def test_send_email_logs_unexpected_failures_instead_of_raising(brevo, monkeypatch, caplog):
+def test_send_email_logs_a_transport_failure_instead_of_raising(
+    brevo_responds, monkeypatch, caplog
+):
+    def time_out(request: httpx.Request) -> httpx.Response:
+        raise httpx.ReadTimeout("brevo took too long", request=request)
+
+    brevo_responds(monkeypatch, time_out)
     monkeypatch.setattr(mail.settings, "brevo_api_key", "test-key")
-    brevo.return_value.transactional_emails.send_transac_email.side_effect = httpx.ReadTimeout(
-        "brevo took too long"
-    )
+
+    with caplog.at_level(logging.ERROR, logger=mail.logger.name):
+        mail.send_email("invitee@example.com", "Welcome", "<p>Hello</p>")
+
+    assert "invitee@example.com" in caplog.text
+
+
+def test_send_email_logs_an_unparsable_response_instead_of_raising(
+    brevo_responds, monkeypatch, caplog
+):
+    brevo_responds(monkeypatch, lambda request: httpx.Response(201, text="not json at all"))
+    monkeypatch.setattr(mail.settings, "brevo_api_key", "test-key")
 
     with caplog.at_level(logging.ERROR, logger=mail.logger.name):
         mail.send_email("invitee@example.com", "Welcome", "<p>Hello</p>")
