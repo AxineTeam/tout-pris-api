@@ -3,6 +3,7 @@ from importlib.metadata import version
 from pathlib import Path
 
 import dj_database_url
+from django.core.exceptions import ImproperlyConfigured
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -27,6 +28,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -77,6 +79,10 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+WHITENOISE_AUTOREFRESH = DEBUG
+
 BREVO_API_KEY = os.environ.get("BREVO_API_KEY", "")
 
 MAIL_FROM_EMAIL = os.environ.get("MAIL_FROM_EMAIL", "no-reply@tout-pris.app")
@@ -85,6 +91,8 @@ MAIL_FROM_NAME = os.environ.get("MAIL_FROM_NAME", "Tout Pris")
 
 REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_AUTHENTICATION_CLASSES": ["rest_framework.authentication.SessionAuthentication"],
+    "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
 }
 
 SPECTACULAR_SETTINGS = {
@@ -93,3 +101,19 @@ SPECTACULAR_SETTINGS = {
     "VERSION": version("tout-pris-back"),
     "SERVE_INCLUDE_SCHEMA": False,
 }
+
+if not DEBUG:
+    if SECRET_KEY.startswith("django-insecure-"):
+        raise ImproperlyConfigured("DJANGO_SECRET_KEY must be set when DEBUG is off")
+
+    STORAGES = {
+        "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+        "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
+    }
+
+    SECURE_SSL_REDIRECT = True
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True

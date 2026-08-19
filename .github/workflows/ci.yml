@@ -29,6 +29,13 @@ jobs:
 
       - run: uv run python manage.py makemigrations --check --dry-run
 
+      - name: Django deployment checks
+        run: uv run python manage.py check --deploy --fail-level WARNING
+        env:
+          DJANGO_DEBUG: "false"
+          DJANGO_SECRET_KEY: ci-only-secret-key-long-enough-to-satisfy-the-deployment-checks
+          DJANGO_ALLOWED_HOSTS: tout-pris.example
+
       - run: uv run python manage.py spectacular --file openapi.yaml
 
       - run: git diff --exit-code openapi.yaml
