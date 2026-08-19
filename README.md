@@ -1,6 +1,6 @@
 # tout-pris-back
 
-Backend Django for Tout Pris, with [Django REST Framework](https://www.django-rest-framework.org) for the API and [drf-spectacular](https://drf-spectacular.readthedocs.io) for its OpenAPI schema.
+Backend Django for Tout Pris, with [Django REST Framework](https://www.django-rest-framework.org) for the API, [drf-spectacular](https://drf-spectacular.readthedocs.io) for its OpenAPI schema, and [drf-pydantic](https://github.com/georgebv/drf-pydantic) to derive serializers from Pydantic models.
 
 There is no Makefile: `manage.py` is the entry point for everything that touches the application or the database, and this README lists every other command.
 

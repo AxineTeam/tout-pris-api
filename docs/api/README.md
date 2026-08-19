@@ -54,7 +54,9 @@ L'API est prioritaire ici pour servir plusieurs clients sans dupliquer la logiqu
 
 DRF est la couche API de référence de l'écosystème Django : c'est elle que les briques tierces intègrent d'origine, django-allauth en tête, et elle apporte montées les permissions, la limitation de débit et la négociation de contenu que la façade aurait dû assembler autrement.
 
-Les schémas adossés à l'ORM sont donc des serializers. Pydantic ne quitte pas le projet pour autant : `drf-pydantic` sait dériver un serializer d'un modèle Pydantic, si bien qu'un même modèle pourra servir de cible à PydanticAI et de schéma de réponse. La dépendance n'est pas ajoutée aujourd'hui — aucun schéma issu d'un modèle de langage n'existe encore, et l'ajouter maintenant serait payer pour un besoin absent.
+Pydantic ne quitte pas le projet pour autant, et `drf-pydantic` est câblé : un modèle Pydantic expose son serializer DRF dérivé par `Model.drf_serializer`, ce qui permet à un même modèle d'être à la fois la cible d'un appel PydanticAI et le schéma d'une réponse. `/api/health/` en est l'exemple vivant plutôt qu'une promesse — la spécification générée est identique à celle qu'un serializer écrit à la main produisait.
+
+Deux façons de déclarer un schéma coexistent donc, et le choix n'est pas laissé au goût : `ModelSerializer` pour ce qui est adossé à l'ORM, puisqu'il dérive les champs du modèle Django, et Pydantic pour ce qui n'a pas de table derrière lui — la sortie d'un modèle de langage, une réponse calculée. C'est la vraie contrepartie de DRF : l'uniformité de déclaration, pas Pydantic lui-même.
 
 La spécification est émise en OpenAPI 3.0.3, défaut de drf-spectacular ; `OAS_VERSION` force 3.1.0 si un générateur de client le réclame.
 
