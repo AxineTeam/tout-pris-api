@@ -1,8 +1,9 @@
+from pydantic import Field
 from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    secret_key: str
+    secret_key: str = Field(min_length=1)
     access_token_ttl_minutes: int = 15
     refresh_token_ttl_days: int = 30
     brevo_api_key: str = ""
