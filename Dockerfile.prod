@@ -34,12 +34,17 @@ COPY --from=builder --chown=nonroot:nonroot /app /app
 # Writable mount point for the SQLite volume declared in docker-compose.prod.yml.
 RUN mkdir /data && chown nonroot:nonroot /data
 
-# Put the venv on PATH so the CMD can call uvicorn directly (uv is absent here).
+# Put the venv on PATH so the CMD can call gunicorn directly (uv is absent here).
 ENV PATH="/app/.venv/bin:$PATH" PYTHONUNBUFFERED=1
+
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 USER nonroot
 WORKDIR /app
 
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
+
 EXPOSE 8000
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["gunicorn", "tout_pris.wsgi:application", "--bind", "0.0.0.0:8000"]

@@ -1,5 +1,5 @@
 # Dev image: full uv toolchain + dev dependencies, source mounted from the host,
-# uvicorn started with --reload. See Dockerfile.prod for the shipped image.
+# Django runserver with its auto-reloader. See Dockerfile.prod for the shipped image.
 FROM ghcr.io/astral-sh/uv:python3.12-trixie-slim
 
 WORKDIR /app
@@ -22,11 +22,15 @@ COPY . /app
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --locked
 
-# Put the venv on PATH so bare `python`/`uvicorn` resolve to it.
+# Put the venv on PATH so bare `python`/`django-admin` resolve to it.
 ENV PATH="/app/.venv/bin:$PATH"
 
-ENTRYPOINT []
+# Outside /app so the compose bind mount of the sources cannot shadow it.
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 
 EXPOSE 8000
 
-CMD ["uv", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
