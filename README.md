@@ -71,7 +71,7 @@ Generated migrations are written with Django's own formatting: run `uv run ruff 
 ### OpenAPI export
 
 ```bash
-uv run python manage.py spectacular --format openapi-json --file openapi.json
+uv run python manage.py spectacular --file openapi.yaml
 ```
 
 ### Production
@@ -89,7 +89,7 @@ DJANGO_SECRET_KEY=... docker compose -f docker-compose.prod.yml up -d
 
 ## OpenAPI
 
-drf-spectacular generates the schema from the code. It is committed as [`openapi.json`](openapi.json) and regenerated with the `spectacular` command above. CI fails if the committed file drifts from the code, so regenerate it whenever routes or schemas change.
+drf-spectacular generates the schema from the code. It is committed as [`openapi.yaml`](openapi.yaml) and regenerated with the `spectacular` command above. CI fails if the committed file drifts from the code, so regenerate it whenever routes or schemas change.
 
 ## Migrations
 

@@ -48,7 +48,7 @@ Backend Django du projet Tout Pris. Soit extrêmement concis.
 - `uv run python manage.py shell_plus` / `createsuperuser` / `check`
 - `uv run pytest` : tests, échec sous 100 % de couverture
 - `uv run ruff check .` / `ruff check --fix .` / `ruff format .` / `ruff format --check .`
-- `uv run python manage.py spectacular --format openapi-json --file openapi.json` : régénère `openapi.json` (obligatoire après tout changement de routes ou de schémas, la CI vérifie qu'il est à jour)
+- `uv run python manage.py spectacular --file openapi.yaml` : régénère `openapi.yaml` (obligatoire après tout changement de routes ou de schémas, la CI vérifie qu'il est à jour)
 - `npx markdownlint-cli2 "**/*.md"` : lint markdown, comme la CI
 - `docker compose -f docker-compose.prod.yml up -d` : image de production
 

@@ -1,6 +1,6 @@
 # Conventions de l'API
 
-L'API est servie par Django REST Framework sous le préfixe `/api/`, et sa spécification OpenAPI est **dérivée du code** par drf-spectacular — jamais écrite à la main. La CI échoue si `openapi.json` dérive des routes, pour que les clients ne divergent pas de l'implémentation.
+L'API est servie par Django REST Framework sous le préfixe `/api/`, et sa spécification OpenAPI est **dérivée du code** par drf-spectacular — jamais écrite à la main. La CI échoue si `openapi.yaml` dérive des routes, pour que les clients ne divergent pas de l'implémentation.
 
 ## Codes HTTP
 
