@@ -42,6 +42,18 @@ The production settings live in `docker-compose.prod.yml`: the database is store
 
 Data is stored in SQLite (`tout_pris.db` by default, override with `DATABASE_URL`).
 
+## Transactional emails
+
+Transactional emails (invitations, email verification, password reset) are sent through [Brevo](https://developers.brevo.com) with the synchronous `brevo-python` client, from `app/mail.py`. Routes send them through FastAPI `BackgroundTasks` so the HTTP response never waits for Brevo.
+
+| Variable | Default | Role |
+| --- | --- | --- |
+| `BREVO_API_KEY` | empty | Brevo API key. When empty, `send_email` logs the message and sends nothing: that is the dev and test mode, no network call is ever made. |
+| `MAIL_FROM_EMAIL` | `no-reply@tout-pris.app` | Sender address, must be a sender validated in Brevo. |
+| `MAIL_FROM_NAME` | `Tout Pris` | Sender display name. |
+
+The key is a secret: never commit it, pass it through the environment (`BREVO_API_KEY=... docker compose -f docker-compose.prod.yml up -d`).
+
 ## OpenAPI
 
 FastAPI generates the OpenAPI schema automatically. With the server running it is served at `/openapi.json`, with interactive docs at `/docs` (Swagger UI) and `/redoc` (ReDoc).

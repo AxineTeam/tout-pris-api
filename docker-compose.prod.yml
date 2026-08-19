@@ -7,6 +7,9 @@ services:
       - "8000:8000"
     environment:
       DATABASE_URL: sqlite:////data/tout_pris.db
+      BREVO_API_KEY: ${BREVO_API_KEY:-}
+      MAIL_FROM_EMAIL: ${MAIL_FROM_EMAIL:-no-reply@tout-pris.app}
+      MAIL_FROM_NAME: ${MAIL_FROM_NAME:-Tout Pris}
     volumes:
       - tout_pris_data:/data
 
