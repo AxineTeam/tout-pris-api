@@ -8,6 +8,7 @@ services:
       - /app/.venv
     environment:
       DATABASE_URL: sqlite:///./tout_pris.db
+      SECRET_KEY: ${SECRET_KEY:-change-me-this-development-key-is-not-secret}
       BREVO_API_KEY: ${BREVO_API_KEY:-}
       MAIL_FROM_EMAIL: ${MAIL_FROM_EMAIL:-no-reply@tout-pris.app}
       MAIL_FROM_NAME: ${MAIL_FROM_NAME:-Tout Pris}

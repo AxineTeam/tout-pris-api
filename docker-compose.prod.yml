@@ -7,7 +7,7 @@ services:
       - "8000:8000"
     environment:
       DATABASE_URL: sqlite:////data/tout_pris.db
-      SECRET_KEY: ${SECRET_KEY:?SECRET_KEY is required in production}
+      SECRET_KEY: ${SECRET_KEY:-change-me-this-production-key-is-not-secret}
       ACCESS_TOKEN_TTL_MINUTES: ${ACCESS_TOKEN_TTL_MINUTES:-15}
       REFRESH_TOKEN_TTL_DAYS: ${REFRESH_TOKEN_TTL_DAYS:-30}
       BREVO_API_KEY: ${BREVO_API_KEY:-}

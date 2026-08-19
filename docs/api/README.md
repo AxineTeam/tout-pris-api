@@ -50,7 +50,7 @@ Le SHA-256 suffit ici, là où le mot de passe exige argon2 : un jeton de 256 bi
 
 La limitation de débit sur `/auth/login`, la détection de réutilisation d'un jeton de rafraîchissement déjà tourné (révocation de toute la famille), la vérification d'email et la réinitialisation de mot de passe ne sont pas implémentées. Elles viendront dans leurs propres lots.
 
-`SECRET_KEY` vaut `change-me-in-production` par défaut : c'est une valeur de développement, elle **doit** être surchargée par une variable d'environnement en production, avec au moins 32 octets aléatoires. PyJWT émet un avertissement en dessous de cette longueur.
+`SECRET_KEY` n'a **aucune valeur par défaut dans l'application** : `Settings()` lève `Field required` au démarrage si la variable d'environnement est absente. Une clé de signature publiée dans le dépôt serait exploitable par quiconque lit le code, quel que soit le mode de déploiement. Les deux fichiers compose et le `Makefile` fournissent un placeholder `change-me-...` pour le développement et les tests ; en production la variable doit porter au moins 32 octets aléatoires, longueur en dessous de laquelle PyJWT émet un avertissement.
 
 ## Pourquoi pas fastapi-users
 
