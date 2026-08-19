@@ -52,6 +52,10 @@ Le socle précédent était écrit à la main sur PyJWT et pwdlib, avec ses prop
 
 L'API est prioritaire ici pour servir plusieurs clients sans dupliquer la logique, ce qui suppose une spécification OpenAPI dérivée du code. drf-spectacular la génère depuis les vues et les serializers, et la CI vérifie qu'elle ne dérive pas.
 
-DRF est la couche API de référence de l'écosystème Django : c'est elle que les briques tierces intègrent d'origine, django-allauth en tête. Le prix assumé est que Pydantic quitte la couche API — les schémas deviennent des Serializers — et que la spécification est émise en OpenAPI 3.0.3 plutôt que 3.1.0.
+DRF est la couche API de référence de l'écosystème Django : c'est elle que les briques tierces intègrent d'origine, django-allauth en tête, et elle apporte montées les permissions, la limitation de débit et la négociation de contenu que la façade aurait dû assembler autrement.
+
+Les schémas adossés à l'ORM sont donc des serializers. Pydantic ne quitte pas le projet pour autant : `drf-pydantic` sait dériver un serializer d'un modèle Pydantic, si bien qu'un même modèle pourra servir de cible à PydanticAI et de schéma de réponse. La dépendance n'est pas ajoutée aujourd'hui — aucun schéma issu d'un modèle de langage n'existe encore, et l'ajouter maintenant serait payer pour un besoin absent.
+
+La spécification est émise en OpenAPI 3.0.3, défaut de drf-spectacular ; `OAS_VERSION` force 3.1.0 si un générateur de client le réclame.
 
 Le raisonnement complet, les candidats écartés et la correspondance brique par brique sont dans l'issue de migration plutôt que répétés ici.
