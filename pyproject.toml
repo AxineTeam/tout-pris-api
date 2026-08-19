@@ -13,6 +13,7 @@ dependencies = [
     "brevo-python>=5",
     "httpx>=0.27",
     "drf-pydantic>=2.9",
+    "whitenoise>=6.12",
 ]
 
 [dependency-groups]
