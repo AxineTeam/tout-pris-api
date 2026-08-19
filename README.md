@@ -48,7 +48,7 @@ Transactional emails (invitations, email verification, password reset) are sent 
 
 | Variable | Default | Role |
 | --- | --- | --- |
-| `BREVO_API_KEY` | empty | Brevo API key. When empty, `send_email` logs the message and sends nothing: that is the dev and test mode, no network call is ever made. |
+| `BREVO_API_KEY` | empty | Brevo API key. When empty, `send_email` logs the subject and the recipient, and sends nothing: that is the dev and test mode, no network call is ever made. |
 | `MAIL_FROM_EMAIL` | `no-reply@tout-pris.app` | Sender address, must be a sender validated in Brevo. |
 | `MAIL_FROM_NAME` | `Tout Pris` | Sender display name. |
 
