@@ -1,6 +1,6 @@
 # Conventions de l'API
 
-L'API est servie par django-ninja sous le préfixe `/api`, et sa spécification OpenAPI est **dérivée du code** — jamais écrite à la main. La CI échoue si `openapi.json` dérive des routes, pour que les clients ne divergent pas de l'implémentation.
+L'API est servie par Django REST Framework sous le préfixe `/api/`, et sa spécification OpenAPI est **dérivée du code** par drf-spectacular — jamais écrite à la main. La CI échoue si `openapi.json` dérive des routes, pour que les clients ne divergent pas de l'implémentation.
 
 ## Codes HTTP
 
@@ -20,11 +20,15 @@ Les routes du domaine sont donc portées par le chemin du foyer — `/api/househ
 
 Cette règle n'a pas encore de porteur dans le code : les endpoints du domaine ne sont dans aucune des sous-issues de la migration. Elle s'applique dès qu'ils arrivent.
 
+## Chemins
+
+Les chemins portent une barre oblique finale, convention de Django et des routeurs DRF : `/api/health/`, `/api/households/{household_id}/persons/`.
+
 ## Corps et schémas
 
 Toutes les entrées et sorties sont en JSON.
 
-Un schéma par opération : `XCreate`, `XUpdate`, `XRead`. Jamais un schéma fourre-tout partagé entre l'entrée et la sortie — c'est ce qui laisse fuiter un jour un champ interne dans une réponse, ou accepter un identifiant fourni par le client.
+Un serializer par opération : `XCreate`, `XUpdate`, `XRead`. Jamais un schéma fourre-tout partagé entre l'entrée et la sortie — c'est ce qui laisse fuiter un jour un champ interne dans une réponse, ou accepter un identifiant fourni par le client.
 
 Rien du corps ne porte d'identité : les identifiants de ressource viennent du chemin. Un `household_id` glissé dans le corps est ignoré.
 
@@ -44,8 +48,10 @@ Assurée par django-allauth en mode headless, sans qu'aucun template ne soit ren
 
 Le socle précédent était écrit à la main sur PyJWT et pwdlib, avec ses propres tables d'identités et de jetons de rafraîchissement. Il a été abandonné avec la migration vers Django : allauth couvre l'inscription, la connexion, la vérification d'email, la réinitialisation de mot de passe et les fournisseurs externes, c'est-à-dire précisément ce qu'il aurait fallu continuer d'écrire et de faire relire.
 
-## Pourquoi Django et django-ninja
+## Pourquoi Django et DRF
 
-L'API est prioritaire ici pour servir plusieurs clients sans dupliquer la logique, ce qui suppose une spécification OpenAPI dérivée du code. django-ninja la génère comme le faisait FastAPI, en conservant Pydantic et les annotations de type, tout en donnant accès aux briques montées de l'écosystème Django — authentification, back-office, permissions, ordonnancement.
+L'API est prioritaire ici pour servir plusieurs clients sans dupliquer la logique, ce qui suppose une spécification OpenAPI dérivée du code. drf-spectacular la génère depuis les vues et les serializers, et la CI vérifie qu'elle ne dérive pas.
+
+DRF est la couche API de référence de l'écosystème Django : c'est elle que les briques tierces intègrent d'origine, django-allauth en tête. Le prix assumé est que Pydantic quitte la couche API — les schémas deviennent des Serializers — et que la spécification est émise en OpenAPI 3.0.3 plutôt que 3.1.0.
 
 Le raisonnement complet, les candidats écartés et la correspondance brique par brique sont dans l'issue de migration plutôt que répétés ici.

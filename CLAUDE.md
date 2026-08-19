@@ -16,7 +16,7 @@ Backend Django du projet Tout Pris. Soit extrêmement concis.
 
 ## Stack
 
-- Python 3.12 (épinglé dans `.python-version`), Django 6.1, django-ninja pour l'API (Pydantic, OpenAPI générée)
+- Python 3.12 (épinglé dans `.python-version`), Django 6.1, Django REST Framework pour l'API, drf-spectacular pour l'OpenAPI générée
 - ORM et migrations Django (SQLite par défaut, `DATABASE_URL` lu par dj-database-url), migrations appliquées par l'entrypoint Docker, jamais par le code applicatif
 - django-extensions pour `shell_plus`, `runserver_plus` et `reset_db`
 - Dépendances gérées par uv (`uv sync`, groupe `dev` dans `pyproject.toml`, lock dans `uv.lock`)
@@ -28,8 +28,8 @@ Backend Django du projet Tout Pris. Soit extrêmement concis.
 
 - `manage.py` : point d'entrée Django, équivalent de `rails`/`rake`
 - `tout_pris/settings.py` : configuration, lue depuis l'environnement
-- `tout_pris/urls.py` : URLconf racine, admin sur `/admin/` et API ninja sur `/api/`
-- `tout_pris/api.py` : instance `NinjaAPI` et endpoint `/health`
+- `tout_pris/urls.py` : URLconf racine, admin sur `/admin/`, API sur `/api/`, schéma et doc servis par drf-spectacular
+- `tout_pris/views.py` : vues DRF du projet, dont `/api/health/`
 - `tout_pris/mail.py` : envoi transactionnel via Brevo
 - `accounts/` : app du `User` custom, référencé par `AUTH_USER_MODEL` dès la migration initiale
 - `tests/` : suite pytest-django, une base de test isolée fournie par Django
@@ -48,7 +48,7 @@ Backend Django du projet Tout Pris. Soit extrêmement concis.
 - `uv run python manage.py shell_plus` / `createsuperuser` / `check`
 - `uv run pytest` : tests, échec sous 100 % de couverture
 - `uv run ruff check .` / `ruff check --fix .` / `ruff format .` / `ruff format --check .`
-- `uv run python manage.py export_openapi_schema --api tout_pris.api.api --output openapi.json --indent 2` : régénère `openapi.json` (obligatoire après tout changement de routes ou de schémas, la CI vérifie qu'il est à jour)
+- `uv run python manage.py spectacular --format openapi-json --file openapi.json` : régénère `openapi.json` (obligatoire après tout changement de routes ou de schémas, la CI vérifie qu'il est à jour)
 - `npx markdownlint-cli2 "**/*.md"` : lint markdown, comme la CI
 - `docker compose -f docker-compose.prod.yml up -d` : image de production
 

@@ -29,7 +29,7 @@ jobs:
 
       - run: uv run python manage.py makemigrations --check --dry-run
 
-      - run: uv run python manage.py export_openapi_schema --api tout_pris.api.api --output openapi.json --indent 2
+      - run: uv run python manage.py spectacular --format openapi-json --file openapi.json
 
       - run: git diff --exit-code openapi.json
 
