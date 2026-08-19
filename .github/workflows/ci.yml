@@ -29,9 +29,9 @@ jobs:
 
       - run: uv run python manage.py makemigrations --check --dry-run
 
-      - run: uv run python manage.py spectacular --format openapi-json --file openapi.json
+      - run: uv run python manage.py spectacular --file openapi.yaml
 
-      - run: git diff --exit-code openapi.json
+      - run: git diff --exit-code openapi.yaml
 
       - uses: DavidAnson/markdownlint-cli2-action@v19
         with:
