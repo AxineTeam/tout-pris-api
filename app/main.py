@@ -5,7 +5,7 @@ from alembic import command
 from alembic.config import Config
 from fastapi import FastAPI
 
-from app.routers import stufflists
+from app.routers import auth, stufflists
 
 
 @asynccontextmanager
@@ -20,6 +20,7 @@ app = FastAPI(
     version=version("tout-pris-back"),
     lifespan=lifespan,
 )
+app.include_router(auth.router)
 app.include_router(stufflists.router)
 
 
