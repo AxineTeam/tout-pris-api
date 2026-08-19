@@ -1,6 +1,7 @@
 import logging
 from unittest.mock import MagicMock
 
+import httpx
 import pytest
 from brevo.core.api_error import ApiError
 
@@ -32,7 +33,11 @@ def test_send_email_calls_brevo_with_the_configured_sender(brevo, monkeypatch):
 
     mail.send_email("invitee@example.com", "Welcome", "<p>Hello</p>")
 
-    brevo.assert_called_once_with(api_key="test-key")
+    brevo.assert_called_once()
+    http_client = brevo.call_args.kwargs["httpx_client"]
+    assert brevo.call_args.kwargs["api_key"] == "test-key"
+    assert http_client.timeout.read == mail.BREVO_TIMEOUT_SECONDS
+    assert http_client.is_closed
     send = brevo.return_value.transactional_emails.send_transac_email
     send.assert_called_once()
     payload = send.call_args.kwargs
@@ -47,6 +52,18 @@ def test_send_email_logs_api_errors_instead_of_raising(brevo, monkeypatch, caplo
     monkeypatch.setattr(mail.settings, "brevo_api_key", "test-key")
     brevo.return_value.transactional_emails.send_transac_email.side_effect = ApiError(
         status_code=400, body="invalid sender"
+    )
+
+    with caplog.at_level(logging.ERROR, logger=mail.logger.name):
+        mail.send_email("invitee@example.com", "Welcome", "<p>Hello</p>")
+
+    assert "invitee@example.com" in caplog.text
+
+
+def test_send_email_logs_unexpected_failures_instead_of_raising(brevo, monkeypatch, caplog):
+    monkeypatch.setattr(mail.settings, "brevo_api_key", "test-key")
+    brevo.return_value.transactional_emails.send_transac_email.side_effect = httpx.ReadTimeout(
+        "brevo took too long"
     )
 
     with caplog.at_level(logging.ERROR, logger=mail.logger.name):
