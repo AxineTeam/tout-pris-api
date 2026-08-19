@@ -9,6 +9,8 @@ dependencies = [
     "sqlalchemy>=2.0",
     "pydantic>=2.9",
     "alembic>=1.13",
+    "pydantic-settings>=2.15",
+    "brevo-python>=5",
 ]
 
 [dependency-groups]

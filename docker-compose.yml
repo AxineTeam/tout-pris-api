@@ -8,3 +8,4 @@ services:
       - /app/.venv
     environment:
       DATABASE_URL: sqlite:///./tout_pris.db
+      BREVO_API_KEY: ${BREVO_API_KEY:-}

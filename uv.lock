@@ -48,6 +48,21 @@ wheels = [
 ]
 
 [[package]]
+name = "brevo-python"
+version = "5.0.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "httpx" },
+    { name = "pydantic" },
+    { name = "pydantic-core" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/a7/4d/8abc86995ddf4a171e750dd83d8e088fb96e39ca62dfbe156bf25f8fd9a8/brevo_python-5.0.2.tar.gz", hash = "sha256:e317dd78bba01210123dc46d94efb1faf3635f9d58e88fec350c8e33caa75279", size = 505202, upload-time = "2026-08-10T15:46:51.214Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c5/66/0ba00fd43ca4ae929b43f0a74de445f49aa9dcbb64f7b669ed9cb2a8bc4d/brevo_python-5.0.2-py3-none-any.whl", hash = "sha256:4addd8cfb8e685c9a339643c5d1c79cd420407c85f1b925b3b539f20b0836d67", size = 986988, upload-time = "2026-08-10T15:46:49.603Z" },
+]
+
+[[package]]
 name = "certifi"
 version = "2026.7.22"
 source = { registry = "https://pypi.org/simple" }
@@ -595,6 +610,20 @@ wheels = [
 ]
 
 [[package]]
+name = "pydantic-settings"
+version = "2.15.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pydantic" },
+    { name = "python-dotenv" },
+    { name = "typing-inspection" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/68/ca/31c57507b13119d7d3cfa1576dad2911a4861e3be07b579395f4e9d393f9/pydantic_settings-2.15.0.tar.gz", hash = "sha256:694b793e84f766ba76a90ebdefc01d0a9a045dab0382bee70393da93712ad117", size = 261253, upload-time = "2026-08-07T09:24:57.419Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/30/a4/2bffa9f8e804325a09867f0e9d30795c80ea9f8d62560bd1b6ad6220eb2f/pydantic_settings-2.15.0-py3-none-any.whl", hash = "sha256:0ba092c291c94baceb5eff768aa0d56400a457585bc0175925a5a5510303da42", size = 69413, upload-time = "2026-08-07T09:24:55.839Z" },
+]
+
+[[package]]
 name = "pydot"
 version = "4.0.1"
 source = { registry = "https://pypi.org/simple" }
@@ -810,8 +839,10 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "alembic" },
+    { name = "brevo-python" },
     { name = "fastapi" },
     { name = "pydantic" },
+    { name = "pydantic-settings" },
     { name = "sqlalchemy" },
     { name = "uvicorn", extra = ["standard"] },
 ]
@@ -829,8 +860,10 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "alembic", specifier = ">=1.13" },
+    { name = "brevo-python", specifier = ">=5" },
     { name = "fastapi", specifier = ">=0.115" },
     { name = "pydantic", specifier = ">=2.9" },
+    { name = "pydantic-settings", specifier = ">=2.15" },
     { name = "sqlalchemy", specifier = ">=2.0" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.32" },
 ]
