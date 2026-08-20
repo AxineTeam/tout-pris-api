@@ -30,12 +30,12 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-include = ["tout_pris*", "accounts*"]
+include = ["tout_pris*", "accounts*", "households*"]
 
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "tout_pris.settings"
 testpaths = ["tests"]
-addopts = "--cov=tout_pris --cov=accounts --cov-report=term-missing --cov-fail-under=100"
+addopts = "--cov=tout_pris --cov=accounts --cov=households --cov-report=term-missing --cov-fail-under=100"
 
 [tool.coverage.run]
 omit = ["*/migrations/*"]

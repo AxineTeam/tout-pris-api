@@ -28,11 +28,11 @@ Contrairement au foyer, `Person` est l'objet le plus visible de l'application : 
 
 Un compte ne peut être rattaché qu'à une seule personne par foyer. La contrainte d'unicité porte sur `(household_id, user_id)` : `NULL` n'entrant pas en conflit avec lui-même en SQL, autant de personnes sans compte que voulu cohabitent dans le même foyer.
 
-## User restera nu
+## User n'appartient pas au domaine
 
-Une brique d'authentification externe, équivalente à OmniAuth, est prévue. Les identités — fournisseur, identifiant chez le fournisseur, jetons — arriveront dans leurs propres tables reliées à `User`.
+`User` est le modèle d'authentification de Django, custom depuis la première migration pour rester extensible. L'authentification elle-même n'est pas écrite ici : django-allauth apporte l'inscription, la connexion, la vérification d'email et les fournisseurs externes, avec les tables d'identités et de jetons qui vont avec.
 
-`User` ne porte donc **aucune colonne d'authentification** : ni mot de passe, ni fournisseur, ni jeton. C'est ce qui permettra de brancher cette brique par ajout de tables, sans migration destructive.
+Le domaine n'ajoute donc **aucune colonne d'authentification** à `User`. Il n'en attend qu'une chose : un `email` unique, qui est l'adresse de connexion et le point d'entrée d'une invitation dans un foyer.
 
 ## Suppressions
 
@@ -40,4 +40,4 @@ Supprimer un foyer supprime ses membres et ses personnes : elles n'ont pas d'exi
 
 Supprimer un utilisateur supprime ses appartenances, mais **conserve les personnes** qui lui étaient liées, dont le `user_id` retombe à `NULL`. Un compte fermé ne doit pas faire disparaître les affaires de quelqu'un d'une liste en cours.
 
-Ces règles sont portées par la base (`ON DELETE CASCADE` et `ON DELETE SET NULL`), ce qui suppose que les clés étrangères soient réellement appliquées. SQLite ne le fait pas par défaut : `app/database.py` active `PRAGMA foreign_keys=ON` à chaque connexion.
+Ces règles sont déclarées sur les clés étrangères (`on_delete=CASCADE` et `on_delete=SET_NULL`) et appliquées par l'ORM Django au moment de la suppression. Aucun pragma SQLite n'est à activer : Django active déjà les clés étrangères sur SQLite, et les tests vérifient le comportement en supprimant réellement les lignes plutôt qu'en relisant la déclaration.
