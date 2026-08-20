@@ -34,7 +34,6 @@ Backend Django du projet Tout Pris. Soit extrêmement concis.
 - `tout_pris/urls.py` : URLconf racine, admin sur `/admin/`, API sur `/api/`, schéma et doc servis par drf-spectacular
 - `tout_pris/views.py` : vues DRF du projet, dont `/api/health/`
 - `tout_pris/mail.py` : envoi transactionnel via Brevo, exposé comme mailer Django
-- `tout_pris/schema.py` : générateur drf-spectacular qui fusionne la spécification d'allauth dans `openapi.yaml`
 - `accounts/` : app du `User` custom, référencé par `AUTH_USER_MODEL` dès la migration initiale
 - `households/` : app du domaine foyer — `Household`, `HouseholdMember`, `Person` — son admin, la création implicite du foyer à l'inscription, et la commande `seed`
 - `tests/` : suite pytest-django, une base de test isolée fournie par Django
@@ -52,7 +51,7 @@ Backend Django du projet Tout Pris. Soit extrêmement concis.
 - `uv run python manage.py reset_db --noinput` puis `migrate` puis `seed` : reconstruit la base de dev (jamais versionnée, `*.db` ignoré) et la remplit d'un foyer réaliste
 - `seed` attend une base vide : rejoué par-dessus lui-même il échoue sur l'unicité de l'email, et sa transaction n'écrit rien
 - `uv run python manage.py shell_plus` / `createsuperuser` / `changepassword` / `check`
-- `uv run python manage.py graph_models accounts households --no-inheritance --exclude-models "Abstract*" --output docs/model/schema.png` : régénère le diagramme ER
+- `uv run python manage.py graph_models accounts households --no-inheritance --exclude-models "Abstract*" | grep -v '// Created:' > docs/model/schema.dot` puis `uv run python manage.py graph_models accounts households --no-inheritance --exclude-models "Abstract*" --output docs/model/schema.png` : régénèrent le `.dot` vérifié en CI et l'image affichée dans le README
 - `uv run pytest` : tests, échec sous 100 % de couverture
 - `uv run ruff check .` / `ruff check --fix .` / `ruff format .` / `ruff format --check .`
 - `uv run python manage.py spectacular --file openapi.yaml` : régénère `openapi.yaml` (obligatoire après tout changement de routes ou de schémas, la CI vérifie qu'il est à jour)
@@ -75,7 +74,8 @@ Backend Django du projet Tout Pris. Soit extrêmement concis.
 ## Documentation du schéma
 
 - Le diagramme ER est une image générée par `graph_models` et committée (`docs/model/schema.png`), affichée dans le README
-- **Aucune vérification automatique** : régénère-le à la main après tout changement de modèle, dans la PR qui porte la migration. La CI ne le vérifie pas et ne le vérifiera pas — le `.dot` intermédiaire embarque l'horodatage de génération dans son en-tête et l'image dépend de la version de graphviz, donc un contrôle de dérive échouerait sur des exécutions où aucun modèle n'a bougé. Ne prétends jamais dans la doc qu'un garde-fou existe ici
+- La CI vérifie la non-dérive sur le `.dot` committé à côté (`docs/model/schema.dot`), pas sur l'image : deux versions de graphviz rendent le même schéma différemment, alors que le `.dot` est du texte stable. Une seule ligne de son en-tête varie d'une génération à l'autre, `// Created:`, et elle est retirée à la génération — le fichier committé n'en porte pas
+- Régénère **les deux** après tout changement de modèle, dans la PR qui porte la migration : la CI échoue sur le `.dot`, mais rien ne surveille l'image, qui peut donc rester en retard sur lui
 - La vérification CI d'`openapi.yaml` n'est pas concernée : ce fichier est déterministe et reste vérifié
 - Les `help_text` ne sont **pas** affichés par `graph_models` : les descriptions de colonnes servent encore l'admin et l'OpenAPI générée, mais elles n'ont plus de garant visuel dans le schéma. Continue à en écrire une par colonne, en sachant que rien ne le rappellera
 - Les descriptions peuvent contenir des virgules : la contrainte venait de paracelsus, elle est tombée

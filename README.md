@@ -103,7 +103,7 @@ DJANGO_SECRET_KEY=... docker compose -f docker-compose.prod.yml up -d
 
 drf-spectacular generates the schema from the code. It is committed as [`openapi.yaml`](openapi.yaml) and regenerated with the `spectacular` command above. CI fails if the committed file drifts from the code, so regenerate it whenever routes or schemas change.
 
-The authentication endpoints are not DRF views, so drf-spectacular cannot see them. `tout_pris/schema.py` merges the specification django-allauth derives from its own code and configuration into the generated document, so a single `openapi.yaml` describes the whole API. Both halves stay derived from the code, and the merge fails loudly rather than overwriting a path or a schema described twice.
+The authentication endpoints are not DRF views, so drf-spectacular cannot see them and `openapi.yaml` does not describe them. django-allauth publishes its own specification instead, served at `/api/auth/openapi.yaml` and `/api/auth/openapi.json`, derived from its code and pruned to the configuration actually loaded. There are two specifications on purpose: see [`docs/api/`](docs/api/README.md).
 
 ## Migrations
 
@@ -116,6 +116,7 @@ Schema migrations are Django migrations, applied by the Docker entrypoint at con
 `graph_models` (django-extensions) draws it from the models, and the image is committed as `docs/model/schema.png`:
 
 ```bash
+uv run python manage.py graph_models accounts households --no-inheritance --exclude-models "Abstract*" | grep -v '// Created:' > docs/model/schema.dot
 uv run python manage.py graph_models accounts households --no-inheritance --exclude-models "Abstract*" --output docs/model/schema.png
 ```
 
@@ -140,7 +141,7 @@ Settings are read from the environment.
 | `MAIL_FROM_EMAIL` | `no-reply@tout-pris.app` | Sender address, must be a sender validated in Brevo. |
 | `MAIL_FROM_NAME` | `Tout Pris` | Sender display name. |
 
-The Brevo key, the Google OAuth secret and the Django secret key are secrets: never commit them, pass them through the environment.
+The Brevo key and the Django secret key are secrets: never commit them, pass them through the environment.
 
 ## Transactional emails
 
@@ -159,7 +160,7 @@ The production settings live in `docker-compose.prod.yml`: the database is store
 ## Project layout
 
 - `manage.py` — Django entry point
-- `tout_pris/` — project package: `settings.py`, `urls.py` (admin, and the API mounted on `/api/`), `views.py`, `mail.py`, `schema.py`, `wsgi.py`, `asgi.py`
+- `tout_pris/` — project package: `settings.py`, `urls.py` (admin, and the API mounted on `/api/`), `views.py`, `mail.py`, `wsgi.py`, `asgi.py`
 - `accounts/` — the custom `User` model, referenced by `AUTH_USER_MODEL` since the initial migration
 - `households/` — the household domain: `Household`, `HouseholdMember` and `Person`, their admin, the implicit creation of a household at signup, and the `seed` command
 - `tests/` — pytest-django test suite

@@ -1,4 +1,4 @@
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from model_bakery import baker
 
@@ -19,6 +19,11 @@ class Command(BaseCommand):
 
     @transaction.atomic
     def handle(self, *args, **options):
+        if Household.objects.exists():
+            raise CommandError(
+                "The database already holds a household, run reset_db and migrate first"
+            )
+
         baker.seed(RANDOM_SEED)
         household = baker.make(Household, name=HOUSEHOLD_NAME)
         for first_name, last_name, role in ACCOUNTS:
