@@ -1,6 +1,6 @@
 # tout-pris-back
 
-Backend Django for Tout Pris, with [Django REST Framework](https://www.django-rest-framework.org) for the API, [drf-spectacular](https://drf-spectacular.readthedocs.io) for its OpenAPI schema, and [drf-pydantic](https://github.com/georgebv/drf-pydantic) to derive serializers from Pydantic models.
+Backend Django for Tout Pris, with [Django REST Framework](https://www.django-rest-framework.org) for the API, [drf-spectacular](https://drf-spectacular.readthedocs.io) for its OpenAPI schema, [drf-pydantic](https://github.com/georgebv/drf-pydantic) to derive serializers from Pydantic models, and [django-allauth](https://docs.allauth.org) in headless mode for authentication.
 
 There is no Makefile: `manage.py` is the entry point for everything that touches the application or the database, and this README lists every other command.
 
@@ -83,6 +83,8 @@ DJANGO_SECRET_KEY=... docker compose -f docker-compose.prod.yml up -d
 ## API
 
 - `GET /api/health` — health check
+- `/api/auth/browser/v1/` — headless authentication: signup, login, session, email verification, password reset, external providers
+- `/accounts/` — OAuth callbacks of the external providers (no page is rendered)
 - `GET /api/docs/` — interactive documentation rendered by drf-spectacular
 - `GET /api/schema/` — OpenAPI schema served by the running app
 - `/admin/` — Django admin
@@ -105,11 +107,14 @@ Settings are read from the environment.
 | `DJANGO_SECRET_KEY` | an insecure development key | Django secret key. Mandatory in production. |
 | `DJANGO_DEBUG` | `true` | Debug mode. Set it to `false` in production. |
 | `DJANGO_ALLOWED_HOSTS` | `*` | Comma-separated list of allowed hosts. |
+| `FRONTEND_URL` | `http://localhost:5173` | Base URL of the Svelte front, used to build the email verification and password reset links. |
+| `GOOGLE_OAUTH_CLIENT_ID` | empty | Google OAuth client id. When empty, signing in with Google fails; every other flow works. |
+| `GOOGLE_OAUTH_SECRET` | empty | Google OAuth client secret. |
 | `BREVO_API_KEY` | empty | Brevo API key. When empty, `send_email` logs the subject and the recipient, and sends nothing: that is the dev and test mode, no network call is ever made. |
 | `MAIL_FROM_EMAIL` | `no-reply@tout-pris.app` | Sender address, must be a sender validated in Brevo. |
 | `MAIL_FROM_NAME` | `Tout Pris` | Sender display name. |
 
-The Brevo key and the secret key are secrets: never commit them, pass them through the environment.
+The Brevo key, the Google OAuth secret and the Django secret key are secrets: never commit them, pass them through the environment.
 
 ## Transactional emails
 
@@ -130,7 +135,7 @@ The production settings live in `docker-compose.prod.yml`: the database is store
 - `manage.py` — Django entry point
 - `tout_pris/` — project package: `settings.py`, `urls.py` (admin, and the API mounted on `/api/`), `views.py`, `mail.py`, `wsgi.py`, `asgi.py`
 - `accounts/` — the custom `User` model, referenced by `AUTH_USER_MODEL` since the initial migration
-- `households/` — the household domain: `Household`, `HouseholdMember` and `Person`, and their admin
+- `households/` — the household domain: `Household`, `HouseholdMember` and `Person`, their admin, and the implicit creation of a household at signup
 - `tests/` — pytest-django test suite
 - `docs/api/` — the API conventions: status codes, household scoping, schemas, collections
 - `docs/model/` — the functional need behind the data model, independent of the framework

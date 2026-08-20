@@ -44,7 +44,25 @@ Une collection vide renvoie `[]` et non `404` : la collection existe, elle est v
 
 ## Authentification
 
-Assurée par django-allauth en mode headless, sans qu'aucun template ne soit rendu. Les endpoints et le choix entre cookie de session et jeton sont documentés ici une fois la brique en place.
+Assurée par django-allauth en mode headless (`HEADLESS_ONLY`), monté sur `/api/auth/`, sans qu'aucun template ne soit rendu : les vues d'allauth qui rendaient des pages ne sont même pas déclarées dans l'URLconf, seuls subsistent les endpoints JSON et les callbacks des fournisseurs sur `/accounts/`.
+
+Un seul client allauth est activé, le client `browser` : la session est portée par le cookie `sessionid`, `httpOnly` et marqué `Secure` en production. Le front étant servi sur le même domaine, ce cookie bat le jeton sur la révocation immédiate et sur l'exposition aux XSS, et évite une danse de refresh côté client. Le client `app` d'allauth, qui authentifie par jeton `X-Session-Token`, reste désactivé : l'activer ouvrirait un second chemin d'authentification à côté de la session, exactement ce que le retrait de `BasicAuthentication` avait fermé. `SessionAuthentication` de DRF lit cette même session, sans classe d'authentification supplémentaire.
+
+Les endpoints suivent la spécification d'allauth, préfixés par `/api/auth/browser/v1/` : `auth/signup`, `auth/login`, `auth/session` (`GET` pour lire la session, `DELETE` pour se déconnecter), `auth/email/verify`, `auth/password/request`, `auth/password/reset`, `auth/provider/redirect`, `account/password/change`, `account/email`, `config`. Ils sont tous décrits dans `openapi.yaml`.
+
+Ces endpoints ne sont pas des vues DRF : `DEFAULT_PERMISSION_CLASSES` ne s'y applique pas, et l'inscription comme la connexion répondent donc à un appelant anonyme sans réglage particulier. C'est vérifié par les tests plutôt que supposé, un endpoint d'inscription fermé par héritage se remarquant très tard.
+
+Le code de statut suit lui aussi la convention d'allauth et non le tableau ci-dessus : `401` signifie « la session n'est pas authentifiée », y compris quand l'appel a réussi. Une inscription en attente de vérification d'email et une réinitialisation de mot de passe réussie répondent `401` avec l'état du flux dans le corps. Le `403` que Django renvoie sur un jeton CSRF manquant échappe de même à la règle « jamais de 403 » : il est émis par le middleware, avant toute logique de domaine.
+
+L'identifiant de connexion est l'email (`ACCOUNT_LOGIN_METHODS = {"email"}`), unique côté application (`ACCOUNT_UNIQUE_EMAIL`) comme en base depuis la contrainte portée par le modèle `User`. `USERNAME_FIELD` reste `username` : allauth le remplit à partir de l'email, il n'est jamais demandé ni exposé.
+
+La vérification d'email est obligatoire : tant qu'elle n'est pas faite, la session reste non authentifiée. Confirmer depuis le navigateur qui a lancé l'inscription ouvre la session directement (`ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION`) ; allauth n'ouvre cette session que si l'inscription en cours est présente dans la session, un lien intercepté ailleurs ne connecte donc personne.
+
+Les liens envoyés par email pointent vers le front, pas vers l'API : `HEADLESS_FRONTEND_URLS` compose les URL de vérification et de réinitialisation à partir de `FRONTEND_URL`, et le front repasse la clé à l'endpoint correspondant.
+
+Un fournisseur externe est branché, Google, configuré depuis l'environnement (`GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_SECRET`) et non en base : aucun secret n'est versionné et il n'y a pas de `SocialApp` à créer dans l'admin. Le front poste sur `auth/provider/redirect`, l'utilisateur revient sur `/accounts/google/login/callback/`, et allauth ouvre la session. Une connexion par fournisseur ne se rattache pas d'elle-même à un compte local existant qui porterait la même adresse : `SOCIALACCOUNT_EMAIL_AUTHENTICATION` reste désactivé, sans quoi un fournisseur qui affirme une adresse suffirait à prendre le compte.
+
+Les limitations de débit d'allauth (`ACCOUNT_RATE_LIMITS`) sont laissées à leurs valeurs par défaut et s'appuient sur le cache Django. Le cache par défaut étant local au processus, les compteurs sont par worker : un cache partagé sera nécessaire le jour où l'API tournera sur plusieurs processus.
 
 Le socle précédent était écrit à la main sur PyJWT et pwdlib, avec ses propres tables d'identités et de jetons de rafraîchissement. Il a été abandonné avec la migration vers Django : allauth couvre l'inscription, la connexion, la vérification d'email, la réinitialisation de mot de passe et les fournisseurs externes, c'est-à-dire précisément ce qu'il aurait fallu continuer d'écrire et de faire relire.
 
