@@ -43,10 +43,20 @@ uv run python manage.py makemigrations             # generate the migrations for
 uv run python manage.py showmigrations             # list the migrations and their state
 uv run python manage.py sqlmigrate accounts 0001   # print the SQL of a migration without applying it
 uv run python manage.py reset_db                   # drop the dev database (django-extensions)
+uv run python manage.py seed                       # fill it with one realistic household
 uv run python manage.py createsuperuser            # create an admin account
+uv run python manage.py changepassword camille     # give a password to a seeded account
 ```
 
-The dev database is a SQLite file (`tout_pris.db`) never versioned in git; rebuild it with `reset_db` then `migrate`.
+The dev database is a SQLite file (`tout_pris.db`) never versioned in git. Rebuild it from scratch in one line:
+
+```bash
+uv run python manage.py reset_db --noinput && uv run python manage.py migrate && uv run python manage.py seed
+```
+
+`seed` is the equivalent of `rails db:seed`. It builds with [model_bakery](https://model-bakery.readthedocs.io) one household named *Famille Martin*, two accounts with a person each — Camille the owner and Sacha the member — and two children without account, Jeanne and Louis. The values are fixed rather than random, so every developer browses the same household, and the generator model_bakery uses for anything left unsaid is seeded, so two runs produce the same database.
+
+It expects an empty database: run it right after `reset_db` and `migrate`, never on top of an already seeded one, where the unique email would abort the whole transaction. The seeded accounts have no usable password — give one with `changepassword`, or create your own account with `createsuperuser`.
 
 ### Shell and checks
 
@@ -135,7 +145,7 @@ The production settings live in `docker-compose.prod.yml`: the database is store
 - `manage.py` — Django entry point
 - `tout_pris/` — project package: `settings.py`, `urls.py` (admin, and the API mounted on `/api/`), `views.py`, `mail.py`, `schema.py`, `wsgi.py`, `asgi.py`
 - `accounts/` — the custom `User` model, referenced by `AUTH_USER_MODEL` since the initial migration
-- `households/` — the household domain: `Household`, `HouseholdMember` and `Person`, their admin, and the implicit creation of a household at signup
+- `households/` — the household domain: `Household`, `HouseholdMember` and `Person`, their admin, the implicit creation of a household at signup, and the `seed` command
 - `tests/` — pytest-django test suite
 - `docs/api/` — the API conventions: status codes, household scoping, schemas, collections
 - `docs/model/` — the functional need behind the data model, independent of the framework

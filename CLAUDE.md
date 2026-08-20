@@ -22,6 +22,7 @@ Backend Django du projet Tout Pris. Soit extrêmement concis.
 - django-extensions pour `shell_plus`, `runserver_plus` et `reset_db`
 - Dépendances gérées par uv (`uv sync`, groupe `dev` dans `pyproject.toml`, lock dans `uv.lock`)
 - pytest-django pour les tests, ruff pour lint et format
+- model_bakery pour construire des objets depuis le modèle Django sans déclarer de factory, utilisé par la commande `seed`
 - Docker + docker compose, devcontainer basé sur le service `api`
 - Deux Dockerfiles (pratiques uv officielles) : `Dockerfile` dev (uv, deps dev, `runserver`, monté sur `/app`), `Dockerfile.prod` multistage (image finale sans uv ni pip, non-root, gunicorn, base dans le volume `/data`)
 
@@ -34,7 +35,7 @@ Backend Django du projet Tout Pris. Soit extrêmement concis.
 - `tout_pris/mail.py` : envoi transactionnel via Brevo, exposé comme mailer Django
 - `tout_pris/schema.py` : générateur drf-spectacular qui fusionne la spécification d'allauth dans `openapi.yaml`
 - `accounts/` : app du `User` custom, référencé par `AUTH_USER_MODEL` dès la migration initiale
-- `households/` : app du domaine foyer — `Household`, `HouseholdMember`, `Person` — son admin, et la création implicite du foyer à l'inscription
+- `households/` : app du domaine foyer — `Household`, `HouseholdMember`, `Person` — son admin, la création implicite du foyer à l'inscription, et la commande `seed`
 - `tests/` : suite pytest-django, une base de test isolée fournie par Django
 - `docs/api/` : conventions de l'API — codes de retour, cloisonnement par foyer, schémas, collections
 - `docs/model/` : besoin fonctionnel derrière le modèle de données, indépendant du framework
@@ -47,8 +48,9 @@ Backend Django du projet Tout Pris. Soit extrêmement concis.
 - `docker compose exec api <commande>` : même commande dans le conteneur
 - `uv run python manage.py runserver 0.0.0.0:8000` : serveur de dev
 - `uv run python manage.py migrate` / `makemigrations` / `showmigrations` / `sqlmigrate` : migrations
-- `uv run python manage.py reset_db` puis `migrate` : reconstruit la base de dev (jamais versionnée, `*.db` ignoré)
-- `uv run python manage.py shell_plus` / `createsuperuser` / `check`
+- `uv run python manage.py reset_db --noinput` puis `migrate` puis `seed` : reconstruit la base de dev (jamais versionnée, `*.db` ignoré) et la remplit d'un foyer réaliste
+- `seed` attend une base vide : rejoué par-dessus lui-même il échoue sur l'unicité de l'email, et sa transaction n'écrit rien
+- `uv run python manage.py shell_plus` / `createsuperuser` / `changepassword` / `check`
 - `uv run pytest` : tests, échec sous 100 % de couverture
 - `uv run ruff check .` / `ruff check --fix .` / `ruff format .` / `ruff format --check .`
 - `uv run python manage.py spectacular --file openapi.yaml` : régénère `openapi.yaml` (obligatoire après tout changement de routes ou de schémas, la CI vérifie qu'il est à jour)
