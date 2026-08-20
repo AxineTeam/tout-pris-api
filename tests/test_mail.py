@@ -3,6 +3,7 @@ import logging
 
 import httpx
 import pytest
+from django.core.mail import EmailMessage, EmailMultiAlternatives
 
 from tout_pris import mail
 
@@ -112,3 +113,55 @@ def test_send_email_logs_an_unparsable_response_instead_of_raising(
         mail.send_email("invitee@example.com", "Welcome", "<p>Hello</p>")
 
     assert "invitee@example.com" in caplog.text
+
+
+def test_the_backend_sends_the_text_body_of_a_django_message(brevo_responds, monkeypatch, settings):
+    requests = brevo_responds(monkeypatch, accepted)
+    settings.BREVO_API_KEY = "test-key"
+    message = EmailMessage(
+        subject="Confirm your email",
+        body="Go to https://example.com/key",
+        to=["invitee@example.com"],
+    )
+
+    sent = mail.BrevoEmailBackend().send_messages([message])
+
+    assert sent == 1
+    assert json.loads(requests[0].content)["textContent"] == "Go to https://example.com/key"
+    assert "htmlContent" not in json.loads(requests[0].content)
+
+
+def test_the_backend_prefers_the_html_alternative_of_a_django_message(
+    brevo_responds, monkeypatch, settings
+):
+    requests = brevo_responds(monkeypatch, accepted)
+    settings.BREVO_API_KEY = "test-key"
+    message = EmailMultiAlternatives(
+        subject="Confirm your email",
+        body="Go to https://example.com/key",
+        to=["invitee@example.com"],
+    )
+    message.attach_alternative("<p>Go to https://example.com/key</p>", "text/html")
+
+    mail.BrevoEmailBackend().send_messages([message])
+
+    payload = json.loads(requests[0].content)
+    assert payload["htmlContent"] == "<p>Go to https://example.com/key</p>"
+    assert payload["textContent"] == "Go to https://example.com/key"
+
+
+def test_the_backend_sends_one_email_per_recipient(brevo_responds, monkeypatch, settings):
+    requests = brevo_responds(monkeypatch, accepted)
+    settings.BREVO_API_KEY = "test-key"
+    message = EmailMessage(
+        subject="Confirm your email",
+        body="Go to https://example.com/key",
+        to=["invitee@example.com", "partner@example.com"],
+    )
+
+    mail.BrevoEmailBackend().send_messages([message])
+
+    assert [json.loads(request.content)["to"][0]["email"] for request in requests] == [
+        "invitee@example.com",
+        "partner@example.com",
+    ]
