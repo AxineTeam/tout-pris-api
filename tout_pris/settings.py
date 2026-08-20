@@ -124,9 +124,23 @@ HEADLESS_FRONTEND_URLS = {
     "account_signup": f"{FRONTEND_URL}/account/signup",
 }
 
-MAILERS = {"default": {"BACKEND": "tout_pris.mail.BrevoEmailBackend"}}
-
 BREVO_API_KEY = os.environ.get("BREVO_API_KEY", "")
+
+smtp_host = os.environ.get("EMAIL_HOST", "")
+
+smtp_port = int(os.environ.get("EMAIL_PORT", "1025"))
+
+if BREVO_API_KEY:
+    MAILERS = {"default": {"BACKEND": "tout_pris.mail.BrevoEmailBackend"}}
+elif smtp_host:
+    MAILERS = {
+        "default": {
+            "BACKEND": "django.core.mail.backends.smtp.EmailBackend",
+            "OPTIONS": {"host": smtp_host, "port": smtp_port},
+        }
+    }
+else:
+    MAILERS = {"default": {"BACKEND": "django.core.mail.backends.console.EmailBackend"}}
 
 MAIL_FROM_EMAIL = os.environ.get("MAIL_FROM_EMAIL", "no-reply@tout-pris.app")
 

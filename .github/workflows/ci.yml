@@ -35,6 +35,7 @@ jobs:
           DJANGO_DEBUG: "false"
           DJANGO_SECRET_KEY: ci-only-secret-key-long-enough-to-satisfy-the-deployment-checks
           DJANGO_ALLOWED_HOSTS: tout-pris.example
+          BREVO_API_KEY: ci-only-brevo-key
 
       - run: uv run python manage.py spectacular --file openapi.yaml
 

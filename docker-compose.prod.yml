@@ -10,7 +10,7 @@ services:
       DJANGO_DEBUG: "false"
       DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?set a secret key}
       DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:?set the domains that serve the API}
-      BREVO_API_KEY: ${BREVO_API_KEY:-}
+      BREVO_API_KEY: ${BREVO_API_KEY:?set the Brevo key, without it the emails are only printed}
       MAIL_FROM_EMAIL: ${MAIL_FROM_EMAIL:-no-reply@tout-pris.app}
       MAIL_FROM_NAME: ${MAIL_FROM_NAME:-Tout Pris}
       FRONTEND_URL: ${FRONTEND_URL:?set the public URL of the front, it is what the email links point to}

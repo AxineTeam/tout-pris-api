@@ -46,3 +46,26 @@ def test_development_leaves_the_transport_settings_alone(monkeypatch):
     settings = load_settings(monkeypatch, DJANGO_DEBUG="true")
 
     assert not hasattr(settings, "SECURE_SSL_REDIRECT")
+
+
+def test_a_brevo_key_sends_the_emails_through_brevo(monkeypatch):
+    settings = load_settings(monkeypatch, BREVO_API_KEY="a-real-key", EMAIL_HOST="mailpit")
+
+    assert settings.MAILERS["default"]["BACKEND"] == "tout_pris.mail.BrevoEmailBackend"
+
+
+def test_an_smtp_host_sends_the_emails_to_the_local_collector(monkeypatch):
+    settings = load_settings(monkeypatch, BREVO_API_KEY="", EMAIL_HOST="mailpit", EMAIL_PORT="1025")
+
+    assert settings.MAILERS["default"] == {
+        "BACKEND": "django.core.mail.backends.smtp.EmailBackend",
+        "OPTIONS": {"host": "mailpit", "port": 1025},
+    }
+
+
+def test_without_any_mail_configuration_the_emails_are_printed(monkeypatch):
+    settings = load_settings(monkeypatch, BREVO_API_KEY="", EMAIL_HOST="")
+
+    assert (
+        settings.MAILERS["default"]["BACKEND"] == "django.core.mail.backends.console.EmailBackend"
+    )
