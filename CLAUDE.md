@@ -32,6 +32,7 @@ Backend Django du projet Tout Pris. Soit extrêmement concis.
 - `tout_pris/urls.py` : URLconf racine, admin sur `/admin/`, API sur `/api/`, schéma et doc servis par drf-spectacular
 - `tout_pris/views.py` : vues DRF du projet, dont `/api/health/`
 - `tout_pris/mail.py` : envoi transactionnel via Brevo, exposé comme mailer Django
+- `tout_pris/schema.py` : générateur drf-spectacular qui fusionne la spécification d'allauth dans `openapi.yaml`
 - `accounts/` : app du `User` custom, référencé par `AUTH_USER_MODEL` dès la migration initiale
 - `households/` : app du domaine foyer — `Household`, `HouseholdMember`, `Person` — son admin, et la création implicite du foyer à l'inscription
 - `tests/` : suite pytest-django, une base de test isolée fournie par Django

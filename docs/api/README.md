@@ -66,6 +66,14 @@ Les limitations de débit d'allauth (`ACCOUNT_RATE_LIMITS`) sont laissées à le
 
 Le socle précédent était écrit à la main sur PyJWT et pwdlib, avec ses propres tables d'identités et de jetons de rafraîchissement. Il a été abandonné avec la migration vers Django : allauth couvre l'inscription, la connexion, la vérification d'email, la réinitialisation de mot de passe et les fournisseurs externes, c'est-à-dire précisément ce qu'il aurait fallu continuer d'écrire et de faire relire.
 
+### Les endpoints d'authentification dans la spécification
+
+drf-spectacular ne décrit que les vues DRF ; les vues d'allauth lui sont invisibles. allauth publie de son côté sa propre spécification, dérivée de son code et élaguée selon la configuration réellement chargée — les endpoints non montés en sont retirés.
+
+`tout_pris/schema.py` fusionne les deux : le générateur de drf-spectacular est sous-classé pour ajouter les chemins, les schémas et les tags d'allauth au document produit. Les deux moitiés restent dérivées du code, aucune n'est écrite à la main, et une seule spécification est publiée. La fusion refuse d'écraser un chemin ou un schéma déjà décrit : un doublon fait échouer la génération plutôt que de faire disparaître silencieusement une opération.
+
+Les opérations venant d'allauth n'ont pas d'`operationId` — sa spécification n'en déclare pas. Un générateur de clients leur donnera des noms dérivés du chemin.
+
 ## Pourquoi Django et DRF
 
 L'API est prioritaire ici pour servir plusieurs clients sans dupliquer la logique, ce qui suppose une spécification OpenAPI dérivée du code. drf-spectacular la génère depuis les vues et les serializers, et la CI vérifie qu'elle ne dérive pas.

@@ -156,6 +156,7 @@ SPECTACULAR_SETTINGS = {
     "DESCRIPTION": "Backend API of the Tout Pris project.",
     "VERSION": version("tout-pris-back"),
     "SERVE_INCLUDE_SCHEMA": False,
+    "DEFAULT_GENERATOR_CLASS": "tout_pris.schema.HeadlessAwareSchemaGenerator",
 }
 
 if not DEBUG:
