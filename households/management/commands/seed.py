@@ -38,9 +38,13 @@ class Command(BaseCommand):
             user.save()
             baker.make(HouseholdMember, household=household, user=user, role=role)
             baker.make(Person, household=household, user=user, name=first_name)
+            personal = baker.make(Household, name=first_name, personal_of=user)
+            baker.make(HouseholdMember, household=personal, user=user, role=HouseholdRole.OWNER)
+            baker.make(Person, household=personal, user=user, name=first_name)
         for name in CHILDREN:
             baker.make(Person, household=household, name=name)
         self.stdout.write(
             f"Seeded {household.name} with {household.members.count()} accounts "
-            f"and {household.persons.count()} persons"
+            f"and {household.persons.count()} persons, "
+            f"each account holding its own personal household"
         )

@@ -140,6 +140,14 @@ digraph model_graph {
   
   
     <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Roboto"><B>personal_of</B></FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Roboto"><B>OneToOneField (id)</B></FONT>
+    </TD></TR>
+  
+  
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
     <FONT COLOR="#7B7B7B" FACE="Roboto">created_at</FONT>
     </TD><TD ALIGN="LEFT">
     <FONT COLOR="#7B7B7B" FACE="Roboto">DateTimeField</FONT>
@@ -264,6 +272,9 @@ digraph model_graph {
   accounts_models_User -> django_contrib_auth_models_Permission
   [label=" user_permissions (user)"] [arrowhead=dot arrowtail=dot, dir=both];
 
+
+  households_models_Household -> accounts_models_User
+  [label=" personal_of (personal_household)"] [arrowhead=none, arrowtail=none, dir=both];
 
   households_models_HouseholdMember -> households_models_Household
   [label=" household (members)"] [arrowhead=none, arrowtail=dot, dir=both];

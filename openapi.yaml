@@ -20,6 +20,22 @@ paths:
               schema:
                 $ref: '#/components/schemas/Health'
           description: ''
+  /api/households/:
+    get:
+      operationId: households_list
+      tags:
+      - households
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Household'
+          description: ''
 components:
   schemas:
     Health:
@@ -29,6 +45,23 @@ components:
           type: string
       required:
       - status
+    Household:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          description: Display name given by the members, such as their family name.
+          maxLength: 100
+        personal:
+          type: boolean
+          readOnly: true
+      required:
+      - id
+      - name
+      - personal
   securitySchemes:
     cookieAuth:
       type: apiKey

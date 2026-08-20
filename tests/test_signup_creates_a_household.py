@@ -80,6 +80,7 @@ def test_signing_up_by_email_creates_the_household_the_membership_and_the_person
     person = Person.objects.get()
 
     assert household.name == "alice"
+    assert household.personal_of == membership.user
     assert membership.household == household
     assert membership.user.email == "alice@example.com"
     assert membership.role == HouseholdRole.OWNER

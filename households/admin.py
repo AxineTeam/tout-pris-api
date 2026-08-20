@@ -17,8 +17,9 @@ class PersonInline(admin.TabularInline):
 
 @admin.register(Household)
 class HouseholdAdmin(admin.ModelAdmin):
-    list_display = ["name", "created_at"]
+    list_display = ["name", "personal_of", "created_at"]
     search_fields = ["name"]
+    autocomplete_fields = ["personal_of"]
     inlines = [HouseholdMemberInline, PersonInline]
 
 
