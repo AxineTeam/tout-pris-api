@@ -33,6 +33,7 @@ Backend Django du projet Tout Pris. Soit extrêmement concis.
 - `tout_pris/views.py` : vues DRF du projet, dont `/api/health/`
 - `tout_pris/mail.py` : envoi transactionnel via Brevo
 - `accounts/` : app du `User` custom, référencé par `AUTH_USER_MODEL` dès la migration initiale
+- `households/` : app du domaine foyer — `Household`, `HouseholdMember`, `Person` — et son admin
 - `tests/` : suite pytest-django, une base de test isolée fournie par Django
 - `docs/api/` : conventions de l'API — codes de retour, cloisonnement par foyer, schémas, collections
 - `docs/model/` : besoin fonctionnel derrière le modèle de données, indépendant du framework
