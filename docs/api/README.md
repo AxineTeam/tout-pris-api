@@ -60,7 +60,9 @@ La vérification d'email est obligatoire : tant qu'elle n'est pas faite, la sess
 
 Les liens envoyés par email pointent vers le front, pas vers l'API : `HEADLESS_FRONTEND_URLS` compose les URL de vérification et de réinitialisation à partir de `FRONTEND_URL`, et le front repasse la clé à l'endpoint correspondant.
 
-Un fournisseur externe est branché, Google, configuré depuis l'environnement (`GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_SECRET`) et non en base : aucun secret n'est versionné et il n'y a pas de `SocialApp` à créer dans l'admin. Le front poste sur `auth/provider/redirect`, l'utilisateur revient sur `/accounts/google/login/callback/`, et allauth ouvre la session. Une connexion par fournisseur ne se rattache pas d'elle-même à un compte local existant qui porterait la même adresse : `SOCIALACCOUNT_EMAIL_AUTHENTICATION` reste désactivé, sans quoi un fournisseur qui affirme une adresse suffirait à prendre le compte.
+Le chemin d'inscription par fournisseur externe est en place — le front poste sur `auth/provider/redirect`, l'utilisateur revient sur le callback du fournisseur, et allauth ouvre la session — mais **aucun fournisseur n'est configuré** : il n'y a ni identifiants dans l'environnement ni `SocialApp` en base. Brancher Google se réduira à fournir ses identifiants. Le chemin reste couvert par des tests qui simulent le fournisseur, parce qu'il est le seul à prouver que l'inscription par fournisseur crée le foyer comme celle par email.
+
+Une connexion par fournisseur ne se rattachera pas d'elle-même à un compte local existant qui porterait la même adresse : `SOCIALACCOUNT_EMAIL_AUTHENTICATION` reste désactivé, sans quoi un fournisseur qui affirme une adresse suffirait à prendre le compte.
 
 Les limitations de débit d'allauth (`ACCOUNT_RATE_LIMITS`) sont laissées à leurs valeurs par défaut et s'appuient sur le cache Django. Le cache par défaut étant local au processus, les compteurs sont par worker : un cache partagé sera nécessaire le jour où l'API tournera sur plusieurs processus.
 

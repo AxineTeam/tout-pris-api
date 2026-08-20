@@ -110,8 +110,6 @@ Settings are read from the environment.
 | `DJANGO_DEBUG` | `true` | Debug mode. Set it to `false` in production. |
 | `DJANGO_ALLOWED_HOSTS` | `*` | Comma-separated list of allowed hosts. |
 | `FRONTEND_URL` | `http://localhost:5173` | Base URL of the Svelte front, used to build the email verification and password reset links. |
-| `GOOGLE_OAUTH_CLIENT_ID` | empty | Google OAuth client id. When empty, signing in with Google fails; every other flow works. |
-| `GOOGLE_OAUTH_SECRET` | empty | Google OAuth client secret. |
 | `BREVO_API_KEY` | empty | Brevo API key. When empty, `send_email` logs the subject and the recipient, and sends nothing: that is the dev and test mode, no network call is ever made. |
 | `MAIL_FROM_EMAIL` | `no-reply@tout-pris.app` | Sender address, must be a sender validated in Brevo. |
 | `MAIL_FROM_NAME` | `Tout Pris` | Sender display name. |
