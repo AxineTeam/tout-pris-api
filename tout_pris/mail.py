@@ -16,10 +16,10 @@ BREVO_TIMEOUT_SECONDS = 10
 
 def send_email(
     to: str, subject: str, html_content: str | None = None, text_content: str | None = None
-) -> None:
+) -> bool:
     if not settings.BREVO_API_KEY:
         logger.info("BREVO_API_KEY is not set, skipping email %r to %s", subject, to)
-        return
+        return False
 
     content = {}
     if html_content is not None:
@@ -39,21 +39,27 @@ def send_email(
                 subject=subject,
                 **content,
             )
+        return True
     except Exception:
         logger.exception("Failed to send email %r to %s", subject, to)
+        return False
 
 
 class BrevoEmailBackend(BaseEmailBackend):
     def send_messages(self, email_messages) -> int:
-        for message in email_messages:
-            for recipient in message.to:
-                send_email(
-                    recipient,
-                    message.subject,
-                    html_content=html_alternative_of(message),
-                    text_content=message.body,
-                )
-        return len(email_messages)
+        return sum(1 for message in email_messages if self.send_message(message))
+
+    def send_message(self, message) -> bool:
+        delivered = [
+            send_email(
+                recipient,
+                message.subject,
+                html_content=html_alternative_of(message),
+                text_content=message.body,
+            )
+            for recipient in message.to
+        ]
+        return all(delivered)
 
 
 def html_alternative_of(message) -> str | None:

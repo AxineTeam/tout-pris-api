@@ -109,17 +109,6 @@ ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True
 
 ACCOUNT_EMAIL_NOTIFICATIONS = True
 
-SOCIALACCOUNT_PROVIDERS = {
-    "google": {
-        "APP": {
-            "client_id": os.environ.get("GOOGLE_OAUTH_CLIENT_ID", ""),
-            "secret": os.environ.get("GOOGLE_OAUTH_SECRET", ""),
-        },
-        "SCOPE": ["profile", "email"],
-        "AUTH_PARAMS": {"access_type": "online"},
-    }
-}
-
 HEADLESS_ONLY = True
 
 HEADLESS_CLIENTS = ("browser",)

@@ -13,6 +13,7 @@ services:
       BREVO_API_KEY: ${BREVO_API_KEY:-}
       MAIL_FROM_EMAIL: ${MAIL_FROM_EMAIL:-no-reply@tout-pris.app}
       MAIL_FROM_NAME: ${MAIL_FROM_NAME:-Tout Pris}
+      FRONTEND_URL: ${FRONTEND_URL:?set the public URL of the front, it is what the email links point to}
     volumes:
       - tout_pris_data:/data
 
