@@ -93,6 +93,8 @@ DJANGO_SECRET_KEY=... docker compose -f docker-compose.prod.yml up -d
 
 drf-spectacular generates the schema from the code. It is committed as [`openapi.yaml`](openapi.yaml) and regenerated with the `spectacular` command above. CI fails if the committed file drifts from the code, so regenerate it whenever routes or schemas change.
 
+The authentication endpoints are not DRF views, so drf-spectacular cannot see them. `tout_pris/schema.py` merges the specification django-allauth derives from its own code and configuration into the generated document, so a single `openapi.yaml` describes the whole API. Both halves stay derived from the code, and the merge fails loudly rather than overwriting a path or a schema described twice.
+
 ## Migrations
 
 Schema migrations are Django migrations, applied by the Docker entrypoint at container start — never by the application code. After changing a model, generate a migration with `makemigrations`, read the generated file, and check the SQL with `sqlmigrate` when in doubt. CI fails if a model change has no migration.
@@ -133,7 +135,7 @@ The production settings live in `docker-compose.prod.yml`: the database is store
 ## Project layout
 
 - `manage.py` — Django entry point
-- `tout_pris/` — project package: `settings.py`, `urls.py` (admin, and the API mounted on `/api/`), `views.py`, `mail.py`, `wsgi.py`, `asgi.py`
+- `tout_pris/` — project package: `settings.py`, `urls.py` (admin, and the API mounted on `/api/`), `views.py`, `mail.py`, `schema.py`, `wsgi.py`, `asgi.py`
 - `accounts/` — the custom `User` model, referenced by `AUTH_USER_MODEL` since the initial migration
 - `households/` — the household domain: `Household`, `HouseholdMember` and `Person`, their admin, and the implicit creation of a household at signup
 - `tests/` — pytest-django test suite
