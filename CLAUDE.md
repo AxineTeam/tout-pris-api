@@ -19,10 +19,11 @@ Backend Django du projet Tout Pris. Soit extrêmement concis.
 - Python 3.12 (épinglé dans `.python-version`), Django 6.1, Django REST Framework pour l'API, drf-spectacular pour l'OpenAPI générée, drf-pydantic pour dériver un serializer d'un modèle Pydantic, django-allauth en mode headless pour l'authentification
 - Deux façons de déclarer un schéma : `ModelSerializer` quand il y a une table derrière, Pydantic via `drf-pydantic` quand il n'y en a pas (sortie d'un modèle de langage, réponse calculée)
 - ORM et migrations Django (SQLite par défaut, `DATABASE_URL` lu par dj-database-url), migrations appliquées par l'entrypoint Docker, jamais par le code applicatif
-- django-extensions pour `shell_plus`, `runserver_plus` et `reset_db`
+- django-extensions pour `shell_plus`, `runserver_plus`, `reset_db` et `graph_models`
+- model_bakery pour construire des objets depuis le modèle Django sans déclarer de factory, utilisé par la commande `seed`
+- graphviz est une dépendance système : `graph_models` appelle le binaire `dot` via pydot, il est installé dans l'image de dev, donc dans le devcontainer
 - Dépendances gérées par uv (`uv sync`, groupe `dev` dans `pyproject.toml`, lock dans `uv.lock`)
 - pytest-django pour les tests, ruff pour lint et format
-- model_bakery pour construire des objets depuis le modèle Django sans déclarer de factory, utilisé par la commande `seed`
 - Docker + docker compose, devcontainer basé sur le service `api`
 - Deux Dockerfiles (pratiques uv officielles) : `Dockerfile` dev (uv, deps dev, `runserver`, monté sur `/app`), `Dockerfile.prod` multistage (image finale sans uv ni pip, non-root, gunicorn, base dans le volume `/data`)
 
@@ -38,7 +39,7 @@ Backend Django du projet Tout Pris. Soit extrêmement concis.
 - `households/` : app du domaine foyer — `Household`, `HouseholdMember`, `Person` — son admin, la création implicite du foyer à l'inscription, et la commande `seed`
 - `tests/` : suite pytest-django, une base de test isolée fournie par Django
 - `docs/api/` : conventions de l'API — codes de retour, cloisonnement par foyer, schémas, collections
-- `docs/model/` : besoin fonctionnel derrière le modèle de données, indépendant du framework
+- `docs/model/` : besoin fonctionnel derrière le modèle de données, indépendant du framework, et `schema.png`, le diagramme ER généré
 - Une app Django par domaine, comme des engines Rails
 
 ## Commandes
@@ -51,6 +52,7 @@ Backend Django du projet Tout Pris. Soit extrêmement concis.
 - `uv run python manage.py reset_db --noinput` puis `migrate` puis `seed` : reconstruit la base de dev (jamais versionnée, `*.db` ignoré) et la remplit d'un foyer réaliste
 - `seed` attend une base vide : rejoué par-dessus lui-même il échoue sur l'unicité de l'email, et sa transaction n'écrit rien
 - `uv run python manage.py shell_plus` / `createsuperuser` / `changepassword` / `check`
+- `uv run python manage.py graph_models accounts households --no-inheritance --exclude-models "Abstract*" --output docs/model/schema.png` : régénère le diagramme ER
 - `uv run pytest` : tests, échec sous 100 % de couverture
 - `uv run ruff check .` / `ruff check --fix .` / `ruff format .` / `ruff format --check .`
 - `uv run python manage.py spectacular --file openapi.yaml` : régénère `openapi.yaml` (obligatoire après tout changement de routes ou de schémas, la CI vérifie qu'il est à jour)
@@ -69,6 +71,14 @@ Backend Django du projet Tout Pris. Soit extrêmement concis.
 - Reformate les migrations générées avec `uv run ruff format .` : Django les écrit avec son propre style
 - Ne modifie jamais une migration déjà mergée : crée-en une nouvelle
 - Le `User` custom est lié au schéma dès la migration initiale : changer `AUTH_USER_MODEL` après coup impose de repartir de zéro
+
+## Documentation du schéma
+
+- Le diagramme ER est une image générée par `graph_models` et committée (`docs/model/schema.png`), affichée dans le README
+- **Aucune vérification automatique** : régénère-le à la main après tout changement de modèle, dans la PR qui porte la migration. La CI ne le vérifie pas et ne le vérifiera pas — le `.dot` intermédiaire embarque l'horodatage de génération dans son en-tête et l'image dépend de la version de graphviz, donc un contrôle de dérive échouerait sur des exécutions où aucun modèle n'a bougé. Ne prétends jamais dans la doc qu'un garde-fou existe ici
+- La vérification CI d'`openapi.yaml` n'est pas concernée : ce fichier est déterministe et reste vérifié
+- Les `help_text` ne sont **pas** affichés par `graph_models` : les descriptions de colonnes servent encore l'admin et l'OpenAPI générée, mais elles n'ont plus de garant visuel dans le schéma. Continue à en écrire une par colonne, en sachant que rien ne le rappellera
+- Les descriptions peuvent contenir des virgules : la contrainte venait de paracelsus, elle est tombée
 
 ## Style de code
 
