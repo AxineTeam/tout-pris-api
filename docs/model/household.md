@@ -34,6 +34,20 @@ Un compte ne peut être rattaché qu'à une seule personne par foyer. La contrai
 
 Le domaine n'ajoute donc **aucune colonne d'authentification** à `User`. Il n'en attend qu'une chose : un `email` unique, qui est l'adresse de connexion et le point d'entrée d'une invitation dans un foyer.
 
+## Cycle de vie d'un compte
+
+Un compte n'existe jamais seul : à l'inscription, le foyer est créé, le compte y est inscrit comme membre, et la personne qui le représente est créée dans ce foyer. Les trois écritures sont faites dans la même transaction — un compte sans foyer serait inutilisable, puisque tout le domaine est porté par le foyer.
+
+Il n'y a qu'un seul chemin d'inscription du point de vue du domaine, alors qu'il y en a deux du point de vue de l'authentification : par email et mot de passe, ou par un fournisseur externe. django-allauth fait converger les deux vers un signal unique, `user_signed_up`, émis au moment où le compte vient d'être créé et avant l'ouverture de la session ; c'est lui que le domaine écoute. Se connecter une seconde fois par un fournisseur, ou rattacher un fournisseur à un compte existant, n'est pas une inscription et ne crée donc pas de second foyer.
+
+Le foyer et la personne prennent pour nom celui du compte : son nom complet quand le fournisseur l'a transmis, sinon la partie locale de son adresse email. Le foyer étant invisible dans l'interface, ce nom n'est qu'un point de départ ; la personne, elle, est immédiatement visible et reste renommable.
+
+Le membre créé porte le rôle `owner`. Aucun droit n'en découle aujourd'hui — tous les membres peuvent tout faire — mais l'inscription est le seul moment où l'on sait qui a ouvert le foyer.
+
+La vérification de l'adresse email est obligatoire et intervient **après** cette création : le compte, son foyer et sa personne existent dès l'inscription, alors que la session ne s'ouvre qu'une fois l'adresse confirmée. Un compte jamais confirmé laisse donc un foyer vide en base, sans aucune conséquence fonctionnelle.
+
+Le second membre d'un foyer n'a pas encore de chemin : inviter son partenaire est la seule manifestation prévue de `HouseholdMember` et reste à construire. En attendant, un foyer n'a qu'un membre, celui qui l'a créé.
+
 ## Suppressions
 
 Supprimer un foyer supprime ses membres et ses personnes : elles n'ont pas d'existence en dehors de lui.
