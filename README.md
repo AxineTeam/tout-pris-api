@@ -122,7 +122,7 @@ uv run python manage.py graph_models accounts households --no-inheritance --excl
 
 Rendering needs the `dot` binary from graphviz — installed in the dev image, therefore in the devcontainer too, and `apt install graphviz` or `brew install graphviz` on a host running without Docker.
 
-**Nothing checks that the image still matches the models.** Regenerate it by hand after a model change, in the same pull request as the migration. CI deliberately stays out of it: the intermediate `.dot` carries its generation timestamp in a header comment, and the rendered image depends on the graphviz version, so a drift check would fail on runs where no model has moved. The `openapi.yaml` check is a different story and stays in place — that file is deterministic.
+CI regenerates the intermediate `docs/model/schema.dot` and fails if it drifts from the models. Its only unstable line is the `// Created:` timestamp, stripped by the `grep -v` above, so the committed file carries none. **The image itself is not checked**, because two versions of graphviz render the same schema differently: regenerate it by hand after a model change, in the same pull request as the migration, or it silently falls behind the `.dot`.
 
 The diagram shows field names and types, never the `help_text` descriptions. They keep serving the admin and the generated OpenAPI, but the schema documentation no longer displays them.
 
