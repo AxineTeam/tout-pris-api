@@ -39,3 +39,40 @@ def test_an_account_without_an_email_address_is_invalid():
         User(username="alice", password="s3cret").full_clean()
 
     assert "email" in invalid.value.error_dict
+
+
+def admin_add_form(data=None):
+    from django.contrib import admin
+
+    form_class = admin.site._registry[User].get_form(None, None, change=False)
+    return form_class(data=data) if data is not None else form_class()
+
+
+def test_the_admin_add_form_collects_the_email_address():
+    assert "email" in admin_add_form().base_fields
+
+
+@pytest.mark.django_db
+def test_the_admin_add_form_refuses_an_email_already_taken():
+    first = admin_add_form(
+        {
+            "username": "first",
+            "email": "shared@example.com",
+            "password1": "a-long-enough-password",
+            "password2": "a-long-enough-password",
+        }
+    )
+    assert first.is_valid(), first.errors
+    first.save()
+
+    second = admin_add_form(
+        {
+            "username": "second",
+            "email": "shared@example.com",
+            "password1": "a-long-enough-password",
+            "password2": "a-long-enough-password",
+        }
+    )
+
+    assert not second.is_valid()
+    assert "email" in second.errors
