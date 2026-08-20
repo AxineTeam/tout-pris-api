@@ -1,5 +1,6 @@
 import pytest
 from django.core.management import call_command
+from django.core.management.base import CommandError
 
 from accounts.models import User
 from households.models import Household, HouseholdMember, HouseholdRole, Person
@@ -62,3 +63,11 @@ def test_seeding_reports_what_it_created(capsys):
     call_command("seed")
 
     assert "Seeded Famille Martin with 2 accounts and 4 persons" in capsys.readouterr().out
+
+
+@pytest.mark.django_db
+def test_seeding_a_database_that_already_holds_a_household_is_refused():
+    call_command("seed")
+
+    with pytest.raises(CommandError):
+        call_command("seed")

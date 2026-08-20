@@ -40,6 +40,11 @@ jobs:
 
       - run: git diff --exit-code openapi.yaml
 
+      - name: Schema diagram is up to date
+        run: |
+          uv run python manage.py graph_models accounts households --no-inheritance --exclude-models "Abstract*" | grep -v '// Created:' > docs/model/schema.dot
+          git diff --exit-code docs/model/schema.dot
+
       - uses: DavidAnson/markdownlint-cli2-action@v19
         with:
           globs: '**/*.md'
