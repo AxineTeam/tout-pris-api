@@ -128,6 +128,7 @@ The production settings live in `docker-compose.prod.yml`: the database is store
 - `manage.py` — Django entry point
 - `tout_pris/` — project package: `settings.py`, `urls.py` (admin, and the API mounted on `/api/`), `views.py`, `mail.py`, `wsgi.py`, `asgi.py`
 - `accounts/` — the custom `User` model, referenced by `AUTH_USER_MODEL` since the initial migration
+- `households/` — the household domain: `Household`, `HouseholdMember` and `Person`, and their admin
 - `tests/` — pytest-django test suite
 - `docs/api/` — the API conventions: status codes, household scoping, schemas, collections
 - `docs/model/` — the functional need behind the data model, independent of the framework
