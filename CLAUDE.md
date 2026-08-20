@@ -25,6 +25,7 @@ Backend Django du projet Tout Pris. Soit extrêmement concis.
 - Dépendances gérées par uv (`uv sync`, groupe `dev` dans `pyproject.toml`, lock dans `uv.lock`)
 - pytest-django pour les tests, ruff pour lint et format
 - Docker + docker compose, devcontainer basé sur le service `api`
+- Le mailer est choisi dans `settings.py` : clé Brevo, Brevo ; hôte SMTP, ce serveur (Mailpit en dev) ; ni l'un ni l'autre, la console. La branche console garantit que le lien de vérification est lisible sans aucune configuration. Les variables s'appellent `EMAIL_HOST` et `EMAIL_PORT` mais sont stockées en minuscules : Django refuse de démarrer si ces deux *settings* existent à côté de `MAILERS`
 - Deux Dockerfiles (pratiques uv officielles) : `Dockerfile` dev (uv, deps dev, `runserver`, monté sur `/app`), `Dockerfile.prod` multistage (image finale sans uv ni pip, non-root, gunicorn, base dans le volume `/data`)
 
 ## Structure
@@ -34,6 +35,7 @@ Backend Django du projet Tout Pris. Soit extrêmement concis.
 - `tout_pris/urls.py` : URLconf racine, admin sur `/admin/`, API sur `/api/`, schéma et doc servis par drf-spectacular
 - `tout_pris/views.py` : vues DRF du projet, dont `/api/health/`
 - `tout_pris/mail.py` : envoi transactionnel via Brevo, exposé comme mailer Django
+- `.env.example` : toutes les variables d'environnement avec une valeur de développement
 - `accounts/` : app du `User` custom, référencé par `AUTH_USER_MODEL` dès la migration initiale
 - `households/` : app du domaine foyer — `Household`, `HouseholdMember`, `Person` — son admin, la création implicite du foyer à l'inscription, et la commande `seed`
 - `tests/` : suite pytest-django, une base de test isolée fournie par Django
@@ -57,6 +59,7 @@ Backend Django du projet Tout Pris. Soit extrêmement concis.
 - `uv run python manage.py spectacular --file openapi.yaml` : régénère `openapi.yaml` (obligatoire après tout changement de routes ou de schémas, la CI vérifie qu'il est à jour)
 - `npx markdownlint-cli2 "**/*.md"` : lint markdown, comme la CI
 - `docker compose -f docker-compose.prod.yml up -d` : image de production
+- Mailpit est démarré par `docker compose up` : les emails de dev se lisent sur <http://localhost:8025>, c'est là qu'on clique le lien de vérification
 
 ## Sans Docker (fallback)
 

@@ -12,7 +12,7 @@ docker compose up -d   # start the API on http://localhost:8000 (docs at /api/do
 docker compose down    # stop it
 ```
 
-Migrations are applied by the container entrypoint on every start, so the database is always up to date.
+Migrations are applied by the container entrypoint on every start, so the database is always up to date. Alongside the API, compose starts [Mailpit](https://mailpit.axllent.org) on <http://localhost:8025>: every email the application sends lands there, rendered, with its links clickable. That is where a signup is completed in development.
 
 ## Commands
 
@@ -26,6 +26,7 @@ docker compose up -d              # start the API in the background
 docker compose down               # stop it
 docker compose logs -f api        # follow the API logs
 docker compose exec api sh        # open a shell in the running container
+docker compose logs -f mailpit    # follow the mail collector logs
 ```
 
 ### Server
@@ -128,7 +129,7 @@ The diagram shows field names and types, never the `help_text` descriptions. The
 
 ## Configuration
 
-Settings are read from the environment.
+Settings are read from the environment. [`.env.example`](.env.example) lists every variable with a development value — copy it to `.env`, which git ignores and docker compose reads on its own.
 
 | Variable | Default | Role |
 | --- | --- | --- |
@@ -137,7 +138,9 @@ Settings are read from the environment.
 | `DJANGO_DEBUG` | `true` | Debug mode. Set it to `false` in production. |
 | `DJANGO_ALLOWED_HOSTS` | `*` | Comma-separated list of allowed hosts. |
 | `FRONTEND_URL` | `http://localhost:5173` | Base URL of the Svelte front, used to build the email verification and password reset links. |
-| `BREVO_API_KEY` | empty | Brevo API key. When empty, `send_email` logs the subject and the recipient, and sends nothing: that is the dev and test mode, no network call is ever made. |
+| `BREVO_API_KEY` | empty | Brevo API key. When set, every email goes through Brevo, in development too. Mandatory in production. |
+| `EMAIL_HOST` | empty | SMTP host the emails go to when `BREVO_API_KEY` is empty. Compose sets it to `mailpit`. |
+| `EMAIL_PORT` | `1025` | Port of that SMTP host. |
 | `MAIL_FROM_EMAIL` | `no-reply@tout-pris.app` | Sender address, must be a sender validated in Brevo. |
 | `MAIL_FROM_NAME` | `Tout Pris` | Sender display name. |
 
@@ -147,7 +150,21 @@ The Brevo key and the Django secret key are secrets: never commit them, pass the
 
 Transactional emails (email verification, password reset, account notifications) are sent through [Brevo](https://developers.brevo.com) with the synchronous `brevo-python` client, from `tout_pris/mail.py`.
 
-`BrevoEmailBackend` exposes it as a Django mailer (`MAILERS["default"]`), so django-allauth and any other application code send mail through `django.core.mail` without knowing about Brevo. Tests never reach the network: Django swaps the mailer for its in-memory one.
+`BrevoEmailBackend` exposes it as a Django mailer, so django-allauth and any other application code send mail through `django.core.mail` without knowing about Brevo.
+
+Which mailer `MAILERS["default"]` holds is decided in `settings.py` from the environment, and reads out loud: a real key, Brevo; an SMTP host, that host; neither, the console.
+
+| Context | Mailer | Where the email is read |
+| --- | --- | --- |
+| Tests | in-memory, imposed by Django | `django.core.mail.outbox` |
+| Development with docker | SMTP to Mailpit | the web interface on <http://localhost:8025> |
+| Development with a Brevo key | Brevo | the real inbox |
+| Off docker, CI, agent | console | standard output |
+| Production | Brevo | — |
+
+The console branch is what makes the verification link readable with no configuration at all, so a fresh clone can complete a signup. It is a development branch only: Django's deployment checks reject the console mailer once `DJANGO_DEBUG` is off, so a production start without a Brevo key fails loudly instead of printing the emails into the logs. Tests never reach the network whatever the environment holds: Django swaps every mailer for its in-memory one.
+
+The environment variables are named `EMAIL_HOST` and `EMAIL_PORT`, but `settings.py` stores them in lowercase names: Django refuses to start when those two settings are defined next to `MAILERS`, since they are the deprecated way of configuring the same thing.
 
 ## Production image
 
@@ -163,6 +180,7 @@ The production settings live in `docker-compose.prod.yml`: the database is store
 - `tout_pris/` — project package: `settings.py`, `urls.py` (admin, and the API mounted on `/api/`), `views.py`, `mail.py`, `wsgi.py`, `asgi.py`
 - `accounts/` — the custom `User` model, referenced by `AUTH_USER_MODEL` since the initial migration
 - `households/` — the household domain: `Household`, `HouseholdMember` and `Person`, their admin, the implicit creation of a household at signup, and the `seed` command
+- `.env.example` — every environment variable with a development value
 - `tests/` — pytest-django test suite
 - `docs/api/` — the API conventions: status codes, household scoping, schemas, collections
 - `docs/model/` — the functional need behind the data model, independent of the framework, and the generated schema diagram

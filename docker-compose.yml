@@ -15,3 +15,10 @@ services:
       MAIL_FROM_EMAIL: ${MAIL_FROM_EMAIL:-no-reply@tout-pris.app}
       MAIL_FROM_NAME: ${MAIL_FROM_NAME:-Tout Pris}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
+      EMAIL_HOST: mailpit
+      EMAIL_PORT: "1025"
+
+  mailpit:
+    image: axllent/mailpit
+    ports:
+      - "8025:8025"
