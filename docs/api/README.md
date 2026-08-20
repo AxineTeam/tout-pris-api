@@ -68,11 +68,11 @@ Le socle précédent était écrit à la main sur PyJWT et pwdlib, avec ses prop
 
 ### Les endpoints d'authentification dans la spécification
 
-drf-spectacular ne décrit que les vues DRF ; les vues d'allauth lui sont invisibles. allauth publie de son côté sa propre spécification, dérivée de son code et élaguée selon la configuration réellement chargée — les endpoints non montés en sont retirés.
+drf-spectacular ne décrit que les vues DRF ; les vues d'allauth lui sont invisibles. **Il y a donc deux spécifications, et c'est assumé** — leur absence de fusion n'est pas une régression.
 
-`tout_pris/schema.py` fusionne les deux : le générateur de drf-spectacular est sous-classé pour ajouter les chemins, les schémas et les tags d'allauth au document produit. Les deux moitiés restent dérivées du code, aucune n'est écrite à la main, et une seule spécification est publiée. La fusion refuse d'écraser un chemin ou un schéma déjà décrit : un doublon fait échouer la génération plutôt que de faire disparaître silencieusement une opération.
+`openapi.yaml`, committé à la racine et vérifié en CI, décrit l'API du domaine. allauth publie la sienne sur `/api/auth/openapi.yaml` et `/api/auth/openapi.json`, servies par l'application sans qu'on ait rien à câbler, dérivées de son code et élaguées selon la configuration réellement chargée : les endpoints non montés en sont retirés.
 
-Les opérations venant d'allauth n'ont pas d'`operationId` — sa spécification n'en déclare pas. Un générateur de clients leur donnera des noms dérivés du chemin.
+Les fusionner demanderait de sous-classer le générateur de drf-spectacular, soit de la glu maison à maintenir au rythme des deux bibliothèques, pour un bénéfice de confort. Un client qui a besoin des deux les lit à deux adresses.
 
 ## Pourquoi Django et DRF
 
