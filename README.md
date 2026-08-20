@@ -113,7 +113,9 @@ The Brevo key and the secret key are secrets: never commit them, pass them throu
 
 ## Transactional emails
 
-Transactional emails (invitations, email verification, password reset) are sent through [Brevo](https://developers.brevo.com) with the synchronous `brevo-python` client, from `tout_pris/mail.py`.
+Transactional emails (email verification, password reset, account notifications) are sent through [Brevo](https://developers.brevo.com) with the synchronous `brevo-python` client, from `tout_pris/mail.py`.
+
+`BrevoEmailBackend` exposes it as a Django mailer (`MAILERS["default"]`), so django-allauth and any other application code send mail through `django.core.mail` without knowing about Brevo. Tests never reach the network: Django swaps the mailer for its in-memory one.
 
 ## Production image
 
