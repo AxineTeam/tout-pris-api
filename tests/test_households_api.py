@@ -56,3 +56,17 @@ def test_an_unauthenticated_caller_is_told_to_authenticate(camille):
 
     assert response.status_code == 401
     assert response.headers["WWW-Authenticate"] == "Session"
+
+
+def test_the_personal_household_comes_first_even_when_the_shared_one_is_older():
+    older = Household.objects.create(name="Famille Martin")
+    sacha = User.objects.create_user(username="sacha", email="sacha@example.com")
+    Household.objects.create(name="sacha", personal_of=sacha).members.create(user=sacha)
+    HouseholdMember.objects.create(household=older, user=sacha)
+
+    listed = signed_in(sacha).get(HOUSEHOLDS_URL).json()
+
+    assert [(entry["name"], entry["personal"]) for entry in listed] == [
+        ("sacha", True),
+        ("Famille Martin", False),
+    ]
