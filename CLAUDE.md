@@ -84,7 +84,9 @@ Backend Django du projet Tout Pris. Soit extrêmement concis.
 - Préfère les commits atomiques (un changement logique = un commit)
 - Résous les conflits de PR par rebase sur `main`, jamais en mergeant `main` dans la branche : le repo merge en rebase-merge, qui jette les commits de merge et leurs résolutions (« Unable to merge » sinon)
 - Quand le dev est fini, `git fetch origin main` et vérifie que la branche est rebasable sans conflit sur `main` ; si `main` a avancé, rebase et re-pousse avant de considérer la PR prête
-- Ouvre toujours une PR une fois le code terminé, sans attendre qu'on te le demande ; elle référence l'issue traitée
+- Ouvre toujours une PR une fois le code terminé, sans attendre qu'on te le demande
+- La description commence par `Closes #N` : mentionner l'issue autrement la référence sans la fermer, et il reste alors un ticket ouvert sur du travail livré
+- PR empilées : avant de merger celle qui sert de base à une autre, rebascule d'abord l'enfant sur `main`. GitHub refuse de supprimer une branche qui est la base d'une PR ouverte, et tant qu'il ne la supprime pas il ne rebascule pas l'enfant non plus — qui se retrouve avec une base morte. Le rebase-merge aggrave le tout en réécrivant les SHA : le diff de l'enfant devient alors l'inverse du travail déjà mergé
 
 ## Tests
 
