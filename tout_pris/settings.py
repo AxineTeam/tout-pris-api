@@ -23,6 +23,11 @@ INSTALLED_APPS = [
     "django_extensions",
     "rest_framework",
     "drf_spectacular",
+    "allauth",
+    "allauth.account",
+    "allauth.socialaccount",
+    "allauth.socialaccount.providers.google",
+    "allauth.headless",
     "accounts",
     "households",
 ]
@@ -36,6 +41,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "allauth.account.middleware.AccountMiddleware",
 ]
 
 ROOT_URLCONF = "tout_pris.urls"
@@ -63,6 +69,11 @@ DATABASES = {"default": dj_database_url.config(default=f"sqlite:///{BASE_DIR / '
 
 AUTH_USER_MODEL = "accounts.User"
 
+AUTHENTICATION_BACKENDS = [
+    "django.contrib.auth.backends.ModelBackend",
+    "allauth.account.auth_backends.AuthenticationBackend",
+]
+
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
@@ -84,11 +95,55 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 
 WHITENOISE_AUTOREFRESH = DEBUG
 
+FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:5173").rstrip("/")
+
+ACCOUNT_LOGIN_METHODS = {"email"}
+
+ACCOUNT_SIGNUP_FIELDS = ["email*", "password1*"]
+
+ACCOUNT_UNIQUE_EMAIL = True
+
+ACCOUNT_EMAIL_VERIFICATION = "mandatory"
+
+ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True
+
+ACCOUNT_EMAIL_NOTIFICATIONS = True
+
+SOCIALACCOUNT_PROVIDERS = {
+    "google": {
+        "APP": {
+            "client_id": os.environ.get("GOOGLE_OAUTH_CLIENT_ID", ""),
+            "secret": os.environ.get("GOOGLE_OAUTH_SECRET", ""),
+        },
+        "SCOPE": ["profile", "email"],
+        "AUTH_PARAMS": {"access_type": "online"},
+    }
+}
+
+HEADLESS_ONLY = True
+
+HEADLESS_CLIENTS = ("browser",)
+
+HEADLESS_SERVE_SPECIFICATION = True
+
+HEADLESS_SPECIFICATION_TEMPLATE_NAME = None
+
+HEADLESS_FRONTEND_URLS = {
+    "account_confirm_email": f"{FRONTEND_URL}/account/verify-email/{{key}}",
+    "account_reset_password": f"{FRONTEND_URL}/account/password/reset",
+    "account_reset_password_from_key": f"{FRONTEND_URL}/account/password/reset/key/{{key}}",
+    "account_signup": f"{FRONTEND_URL}/account/signup",
+}
+
+MAILERS = {"default": {"BACKEND": "tout_pris.mail.BrevoEmailBackend"}}
+
 BREVO_API_KEY = os.environ.get("BREVO_API_KEY", "")
 
 MAIL_FROM_EMAIL = os.environ.get("MAIL_FROM_EMAIL", "no-reply@tout-pris.app")
 
 MAIL_FROM_NAME = os.environ.get("MAIL_FROM_NAME", "Tout Pris")
+
+DEFAULT_FROM_EMAIL = MAIL_FROM_EMAIL
 
 REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",

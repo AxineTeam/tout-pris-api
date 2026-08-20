@@ -16,7 +16,7 @@ Backend Django du projet Tout Pris. Soit extrêmement concis.
 
 ## Stack
 
-- Python 3.12 (épinglé dans `.python-version`), Django 6.1, Django REST Framework pour l'API, drf-spectacular pour l'OpenAPI générée, drf-pydantic pour dériver un serializer d'un modèle Pydantic
+- Python 3.12 (épinglé dans `.python-version`), Django 6.1, Django REST Framework pour l'API, drf-spectacular pour l'OpenAPI générée, drf-pydantic pour dériver un serializer d'un modèle Pydantic, django-allauth en mode headless pour l'authentification
 - Deux façons de déclarer un schéma : `ModelSerializer` quand il y a une table derrière, Pydantic via `drf-pydantic` quand il n'y en a pas (sortie d'un modèle de langage, réponse calculée)
 - ORM et migrations Django (SQLite par défaut, `DATABASE_URL` lu par dj-database-url), migrations appliquées par l'entrypoint Docker, jamais par le code applicatif
 - django-extensions pour `shell_plus`, `runserver_plus` et `reset_db`
@@ -31,9 +31,9 @@ Backend Django du projet Tout Pris. Soit extrêmement concis.
 - `tout_pris/settings.py` : configuration, lue depuis l'environnement
 - `tout_pris/urls.py` : URLconf racine, admin sur `/admin/`, API sur `/api/`, schéma et doc servis par drf-spectacular
 - `tout_pris/views.py` : vues DRF du projet, dont `/api/health/`
-- `tout_pris/mail.py` : envoi transactionnel via Brevo
+- `tout_pris/mail.py` : envoi transactionnel via Brevo, exposé comme mailer Django
 - `accounts/` : app du `User` custom, référencé par `AUTH_USER_MODEL` dès la migration initiale
-- `households/` : app du domaine foyer — `Household`, `HouseholdMember`, `Person` — et son admin
+- `households/` : app du domaine foyer — `Household`, `HouseholdMember`, `Person` — son admin, et la création implicite du foyer à l'inscription
 - `tests/` : suite pytest-django, une base de test isolée fournie par Django
 - `docs/api/` : conventions de l'API — codes de retour, cloisonnement par foyer, schémas, collections
 - `docs/model/` : besoin fonctionnel derrière le modèle de données, indépendant du framework
