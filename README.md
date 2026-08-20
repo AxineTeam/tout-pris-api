@@ -109,6 +109,22 @@ The authentication endpoints are not DRF views, so drf-spectacular cannot see th
 
 Schema migrations are Django migrations, applied by the Docker entrypoint at container start — never by the application code. After changing a model, generate a migration with `makemigrations`, read the generated file, and check the SQL with `sqlmigrate` when in doubt. CI fails if a model change has no migration.
 
+## Schema diagram
+
+![Entity-relationship diagram of the accounts and households models](docs/model/schema.png)
+
+`graph_models` (django-extensions) draws it from the models, and the image is committed as `docs/model/schema.png`:
+
+```bash
+uv run python manage.py graph_models accounts households --no-inheritance --exclude-models "Abstract*" --output docs/model/schema.png
+```
+
+Rendering needs the `dot` binary from graphviz — installed in the dev image, therefore in the devcontainer too, and `apt install graphviz` or `brew install graphviz` on a host running without Docker.
+
+**Nothing checks that the image still matches the models.** Regenerate it by hand after a model change, in the same pull request as the migration. CI deliberately stays out of it: the intermediate `.dot` carries its generation timestamp in a header comment, and the rendered image depends on the graphviz version, so a drift check would fail on runs where no model has moved. The `openapi.yaml` check is a different story and stays in place — that file is deterministic.
+
+The diagram shows field names and types, never the `help_text` descriptions. They keep serving the admin and the generated OpenAPI, but the schema documentation no longer displays them.
+
 ## Configuration
 
 Settings are read from the environment.
@@ -148,6 +164,6 @@ The production settings live in `docker-compose.prod.yml`: the database is store
 - `households/` — the household domain: `Household`, `HouseholdMember` and `Person`, their admin, the implicit creation of a household at signup, and the `seed` command
 - `tests/` — pytest-django test suite
 - `docs/api/` — the API conventions: status codes, household scoping, schemas, collections
-- `docs/model/` — the functional need behind the data model, independent of the framework
+- `docs/model/` — the functional need behind the data model, independent of the framework, and the generated schema diagram
 
 A devcontainer is provided (`.devcontainer/`) based on the compose `api` service.

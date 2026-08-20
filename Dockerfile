@@ -4,6 +4,12 @@ FROM ghcr.io/astral-sh/uv:python3.12-trixie-slim
 
 WORKDIR /app
 
+# graphviz ships the `dot` binary that `manage.py graph_models` shells out to
+# through pydot to render docs/model/schema.png. Dev only, never in Dockerfile.prod.
+RUN apt-get update \
+    && apt-get install --no-install-recommends --yes graphviz \
+    && rm -rf /var/lib/apt/lists/*
+
 # UV_COMPILE_BYTECODE: precompile .pyc at install time for faster startup.
 # UV_LINK_MODE=copy: avoid hardlink warnings when cache and venv are on different filesystems.
 ENV PYTHONUNBUFFERED=1 UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy
