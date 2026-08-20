@@ -18,7 +18,9 @@ Le `403` n'est jamais renvoyé. Une ressource qui existe mais que l'appelant n'a
 
 Les routes du domaine sont donc portées par le chemin du foyer — `/api/households/{household_id}/persons`, `/api/households/{household_id}/trips` — et le cloisonnement est appliqué une fois pour toutes par la couche qui résout le foyer courant, jamais réécrit dans chaque route.
 
-Cette règle n'a pas encore de porteur dans le code : les endpoints du domaine ne sont dans aucune des sous-issues de la migration. Elle s'applique dès qu'ils arrivent.
+Cette règle n'a pas encore de porteur dans le code : `GET /api/households/` est la première route du domaine, et elle n'est imbriquée sous aucun foyer. Elle s'applique dès la première ressource qui l'est.
+
+`GET /api/households/` liste les foyers dont l'appelant est membre : son foyer personnel et ceux qu'on lui a partagés. C'est l'écran de sélection décrit dans [`docs/model/household.md`](../model/household.md). Chaque entrée porte `personal`, un booléen, plutôt qu'un nom à afficher pour le foyer personnel : ce nom existe en base pour l'admin, et l'interface écrit « Personnel ».
 
 ## Chemins
 

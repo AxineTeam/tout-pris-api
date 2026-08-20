@@ -12,6 +12,14 @@ class Household(models.Model):
         max_length=100,
         help_text="Display name given by the members, such as their family name.",
     )
+    personal_of = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="personal_household",
+        help_text="Account this household is the private space of, empty when it is shared.",
+    )
     created_at = models.DateTimeField(
         auto_now_add=True,
         help_text="When the household was created, usually at the first member's signup.",

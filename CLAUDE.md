@@ -37,7 +37,7 @@ Backend Django du projet Tout Pris. Soit extrêmement concis.
 - `tout_pris/mail.py` : envoi transactionnel via Brevo, exposé comme mailer Django
 - `.env.example` : toutes les variables d'environnement avec une valeur de développement
 - `accounts/` : app du `User` custom, référencé par `AUTH_USER_MODEL` dès la migration initiale
-- `households/` : app du domaine foyer — `Household`, `HouseholdMember`, `Person` — son admin, la création implicite du foyer à l'inscription, et la commande `seed`
+- `households/` : app du domaine foyer — `Household`, `HouseholdMember`, `Person` — son admin, son API, le foyer personnel créé à l'inscription, et la commande `seed`
 - `tests/` : suite pytest-django, une base de test isolée fournie par Django
 - `docs/api/` : conventions de l'API — codes de retour, cloisonnement par foyer, schémas, collections
 - `docs/model/` : besoin fonctionnel derrière le modèle de données, indépendant du framework, et `schema.png`, le diagramme ER généré
