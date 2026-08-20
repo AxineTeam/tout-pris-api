@@ -40,4 +40,6 @@ Supprimer un foyer supprime ses membres et ses personnes : elles n'ont pas d'exi
 
 Supprimer un utilisateur supprime ses appartenances, mais **conserve les personnes** qui lui étaient liées, dont le `user_id` retombe à `NULL`. Un compte fermé ne doit pas faire disparaître les affaires de quelqu'un d'une liste en cours.
 
-Ces règles sont déclarées sur les clés étrangères (`on_delete=CASCADE` et `on_delete=SET_NULL`) et appliquées par l'ORM Django au moment de la suppression. Aucun pragma SQLite n'est à activer : Django active déjà les clés étrangères sur SQLite, et les tests vérifient le comportement en supprimant réellement les lignes plutôt qu'en relisant la déclaration.
+Ces règles sont déclarées sur les clés étrangères (`on_delete=CASCADE` et `on_delete=SET_NULL`) et appliquées par l'ORM Django au moment de la suppression. Aucun pragma SQLite n'est à activer : Django active déjà les clés étrangères, et les tests vérifient le comportement en supprimant réellement les lignes plutôt qu'en relisant la déclaration.
+
+La garantie est donc double, et il vaut mieux le savoir avant d'écrire du SQL à la main : la base refuse une suppression qui laisserait des lignes orphelines, et c'est l'ORM qui sait comment l'éviter en supprimant ou en détachant d'abord. Un `DELETE` brut sur un foyer est rejeté par la base plutôt que d'orpheliner ses personnes.
