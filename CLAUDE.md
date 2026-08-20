@@ -100,6 +100,7 @@ Backend Django du projet Tout Pris. Soit extrêmement concis.
 - Ouvre toujours une PR une fois le code terminé, sans attendre qu'on te le demande
 - La description commence par `Closes #N` : mentionner l'issue autrement la référence sans la fermer, et il reste alors un ticket ouvert sur du travail livré
 - PR empilées : avant de merger celle qui sert de base à une autre, rebascule d'abord l'enfant sur `main`. GitHub refuse de supprimer une branche qui est la base d'une PR ouverte, et tant qu'il ne la supprime pas il ne rebascule pas l'enfant non plus — qui se retrouve avec une base morte. Le rebase-merge aggrave le tout en réécrivant les SHA : le diff de l'enfant devient alors l'inverse du travail déjà mergé
+- Rebasculer l'enfant ne suffit pas : une fois le parent mergé, **rebase aussi la branche enfant sur `main`**. Elle porte encore les commits du parent d'avant la réécriture des SHA, que `main` ne reconnaît plus, et la PR reste `dirty` avec un diff fantôme même si sa base est correcte
 
 ## Tests
 
