@@ -35,6 +35,7 @@ Backend Django du projet Tout Pris. Soit extrêmement concis.
 - `tout_pris/urls.py` : URLconf racine, admin sur `/admin/`, API sur `/api/`, schéma et doc servis par drf-spectacular
 - `tout_pris/views.py` : vues DRF du projet, dont `/api/health/`
 - `tout_pris/mail.py` : envoi transactionnel via Brevo, exposé comme mailer Django
+- `tout_pris/authentication.py` : `SessionAuthentication` de DRF annonçant un en-tête `WWW-Authenticate`, sans quoi une session non authentifiée reçoit `403` au lieu de `401`
 - `.env.example` : toutes les variables d'environnement avec une valeur de développement
 - `accounts/` : app du `User` custom, référencé par `AUTH_USER_MODEL` dès la migration initiale
 - `households/` : app du domaine foyer — `Household`, `HouseholdMember`, `Person` — son admin, son API, le foyer personnel créé à l'inscription, et la commande `seed`

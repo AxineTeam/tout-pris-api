@@ -180,7 +180,7 @@ The production settings live in `docker-compose.prod.yml`: the database is store
 ## Project layout
 
 - `manage.py` — Django entry point
-- `tout_pris/` — project package: `settings.py`, `urls.py` (admin, and the API mounted on `/api/`), `views.py`, `mail.py`, `wsgi.py`, `asgi.py`
+- `tout_pris/` — project package: `settings.py`, `urls.py` (admin, and the API mounted on `/api/`), `views.py`, `mail.py`, `authentication.py`, `wsgi.py`, `asgi.py`
 - `accounts/` — the custom `User` model, referenced by `AUTH_USER_MODEL` since the initial migration
 - `households/` — the household domain: `Household`, `HouseholdMember` and `Person`, their admin and API, the personal household created at signup, and the `seed` command
 - `.env.example` — every environment variable with a development value
