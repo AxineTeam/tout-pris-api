@@ -14,6 +14,8 @@ L'API est servie par Django REST Framework sous le préfixe `/api/`, et sa spéc
 | `409` | Conflit avec une ressource existante |
 | `422` | Corps invalide au sens des schémas |
 
+Une session non authentifiée reçoit bien `401` et non le `403` que DRF renvoie par défaut : DRF ne choisit `401` que si une classe d'authentification annonce un en-tête `WWW-Authenticate`, et `SessionAuthentication` n'en annonce aucun. `tout_pris.authentication.SessionAuthentication` en annonce un, pour que « connecte-toi » se lise sur un seul code quel que soit l'endpoint — allauth répond déjà `401`. Le schéma annoncé est `Session` et non `Basic`, il ne déclenche donc aucune fenêtre d'authentification du navigateur, et une extension de drf-spectacular garde la description `cookieAuth` dans la spécification, que le renommage de la classe lui avait fait perdre.
+
 Le `403` n'est jamais renvoyé. Une ressource qui existe mais que l'appelant n'a pas le droit de voir répond `404`, exactement comme si elle n'existait pas : distinguer les deux cas révélerait l'existence de foyers, de personnes ou de voyages à un tiers.
 
 Les routes du domaine sont donc portées par le chemin du foyer — `/api/households/{household_id}/persons`, `/api/households/{household_id}/trips` — et le cloisonnement est appliqué une fois pour toutes par la couche qui résout le foyer courant, jamais réécrit dans chaque route.

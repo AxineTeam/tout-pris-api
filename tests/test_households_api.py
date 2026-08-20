@@ -49,3 +49,10 @@ def test_the_households_of_other_accounts_are_never_listed(camille):
     listed = signed_in(camille).get(HOUSEHOLDS_URL).json()
 
     assert [entry["name"] for entry in listed] == ["camille"]
+
+
+def test_an_unauthenticated_caller_is_told_to_authenticate(camille):
+    response = Client().get(HOUSEHOLDS_URL)
+
+    assert response.status_code == 401
+    assert response.headers["WWW-Authenticate"] == "Session"

@@ -1,0 +1,11 @@
+from drf_spectacular.authentication import SessionScheme as DRFSessionScheme
+from rest_framework.authentication import SessionAuthentication as DRFSessionAuthentication
+
+
+class SessionAuthentication(DRFSessionAuthentication):
+    def authenticate_header(self, request):
+        return "Session"
+
+
+class SessionScheme(DRFSessionScheme):
+    target_class = "tout_pris.authentication.SessionAuthentication"
