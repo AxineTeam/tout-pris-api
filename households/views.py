@@ -3,7 +3,7 @@ from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.functional import cached_property
-from drf_spectacular.utils import extend_schema, extend_schema_view
+from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
 from rest_framework import generics
 from rest_framework.exceptions import APIException
 from rest_framework.response import Response
@@ -98,6 +98,16 @@ class PersonListCreateView(HouseholdScopedView, generics.ListCreateAPIView):
         return Response(PersonSerializer(person).data, status=201)
 
 
+@extend_schema_view(
+    delete=extend_schema(
+        responses={
+            204: None,
+            409: OpenApiResponse(
+                description="The account of that person is still a member of the household."
+            ),
+        }
+    )
+)
 class PersonDetailView(HouseholdScopedView, generics.RetrieveDestroyAPIView):
     def get_serializer_class(self):
         return PersonUpdateSerializer if self.request.method == "PATCH" else PersonSerializer
@@ -124,6 +134,16 @@ class MemberListView(SharedHouseholdScopedView, generics.ListAPIView):
         return self.household.members.select_related("user").order_by("id")
 
 
+@extend_schema_view(
+    delete=extend_schema(
+        responses={
+            204: None,
+            409: OpenApiResponse(
+                description="The last member cannot leave, the household is deleted instead."
+            ),
+        }
+    )
+)
 class MemberDestroyView(SharedHouseholdScopedView, generics.DestroyAPIView):
     serializer_class = MemberSerializer
 

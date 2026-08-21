@@ -220,6 +220,8 @@ paths:
       responses:
         '204':
           description: No response body
+        '409':
+          description: The last member cannot leave, the household is deleted instead.
   /api/households/{household_id}/persons/:
     get:
       operationId: households_persons_list
@@ -353,6 +355,8 @@ paths:
       responses:
         '204':
           description: No response body
+        '409':
+          description: The account of that person is still a member of the household.
   /api/invitations/accept/:
     post:
       operationId: invitations_accept_create
