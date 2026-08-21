@@ -357,6 +357,30 @@ paths:
           description: No response body
         '409':
           description: The account of that person is still a member of the household.
+  /api/households/{household_id}/persons/{id}/claim/:
+    post:
+      operationId: households_persons_claim_create
+      parameters:
+      - in: path
+        name: household_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - households
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+        '409':
+          description: That person already has an account, or the caller already is
+            someone in this household.
   /api/invitations/accept/:
     post:
       operationId: invitations_accept_create

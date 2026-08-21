@@ -30,11 +30,15 @@ def household(camille):
     return shared
 
 
+def signed_in(user):
+    client = Client()
+    client.force_login(user)
+    return client
+
+
 @pytest.fixture
 def client(camille):
-    signed_in = Client()
-    signed_in.force_login(camille)
-    return signed_in
+    return signed_in(camille)
 
 
 @pytest.fixture
@@ -156,3 +160,57 @@ def test_a_rename_whose_body_is_not_an_object_is_refused(client, household):
     response = client.patch(person_url(household, jeanne), [], content_type="application/json")
 
     assert response.status_code == 400
+
+
+def claim_url(household, person):
+    return f"{person_url(household, person)}claim/"
+
+
+@pytest.fixture
+def sacha(household):
+    user = User.objects.create_user(username="sacha", email="sacha@example.com", first_name="Sacha")
+    HouseholdMember.objects.create(household=household, user=user)
+    return user
+
+
+def test_claiming_a_person_makes_them_the_caller(household, sacha):
+    waiting = Person.objects.create(household=household, name="Papa")
+
+    response = signed_in(sacha).post(claim_url(household, waiting))
+
+    assert response.status_code == 204
+    waiting.refresh_from_db()
+    assert waiting.user == sacha
+    assert household.persons.count() == 2
+
+
+def test_a_person_who_already_has_an_account_is_not_claimed(household, sacha, camille):
+    taken = household.persons.get(user=camille)
+
+    response = signed_in(sacha).post(claim_url(household, taken))
+
+    assert response.status_code == 409
+    taken.refresh_from_db()
+    assert taken.user == camille
+
+
+def test_a_caller_who_already_is_someone_claims_nobody_else(client, household, camille):
+    waiting = Person.objects.create(household=household, name="Papa")
+
+    response = client.post(claim_url(household, waiting))
+
+    assert response.status_code == 409
+    waiting.refresh_from_db()
+    assert waiting.user is None
+
+
+def test_claiming_a_person_of_another_household_is_out_of_reach(client, stranger_household):
+    theirs = Person.objects.create(household=stranger_household, name="Inconnu")
+
+    assert client.post(claim_url(stranger_household, theirs)).status_code == 404
+
+
+def test_claiming_refuses_an_unauthenticated_caller(household):
+    waiting = Person.objects.create(household=household, name="Papa")
+
+    assert Client().post(claim_url(household, waiting)).status_code == 401

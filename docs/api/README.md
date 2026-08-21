@@ -43,6 +43,14 @@ Le corps ne porte que le nom. Le compte lié est en lecture seule dans le schém
 
 Supprimer une personne dont le compte est encore membre du foyer répond `409` : ça retirerait sa représentation à quelqu'un qui a toujours accès, et chaque écran « pour qui » se retrouverait sans lui. Retirer le membre d'abord délie la personne et rend sa suppression possible.
 
+`POST /api/households/{household_id}/persons/{id}/claim/` répond `204` et rattache la personne au compte appelant. C'est l'écran « qui êtes-vous ? » à l'arrivée dans un foyer : l'invité choisit la personne qui l'attendait — « Papa » créé par le foyer avant qu'il ne rejoigne — au lieu qu'une deuxième soit créée à côté d'elle. Rien dans le corps, l'identité vient du chemin et de la session.
+
+Deux refus, tous deux en `409` : une personne qui a déjà un compte, et un appelant qui est déjà quelqu'un dans ce foyer. Le premier protège la représentation d'un autre membre, le second l'invariant « un compte, une personne par foyer » que la base porte déjà — répondre `409` plutôt que laisser passer une violation de contrainte donne à l'appelant une réponse qu'il peut lire.
+
+Un membre peut donc exister sans personne, le temps de choisir : c'est l'état dans lequel l'acceptation d'une invitation le laisse quand elle n'en désigne aucune, et l'écran de choix est ce qui en sort.
+
+Un arrivant que personne n'attendait se crée donc sa personne puis la revendique, en deux appels. Rattacher au passage à la création aurait fait un second chemin d'écriture vers `Person.user` pour épargner une requête, alors que la revendication est déjà la seule porte et qu'elle porte les deux refus.
+
 ## Membres
 
 `GET /api/households/{household_id}/members/` liste qui a accès au foyer, avec l'adresse et le rôle de chaque compte. `DELETE /api/households/{household_id}/members/{id}/` retire un membre ; se retirer soi-même, c'est quitter le foyer, il n'y a pas de route « quitter » distincte pour la même écriture.

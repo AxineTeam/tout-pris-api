@@ -8,6 +8,7 @@ from households.views import (
     InvitationListCreateView,
     MemberDestroyView,
     MemberListView,
+    PersonClaimView,
     PersonDetailView,
     PersonListCreateView,
 )
@@ -20,6 +21,11 @@ urlpatterns = [
         "households/<int:household_id>/persons/<int:pk>/",
         PersonDetailView.as_view(),
         name="person",
+    ),
+    path(
+        "households/<int:household_id>/persons/<int:pk>/claim/",
+        PersonClaimView.as_view(),
+        name="claim-person",
     ),
     path("households/<int:household_id>/members/", MemberListView.as_view(), name="members"),
     path(
