@@ -1,5 +1,4 @@
 import datetime
-import secrets
 
 from django.conf import settings
 from django.db import models
@@ -104,11 +103,10 @@ class Invitation(models.Model):
     email = models.EmailField(
         help_text="Address the invitation was sent to, which may or may not have an account.",
     )
-    token = models.CharField(
+    token_hash = models.CharField(
         max_length=64,
         unique=True,
-        default=secrets.token_urlsafe,
-        help_text="Opaque secret carried by the link, never a guessable identifier.",
+        help_text="SHA-256 of the secret carried by the link, the secret itself is never stored.",
     )
     person = models.ForeignKey(
         Person,
