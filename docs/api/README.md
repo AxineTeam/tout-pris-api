@@ -23,9 +23,35 @@ Le porteur de cette règle est `HouseholdScopedView`, dont dérivent les vues du
 
 Les routes du domaine sont donc portées par le chemin du foyer — `/api/households/{household_id}/persons`, `/api/households/{household_id}/trips` — et le cloisonnement est appliqué une fois pour toutes par la couche qui résout le foyer courant, jamais réécrit dans chaque route.
 
-Cette règle n'a pas encore de porteur dans le code : `GET /api/households/` est la première route du domaine, et elle n'est imbriquée sous aucun foyer. Elle s'applique dès la première ressource qui l'est.
+Les foyers eux-mêmes échappent à cette imbrication : `/api/households/` est la racine du domaine, et sa collection est cloisonnée par l'appartenance de l'appelant plutôt que par un foyer de chemin.
+
+## Foyers
 
 `GET /api/households/` liste les foyers dont l'appelant est membre : son foyer personnel et ceux qu'on lui a partagés. C'est l'écran de sélection décrit dans [`docs/model/household.md`](../model/household.md). Chaque entrée porte `personal`, un booléen, plutôt qu'un nom à afficher pour le foyer personnel : ce nom existe en base pour l'admin, et l'interface écrit « Personnel ».
+
+`POST /api/households/` crée un foyer partagé et répond `201`. Le créateur y est inscrit comme membre `owner` et la `Person` qui le représente est créée dans la même transaction, exactement comme l'inscription le fait pour le foyer personnel : sans elle, il serait membre d'un foyer où il n'existe pour personne. Le corps ne porte que le nom — un foyer personnel ne se crée qu'à l'inscription, et aucun client ne désigne son `personal_of`.
+
+C'est cette route qui débloque le partage : inviter exige un foyer partagé, et rien d'autre n'en produit.
+
+`PATCH` et `DELETE /api/households/{household_id}/` renomment et suppriment un foyer partagé, et supprimer emporte ses membres, ses personnes et ses invitations. Le foyer personnel répond `404` sur les deux : son nom n'est jamais affiché, donc jamais renommé, et il ne disparaît qu'avec le compte dont il est l'espace privé.
+
+## Personnes
+
+CRUD complet sous le foyer : `GET` et `POST /api/households/{household_id}/persons/`, puis `GET`, `PATCH` et `DELETE /api/households/{household_id}/persons/{id}/`. Tous les foyers en ont, le foyer personnel compris.
+
+Le corps ne porte que le nom. Le compte lié est en lecture seule dans le schéma : il est rempli par l'inscription ou par l'acceptation d'une invitation, jamais par un client qui désignerait un compte à rattacher.
+
+Supprimer une personne dont le compte est encore membre du foyer répond `409` : ça retirerait sa représentation à quelqu'un qui a toujours accès, et chaque écran « pour qui » se retrouverait sans lui. Retirer le membre d'abord délie la personne et rend sa suppression possible.
+
+## Membres
+
+`GET /api/households/{household_id}/members/` liste qui a accès au foyer, avec l'adresse et le rôle de chaque compte. `DELETE /api/households/{household_id}/members/{id}/` retire un membre ; se retirer soi-même, c'est quitter le foyer, il n'y a pas de route « quitter » distincte pour la même écriture.
+
+Retirer un membre **conserve sa `Person` et vide son compte**, comme le fait déjà la suppression d'un compte. `Person.user` pointe vers un compte et non vers une appartenance : le laisser rempli rattacherait un non-membre à une personne du foyer. Les affaires de « Papa » restent dans les listes, seul le lien vers le compte disparaît.
+
+Le dernier membre ne peut pas quitter un foyer partagé : la route répond `409`. Le laisser partir abandonnerait en base un foyer que plus personne ne peut ni lire ni supprimer, avec ses personnes et ses futures listes ; supprimer le foyer d'un `DELETE` explicite dit ce que ça détruit, et évite de le détruire par accident en quittant.
+
+Comme pour les invitations, un foyer personnel répond `404` sur ces deux routes, y compris à son propriétaire : la collection n'existe pas, il n'a pas d'autre membre possible que lui.
 
 ## Invitations
 
@@ -54,6 +80,8 @@ Rien du corps ne porte d'identité : les identifiants de ressource viennent du c
 ## Écriture partielle
 
 `PATCH`, pas `PUT`. Le client édite un champ à la fois ; un `PUT` l'obligerait à réémettre une représentation complète, donc à écraser des champs qu'il ne connaît pas. Un champ absent et un `null` explicite laissent tous deux la valeur inchangée, et un corps vide est une requête valide sans effet.
+
+La règle est portée par `PartialWriteSerializer`, dont dérivent les serializers `XUpdate` : il retire du corps les champs à `null` avant la validation, plutôt que de laisser chaque route s'en souvenir.
 
 ## Collections
 

@@ -1,14 +1,32 @@
 from django.urls import path
 
 from households.views import (
-    HouseholdListView,
+    HouseholdDetailView,
+    HouseholdListCreateView,
     InvitationAcceptView,
     InvitationDestroyView,
     InvitationListCreateView,
+    MemberDestroyView,
+    MemberListView,
+    PersonDetailView,
+    PersonListCreateView,
 )
 
 urlpatterns = [
-    path("households/", HouseholdListView.as_view(), name="households"),
+    path("households/", HouseholdListCreateView.as_view(), name="households"),
+    path("households/<int:household_id>/", HouseholdDetailView.as_view(), name="household"),
+    path("households/<int:household_id>/persons/", PersonListCreateView.as_view(), name="persons"),
+    path(
+        "households/<int:household_id>/persons/<int:pk>/",
+        PersonDetailView.as_view(),
+        name="person",
+    ),
+    path("households/<int:household_id>/members/", MemberListView.as_view(), name="members"),
+    path(
+        "households/<int:household_id>/members/<int:pk>/",
+        MemberDestroyView.as_view(),
+        name="member",
+    ),
     path(
         "households/<int:household_id>/invitations/",
         InvitationListCreateView.as_view(),

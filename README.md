@@ -95,6 +95,10 @@ DJANGO_SECRET_KEY=... docker compose -f docker-compose.prod.yml up -d
 
 - `GET /api/health` — health check
 - `GET /api/households/` — the households the caller belongs to, their personal one first
+- `POST /api/households/` — create a shared household, joined as its owner
+- `/api/households/{household_id}/` — rename or delete a shared household
+- `/api/households/{household_id}/persons/` — the people of a household, created, renamed and deleted
+- `/api/households/{household_id}/members/` — who has access to a shared household, and removing one of them
 - `/api/households/{household_id}/invitations/` — invite an address into a shared household, list the pending invitations, cancel one
 - `POST /api/invitations/accept/` — join a household with the token received by email
 - `/api/auth/browser/v1/` — headless authentication: signup, login, session, email verification, password reset, external providers

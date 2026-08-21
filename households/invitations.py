@@ -8,8 +8,8 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 
 from accounts.models import User
+from households.memberships import display_name_of
 from households.models import HouseholdMember, Invitation, Person
-from households.signals import display_name_of
 
 
 def hashed(token):

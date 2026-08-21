@@ -66,7 +66,17 @@ Le membre créé porte le rôle `owner`. Aucun droit n'en découle aujourd'hui �
 
 La vérification de l'adresse email est obligatoire et intervient **après** cette création : le compte, son foyer et sa personne existent dès l'inscription, alors que la session ne s'ouvre qu'une fois l'adresse confirmée. Un compte jamais confirmé laisse donc un foyer vide en base, sans aucune conséquence fonctionnelle.
 
-Le second membre d'un foyer partagé arrive par l'invitation, qui reste à construire. Un foyer personnel, lui, n'en a jamais qu'un.
+Le second membre d'un foyer partagé arrive par l'invitation. Un foyer personnel, lui, n'en a jamais qu'un.
+
+## Cycle de vie d'un foyer partagé
+
+Un foyer partagé se crée à la demande, et son créateur y entre par le même chemin qu'un compte dans son foyer personnel : le foyer, l'appartenance `owner` et la personne qui le représente sont écrits dans la même transaction. C'est la seule création de foyer que l'API expose ; le foyer personnel, lui, n'est créé que par l'inscription.
+
+On le quitte en retirant son appartenance, et retirer celle de quelqu'un d'autre est la même écriture — aucun droit ne les distingue tant que le rôle ne porte rien.
+
+Le retrait **délie la personne sans la supprimer** : son `user` retombe à `NULL` et elle reste dans le foyer, exactement comme lors de la suppression d'un compte. La différence est que l'ORM ne peut rien en dire ici, il n'y a pas de ligne supprimée dont une clé étrangère dépendrait : c'est le code du retrait qui délie, et un test qui le garde.
+
+Le dernier membre ne peut pas partir. Un foyer partagé sans membre ne serait plus lisible par personne, et ses personnes comme ses futures listes resteraient en base sans porte d'entrée ; supprimer le foyer reste possible et dit clairement ce qu'il emporte.
 
 ## Suppressions
 
