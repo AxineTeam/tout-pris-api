@@ -139,7 +139,7 @@ class MemberListView(SharedHouseholdScopedView, generics.ListAPIView):
         responses={
             204: None,
             409: OpenApiResponse(
-                description="The last member cannot leave, the household is deleted instead."
+                description="The last member cannot leave, delete the household instead."
             ),
         }
     )
