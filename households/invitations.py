@@ -66,11 +66,11 @@ def accept(invitation, user):
         return household
 
     HouseholdMember.objects.create(household=household, user=user)
-    claim_person(invitation, user)
+    attach_designated_person(invitation, user)
     return household
 
 
-def claim_person(invitation, user):
+def attach_designated_person(invitation, user):
     person = invitation.person
     if person and person.household_id == invitation.household_id and person.user_id is None:
         person.user = user
