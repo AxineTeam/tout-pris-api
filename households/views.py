@@ -127,6 +127,34 @@ class PersonDetailView(HouseholdScopedView, generics.RetrieveDestroyAPIView):
         person.delete()
 
 
+@extend_schema_view(
+    post=extend_schema(
+        request=None,
+        responses={
+            204: None,
+            409: OpenApiResponse(
+                description=(
+                    "That person already has an account, "
+                    "or the caller already is someone in this household."
+                )
+            ),
+        },
+    )
+)
+class PersonClaimView(HouseholdScopedView):
+    serializer_class = PersonSerializer
+
+    def post(self, request, *args, **kwargs):
+        person = get_object_or_404(self.household.persons, pk=self.kwargs["pk"])
+        if person.user_id:
+            raise Conflict("That person already has an account.")
+        if self.household.persons.filter(user=request.user).exists():
+            raise Conflict("The caller already is someone in this household.")
+        person.user = request.user
+        person.save()
+        return Response(status=204)
+
+
 class MemberListView(SharedHouseholdScopedView, generics.ListAPIView):
     serializer_class = MemberSerializer
 
