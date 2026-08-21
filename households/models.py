@@ -1,5 +1,9 @@
+import datetime
+import secrets
+
 from django.conf import settings
 from django.db import models
+from django.utils import timezone
 
 
 class HouseholdRole(models.TextChoices):
@@ -86,3 +90,66 @@ class Person(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class Invitation(models.Model):
+    LIFETIME = datetime.timedelta(days=7)
+
+    household = models.ForeignKey(
+        Household,
+        on_delete=models.CASCADE,
+        related_name="invitations",
+        help_text="Shared household the invited address is offered membership of.",
+    )
+    email = models.EmailField(
+        help_text="Address the invitation was sent to, which may or may not have an account.",
+    )
+    token = models.CharField(
+        max_length=64,
+        unique=True,
+        default=secrets.token_urlsafe,
+        help_text="Opaque secret carried by the link, never a guessable identifier.",
+    )
+    person = models.ForeignKey(
+        Person,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="invitations",
+        help_text="Person the guest is expected to be, so accepting fills that person in.",
+    )
+    invited_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="sent_invitations",
+        help_text="Member who sent the invitation, emptied rather than cascading if they leave.",
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        help_text="When the invitation was created and its email sent.",
+    )
+    expires_at = models.DateTimeField(
+        help_text="When the token stops being accepted, a week after it was created.",
+    )
+    accepted_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="When the invitation was accepted, which spends the single-use token.",
+    )
+    accepted_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="accepted_invitations",
+        help_text="Account that accepted the invitation, which is not always the invited address.",
+    )
+
+    def save(self, *args, **kwargs):
+        if not self.expires_at:
+            self.expires_at = timezone.now() + self.LIFETIME
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.email} to {self.household}"

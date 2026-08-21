@@ -2,7 +2,7 @@ import pytest
 from django.db import IntegrityError
 
 from accounts.models import User
-from households.models import Household, HouseholdMember, HouseholdRole, Person
+from households.models import Household, HouseholdMember, HouseholdRole, Invitation, Person
 
 pytestmark = pytest.mark.django_db
 
@@ -83,3 +83,11 @@ def test_deleting_a_user_keeps_the_person_and_clears_the_account_link(household,
 
     assert person.user_id is None
     assert HouseholdMember.objects.count() == 0
+
+
+def test_an_invitation_is_named_after_its_address_and_household(household, user):
+    invitation = Invitation.objects.create(
+        household=household, email="guest@example.com", invited_by=user
+    )
+
+    assert str(invitation) == "guest@example.com to Chez nous"

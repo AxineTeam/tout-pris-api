@@ -95,6 +95,8 @@ DJANGO_SECRET_KEY=... docker compose -f docker-compose.prod.yml up -d
 
 - `GET /api/health` — health check
 - `GET /api/households/` — the households the caller belongs to, their personal one first
+- `/api/households/{household_id}/invitations/` — invite an address into a shared household, list the pending invitations, cancel one
+- `POST /api/invitations/accept/` — join a household with the token received by email
 - `/api/auth/browser/v1/` — headless authentication: signup, login, session, email verification, password reset, external providers
 - `/accounts/` — OAuth callbacks of the external providers (no page is rendered)
 - `GET /api/docs/` — interactive documentation rendered by drf-spectacular
@@ -182,7 +184,7 @@ The production settings live in `docker-compose.prod.yml`: the database is store
 - `manage.py` — Django entry point
 - `tout_pris/` — project package: `settings.py`, `urls.py` (admin, and the API mounted on `/api/`), `views.py`, `mail.py`, `authentication.py`, `wsgi.py`, `asgi.py`
 - `accounts/` — the custom `User` model, referenced by `AUTH_USER_MODEL` since the initial migration
-- `households/` — the household domain: `Household`, `HouseholdMember` and `Person`, their admin and API, the personal household created at signup, and the `seed` command
+- `households/` — the household domain: `Household`, `HouseholdMember`, `Person` and `Invitation`, their admin and API, the personal household created at signup, and the `seed` command
 - `.env.example` — every environment variable with a development value
 - `tests/` — pytest-django test suite
 - `docs/api/` — the API conventions: status codes, household scoping, schemas, collections

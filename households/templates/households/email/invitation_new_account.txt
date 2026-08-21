@@ -1,0 +1,9 @@
+Hello,
+
+{{ inviter }} invites you to join the household {{ household }} on Tout Pris, so you can prepare your trips together.
+
+Create your account and follow this link to join:
+
+{{ url }}
+
+The link works once and expires on {{ expires_at }}. If you were not expecting this invitation, ignore this message: nothing happens until you follow the link.

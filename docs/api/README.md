@@ -10,6 +10,7 @@ L'API est servie par Django REST Framework sous le préfixe `/api/`, et sa spéc
 | `201` | Création d'une ressource |
 | `204` | Action réussie sans corps |
 | `401` | Requête non authentifiée |
+| `429` | Limite d'envoi ou de débit atteinte |
 | `404` | Ressource inexistante **ou** appartenant à un autre foyer |
 | `409` | Conflit avec une ressource existante |
 | `422` | Corps invalide au sens des schémas |
@@ -18,11 +19,25 @@ Une session non authentifiée reçoit bien `401` et non le `403` que DRF renvoie
 
 Le `403` n'est jamais renvoyé. Une ressource qui existe mais que l'appelant n'a pas le droit de voir répond `404`, exactement comme si elle n'existait pas : distinguer les deux cas révélerait l'existence de foyers, de personnes ou de voyages à un tiers.
 
+Le porteur de cette règle est `HouseholdScopedView`, dont dérivent les vues du domaine : elle résout le foyer du chemin **parmi ceux dont l'appelant est membre**, et répond `404` sinon. Le cloisonnement tient au type de la vue et non à la vigilance de chaque route — une route qui oublierait d'en hériter se remarquerait, alors qu'un filtre oublié dans un `get_queryset` ne se remarque pas.
+
 Les routes du domaine sont donc portées par le chemin du foyer — `/api/households/{household_id}/persons`, `/api/households/{household_id}/trips` — et le cloisonnement est appliqué une fois pour toutes par la couche qui résout le foyer courant, jamais réécrit dans chaque route.
 
 Cette règle n'a pas encore de porteur dans le code : `GET /api/households/` est la première route du domaine, et elle n'est imbriquée sous aucun foyer. Elle s'applique dès la première ressource qui l'est.
 
 `GET /api/households/` liste les foyers dont l'appelant est membre : son foyer personnel et ceux qu'on lui a partagés. C'est l'écran de sélection décrit dans [`docs/model/household.md`](../model/household.md). Chaque entrée porte `personal`, un booléen, plutôt qu'un nom à afficher pour le foyer personnel : ce nom existe en base pour l'admin, et l'interface écrit « Personnel ».
+
+## Invitations
+
+Un membre invite une adresse dans un foyer partagé, l'invité suit le lien reçu et rejoint. Les routes sont `POST` et `GET /api/households/{household_id}/invitations/`, `DELETE /api/households/{household_id}/invitations/{id}/`, et `POST /api/invitations/accept/`.
+
+Inviter répond `204` sans corps, **y compris quand rien n'est créé**. Une adresse déjà titulaire d'un compte, une adresse inconnue et une adresse déjà membre du foyer donnent la même réponse au bit près : distinguer les cas ferait de la route un oracle d'énumération d'adresses.
+
+Un foyer personnel répond `404` sur ces trois routes, y compris à son propriétaire : la collection n'existe pas, il n'a pas d'autre membre possible que lui.
+
+L'acceptation fait exception au chemin porté par le foyer, l'appelant n'étant justement pas encore membre. C'est le jeton qui porte l'autorisation, et il voyage dans le corps plutôt que dans l'URL — un secret dans un chemin se retrouve dans les journaux du serveur, l'historique du navigateur et l'en-tête `Referer`. allauth fait le même choix pour ses clés de vérification d'email et de réinitialisation.
+
+Le raisonnement complet et les décisions du flux sont dans [`docs/model/invitation.md`](../model/invitation.md).
 
 ## Chemins
 
