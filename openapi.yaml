@@ -36,6 +36,77 @@ paths:
                 items:
                   $ref: '#/components/schemas/Household'
           description: ''
+    post:
+      operationId: households_create
+      tags:
+      - households
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HouseholdCreate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/HouseholdCreate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/HouseholdCreate'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Household'
+          description: ''
+  /api/households/{household_id}/:
+    patch:
+      operationId: households_partial_update
+      parameters:
+      - in: path
+        name: household_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - households
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedHouseholdUpdate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedHouseholdUpdate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedHouseholdUpdate'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Household'
+          description: ''
+    delete:
+      operationId: households_destroy
+      parameters:
+      - in: path
+        name: household_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - households
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/households/{household_id}/invitations/:
     get:
       operationId: households_invitations_list
@@ -83,15 +154,187 @@ paths:
       security:
       - cookieAuth: []
       responses:
+        '204':
+          description: No response body
+  /api/households/{household_id}/invitations/{id}/:
+    delete:
+      operationId: households_invitations_destroy
+      parameters:
+      - in: path
+        name: household_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - households
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/households/{household_id}/members/:
+    get:
+      operationId: households_members_list
+      parameters:
+      - in: path
+        name: household_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - households
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Member'
+          description: ''
+  /api/households/{household_id}/members/{id}/:
+    delete:
+      operationId: households_members_destroy
+      parameters:
+      - in: path
+        name: household_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - households
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/households/{household_id}/persons/:
+    get:
+      operationId: households_persons_list
+      parameters:
+      - in: path
+        name: household_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - households
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Person'
+          description: ''
+    post:
+      operationId: households_persons_create
+      parameters:
+      - in: path
+        name: household_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - households
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PersonCreate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PersonCreate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PersonCreate'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
         '201':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/InvitationCreate'
+                $ref: '#/components/schemas/Person'
           description: ''
-  /api/households/{household_id}/invitations/{id}/:
+  /api/households/{household_id}/persons/{id}/:
+    get:
+      operationId: households_persons_retrieve
+      parameters:
+      - in: path
+        name: household_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - households
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Person'
+          description: ''
+    patch:
+      operationId: households_persons_partial_update
+      parameters:
+      - in: path
+        name: household_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - households
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPersonUpdate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedPersonUpdate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPersonUpdate'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Person'
+          description: ''
     delete:
-      operationId: households_invitations_destroy
+      operationId: households_persons_destroy
       parameters:
       - in: path
         name: household_id
@@ -162,6 +405,15 @@ components:
       - id
       - name
       - personal
+    HouseholdCreate:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Display name given by the members, such as their family name.
+          maxLength: 100
+      required:
+      - name
     Invitation:
       type: object
       properties:
@@ -216,6 +468,86 @@ components:
             person in.
       required:
       - email
+    Member:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user:
+          type: integer
+          readOnly: true
+          description: Account granted access to the household, its people, its catalog
+            and its trips.
+        email:
+          type: string
+          format: email
+          readOnly: true
+        role:
+          allOf:
+          - $ref: '#/components/schemas/RoleEnum'
+          readOnly: true
+          description: |-
+            Reserved for a later differentiation of rights: every member can do everything.
+
+            * `owner` - Owner
+            * `member` - Member
+      required:
+      - email
+      - id
+      - role
+      - user
+    PatchedHouseholdUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Display name given by the members, such as their family name.
+          maxLength: 100
+    PatchedPersonUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Display name shown in every picker asking who an item is for.
+          maxLength: 100
+    Person:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          description: Display name shown in every picker asking who an item is for.
+          maxLength: 100
+        user:
+          type: integer
+          readOnly: true
+          nullable: true
+          description: Account of the person when they have one, empty for a child
+            or a guest.
+      required:
+      - id
+      - name
+      - user
+    PersonCreate:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Display name shown in every picker asking who an item is for.
+          maxLength: 100
+      required:
+      - name
+    RoleEnum:
+      enum:
+      - owner
+      - member
+      type: string
+      description: |-
+        * `owner` - Owner
+        * `member` - Member
   securitySchemes:
     cookieAuth:
       type: apiKey
