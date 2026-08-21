@@ -1,3 +1,6 @@
+import hashlib
+import secrets
+
 from django.conf import settings
 from django.core.mail import EmailMessage
 from django.db import transaction
@@ -9,25 +12,34 @@ from households.models import HouseholdMember, Invitation, Person
 from households.signals import display_name_of
 
 
+def hashed(token):
+    return hashlib.sha256(token.encode()).hexdigest()
+
+
 @transaction.atomic
 def invite(household, email, invited_by, person=None):
     Invitation.objects.filter(household=household, email=email, accepted_at=None).delete()
     if HouseholdMember.objects.filter(household=household, user__email=email).exists():
         return None
+    token = secrets.token_urlsafe()
     invitation = Invitation.objects.create(
-        household=household, email=email, invited_by=invited_by, person=person
+        household=household,
+        email=email,
+        invited_by=invited_by,
+        person=person,
+        token_hash=hashed(token),
     )
-    transaction.on_commit(lambda: send_invitation(invitation))
+    transaction.on_commit(lambda: send_invitation(invitation, token))
     return invitation
 
 
-def send_invitation(invitation):
+def send_invitation(invitation, token):
     known_account = User.objects.filter(email=invitation.email).exists()
     template = "invitation_existing_account" if known_account else "invitation_new_account"
     context = {
         "household": invitation.household.name,
         "inviter": display_name_of(invitation.invited_by),
-        "url": settings.INVITATION_FRONTEND_URL.format(key=invitation.token),
+        "url": settings.INVITATION_FRONTEND_URL.format(key=token),
         "expires_at": invitation.expires_at.date().isoformat(),
     }
     EmailMessage(
@@ -39,7 +51,7 @@ def send_invitation(invitation):
 
 def pending_invitation(token):
     return Invitation.objects.filter(
-        token=token, accepted_at=None, expires_at__gt=timezone.now()
+        token_hash=hashed(token), accepted_at=None, expires_at__gt=timezone.now()
     ).first()
 
 

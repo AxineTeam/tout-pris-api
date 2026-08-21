@@ -1,6 +1,9 @@
 import datetime
+import hashlib
+import re
 
 import pytest
+from django.conf import settings
 from django.core import mail
 from django.test import Client
 from django.utils import timezone
@@ -13,6 +16,11 @@ pytestmark = pytest.mark.django_db
 
 ACCEPT_URL = "/api/invitations/accept/"
 GUEST_EMAIL = "guest@example.com"
+
+
+def token_from_last_email():
+    prefix = settings.INVITATION_FRONTEND_URL.format(key="")
+    return re.findall(rf"{prefix}(\S+)", mail.outbox[-1].body)[-1]
 
 
 def invitations_url(household):
@@ -68,9 +76,11 @@ def test_inviting_an_address_sends_it_a_link_holding_the_token(send_invitation):
     response = send_invitation()
 
     assert response.status_code == 204
-    invitation = Invitation.objects.get()
     assert [message.to for message in mail.outbox] == [[GUEST_EMAIL]]
-    assert invitation.token in mail.outbox[0].body
+    assert (
+        Invitation.objects.get().token_hash
+        == hashlib.sha256(token_from_last_email().encode()).hexdigest()
+    )
 
 
 def test_the_invitation_expires_a_week_after_it_was_sent(send_invitation):
@@ -117,12 +127,12 @@ def test_inviting_a_member_of_the_household_again_creates_nothing(send_invitatio
 
 def test_inviting_the_same_address_again_replaces_the_pending_invitation(send_invitation):
     send_invitation()
-    first = Invitation.objects.get().token
+    first = token_from_last_email()
 
     send_invitation()
 
     assert Invitation.objects.count() == 1
-    assert Invitation.objects.get().token != first
+    assert token_from_last_email() != first
 
 
 def test_a_pending_invitation_is_listed_for_its_household(send_invitation, signed_in):
@@ -156,7 +166,7 @@ def test_the_invitations_of_another_household_are_out_of_reach(signed_in):
 def test_accepting_makes_the_guest_a_member_of_the_household(send_invitation, signed_in, guest):
     _, household = signed_in
     send_invitation()
-    token = Invitation.objects.get().token
+    token = token_from_last_email()
 
     response = signed_in_client(guest).post(
         ACCEPT_URL, {"token": token}, content_type="application/json"
@@ -170,7 +180,7 @@ def test_accepting_makes_the_guest_a_member_of_the_household(send_invitation, si
 
 def test_accepting_spends_the_token(send_invitation, guest):
     send_invitation()
-    token = Invitation.objects.get().token
+    token = token_from_last_email()
     client = signed_in_client(guest)
     client.post(ACCEPT_URL, {"token": token}, content_type="application/json")
 
@@ -189,12 +199,13 @@ def test_an_unknown_token_is_refused(guest):
 
 def test_an_expired_token_is_refused(send_invitation, guest):
     send_invitation()
+    token = token_from_last_email()
     invitation = Invitation.objects.get()
     invitation.expires_at = timezone.now() - datetime.timedelta(seconds=1)
     invitation.save()
 
     response = signed_in_client(guest).post(
-        ACCEPT_URL, {"token": invitation.token}, content_type="application/json"
+        ACCEPT_URL, {"token": token}, content_type="application/json"
     )
 
     assert response.status_code == 404
@@ -206,7 +217,7 @@ def test_accepting_fills_in_the_person_the_guest_was_expected_to_be(
     _, household = signed_in
     waiting = Person.objects.create(household=household, name="Sacha")
     send_invitation(person=waiting.pk)
-    token = Invitation.objects.get().token
+    token = token_from_last_email()
 
     signed_in_client(guest).post(ACCEPT_URL, {"token": token}, content_type="application/json")
 
@@ -215,24 +226,37 @@ def test_accepting_fills_in_the_person_the_guest_was_expected_to_be(
     assert household.persons.filter(user=guest).count() == 1
 
 
-def test_a_person_of_another_household_cannot_be_named(send_invitation):
+def test_a_person_of_another_household_is_refused_like_one_that_does_not_exist(send_invitation):
     stranger = Person.objects.create(
         household=Household.objects.create(name="Chez les autres"), name="Inconnu"
     )
 
-    response = send_invitation(person=stranger.pk)
+    missing = stranger.pk + 10_000
 
-    assert response.status_code == 400
+    refused = send_invitation(person=stranger.pk)
+    unknown = send_invitation(person=missing)
+
+    assert refused.status_code == unknown.status_code == 400
+    assert refused.json() == {"person": [f'Invalid pk "{stranger.pk}" - object does not exist.']}
+    assert unknown.json() == {"person": [f'Invalid pk "{missing}" - object does not exist.']}
     assert not Invitation.objects.exists()
+
+
+def test_the_token_is_never_stored(send_invitation):
+    send_invitation()
+
+    stored = Invitation.objects.values().get()
+
+    assert token_from_last_email() not in str(stored)
 
 
 def test_a_member_who_accepts_again_stays_a_single_member(send_invitation, signed_in, member):
     user, household = member
     send_invitation()
-    invitation = Invitation.objects.get()
+    token = token_from_last_email()
 
     response = signed_in_client(user).post(
-        ACCEPT_URL, {"token": invitation.token}, content_type="application/json"
+        ACCEPT_URL, {"token": token}, content_type="application/json"
     )
 
     assert response.status_code == 200
@@ -253,7 +277,7 @@ def sign_up_the_guest():
 def test_a_guest_who_signs_up_to_answer_keeps_their_personal_household(send_invitation, signed_in):
     _, household = signed_in
     send_invitation()
-    token = Invitation.objects.get().token
+    token = token_from_last_email()
     client = sign_up_the_guest()
 
     client.post(ACCEPT_URL, {"token": token}, content_type="application/json")
@@ -271,7 +295,7 @@ def test_a_guest_who_already_had_a_shared_household_keeps_it(send_invitation, si
     HouseholdMember.objects.create(household=own, user=guest)
     Person.objects.create(household=own, user=guest, name="Sacha")
     send_invitation()
-    token = Invitation.objects.get().token
+    token = token_from_last_email()
 
     signed_in_client(guest).post(ACCEPT_URL, {"token": token}, content_type="application/json")
 

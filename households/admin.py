@@ -45,4 +45,4 @@ class InvitationAdmin(admin.ModelAdmin):
     list_filter = ["household"]
     search_fields = ["email", "household__name"]
     autocomplete_fields = ["household", "person", "invited_by", "accepted_by"]
-    readonly_fields = ["token", "created_at"]
+    readonly_fields = ["token_hash", "created_at"]

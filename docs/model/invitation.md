@@ -8,9 +8,15 @@ Un membre saisit une adresse, l'invité reçoit un lien, il le suit et rejoint l
 
 ## La table
 
-`Invitation` porte le foyer partagé, l'adresse invitée, un jeton, l'auteur de l'invitation, une date d'expiration, et — une fois l'invitation acceptée — la date et le compte qui l'ont acceptée. Elle porte aussi une `Person` optionnelle, expliquée plus bas.
+`Invitation` porte le foyer partagé, l'adresse invitée, l'empreinte d'un jeton, l'auteur de l'invitation, une date d'expiration, et — une fois l'invitation acceptée — la date et le compte qui l'ont acceptée. Elle porte aussi une `Person` optionnelle, expliquée plus bas.
 
-Le `token` est un secret opaque tiré par `secrets.token_urlsafe`, pas un identifiant devinable : quiconque le détient rejoint le foyer, il vaut donc un mot de passe à usage unique. Il est unique en base, et `accepted_at` le neutralise après usage.
+Le jeton est un secret opaque tiré par `secrets.token_urlsafe`, pas un identifiant devinable : quiconque le détient rejoint le foyer, il vaut donc un mot de passe à usage unique. `accepted_at` le neutralise après usage.
+
+**Il n'est jamais stocké.** La base ne garde que son empreinte SHA-256, unique et indexée, et le secret ne vit qu'en mémoire le temps de construire l'URL du message. Le laisser en clair suffirait à n'importe quel compte d'administration ouvrant une invitation en attente pour rejoindre un foyer dont il n'est pas membre — un mot de passe à usage unique ne se stocke pas plus en clair que les autres.
+
+C'est aussi pour cela que le jeton n'est pas produit par un `default` sur le modèle : le faire tirer par Django au moment d'écrire, c'est exactement ce qui force sa persistance. Il est tiré par le code qui invite, qui range l'empreinte et transmet la valeur claire à l'envoi.
+
+SHA-256 sans sel ni étirement suffit, contrairement à un mot de passe : 256 bits tirés au hasard ne s'attaquent ni par dictionnaire ni par force brute, et argon2 est fait pour les secrets à faible entropie. La recherche à l'acceptation reste une égalité exacte sur une colonne indexée.
 
 L'expiration est d'une semaine. Une invitation qui traîne dans une boîte pendant des mois est une porte ouverte que personne ne surveille.
 
@@ -31,6 +37,8 @@ C'est `404` et non une erreur de validation parce que la collection n'existe pas
 Le foyer partagé contient déjà des `Person` sans compte, et l'invité correspond souvent à l'une d'elles, déjà créée sous le nom « Papa ». L'invitation peut donc désigner cette personne, et l'acceptation y inscrit le compte au lieu d'en créer une deuxième.
 
 C'est l'inviteur qui choisit, parce que c'est lui qui sait que l'adresse correspond à « Papa » : l'invité, lui, ne connaît pas les personnes du foyer avant d'y entrer, et lui demander de se reconnaître dans une liste lui montrerait la composition d'un foyer qu'il n'a pas encore rejoint.
+
+La personne désignée est cherchée **parmi celles du foyer**, et non validée après coup : une personne d'un autre foyer est alors refusée dans les mêmes termes qu'une personne inexistante. Distinguer les deux permettrait d'énumérer les identifiants des personnes des foyers d'autrui, ce que la règle « `404` et jamais `403` » interdit partout ailleurs.
 
 Le rattachement est vérifié au moment d'accepter, pas seulement au moment d'inviter : entre les deux, la personne a pu être supprimée, changer de foyer ou recevoir un compte. Si l'une de ces conditions n'est plus remplie, l'acceptation crée une `Person` comme si aucune n'avait été désignée, plutôt que d'échouer sur un détail que l'invité ne peut pas corriger.
 

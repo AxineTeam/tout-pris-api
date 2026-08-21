@@ -27,10 +27,12 @@ class InvitationCreateSerializer(serializers.ModelSerializer):
         model = Invitation
         fields = ["email", "person"]
 
-    def validate_person(self, person):
-        if person.household_id != self.context["household"].pk:
-            raise serializers.ValidationError("This person belongs to another household.")
-        return person
+    def get_fields(self):
+        fields = super().get_fields()
+        household = self.context.get("household")
+        if household:
+            fields["person"].queryset = household.persons.all()
+        return fields
 
 
 class InvitationAcceptSerializer(serializers.Serializer):
