@@ -221,7 +221,7 @@ paths:
         '204':
           description: No response body
         '409':
-          description: The last member cannot leave, the household is deleted instead.
+          description: The last member cannot leave, delete the household instead.
   /api/households/{household_id}/persons/:
     get:
       operationId: households_persons_list
