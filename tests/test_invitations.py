@@ -347,16 +347,14 @@ def test_a_personal_household_has_no_invitations_to_speak_of(member):
 def test_a_returning_member_is_offered_the_person_they_left_behind(
     send_invitation, signed_in, guest
 ):
-    _, household = signed_in
+    client, household = signed_in
     waiting = Person.objects.create(household=household, name="Papa")
     send_invitation(person=waiting.pk)
     signed_in_client(guest).post(
         ACCEPT_URL, {"token": token_from_last_email()}, content_type="application/json"
     )
-    HouseholdMember.objects.get(household=household, user=guest).delete()
-    waiting.refresh_from_db()
-    waiting.user = None
-    waiting.save()
+    membership = HouseholdMember.objects.get(household=household, user=guest)
+    client.delete(f"/api/households/{household.pk}/members/{membership.pk}/")
 
     send_invitation()
     signed_in_client(guest).post(
