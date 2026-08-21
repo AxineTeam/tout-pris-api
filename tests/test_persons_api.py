@@ -210,6 +210,14 @@ def test_claiming_a_person_of_another_household_is_out_of_reach(client, stranger
     assert client.post(claim_url(stranger_household, theirs)).status_code == 404
 
 
+def test_claiming_a_person_of_another_household_through_our_own_is_refused(
+    client, household, stranger_household
+):
+    theirs = Person.objects.create(household=stranger_household, name="Inconnu")
+
+    assert client.post(claim_url(household, theirs)).status_code == 404
+
+
 def test_claiming_refuses_an_unauthenticated_caller(household):
     waiting = Person.objects.create(household=household, name="Papa")
 
