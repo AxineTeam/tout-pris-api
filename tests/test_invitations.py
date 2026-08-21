@@ -163,7 +163,9 @@ def test_the_invitations_of_another_household_are_out_of_reach(signed_in):
     assert client.post(invitations_url(stranger), {"email": GUEST_EMAIL}).status_code == 404
 
 
-def test_accepting_makes_the_guest_a_member_of_the_household(send_invitation, signed_in, guest):
+def test_accepting_makes_the_guest_a_member_without_choosing_who_they_are(
+    send_invitation, signed_in, guest
+):
     _, household = signed_in
     send_invitation()
     token = token_from_last_email()
@@ -175,7 +177,7 @@ def test_accepting_makes_the_guest_a_member_of_the_household(send_invitation, si
     assert response.status_code == 200
     assert response.json() == {"id": household.pk, "name": household.name, "personal": False}
     assert HouseholdMember.objects.filter(household=household, user=guest).exists()
-    assert household.persons.filter(user=guest).exists()
+    assert not household.persons.filter(user=guest).exists()
 
 
 def test_accepting_spends_the_token(send_invitation, guest):
@@ -340,3 +342,34 @@ def test_a_personal_household_has_no_invitations_to_speak_of(member):
         ).status_code
         == 404
     )
+
+
+def test_a_returning_member_is_offered_the_person_they_left_behind(
+    send_invitation, signed_in, guest
+):
+    _, household = signed_in
+    waiting = Person.objects.create(household=household, name="Papa")
+    send_invitation(person=waiting.pk)
+    signed_in_client(guest).post(
+        ACCEPT_URL, {"token": token_from_last_email()}, content_type="application/json"
+    )
+    HouseholdMember.objects.get(household=household, user=guest).delete()
+    waiting.refresh_from_db()
+    waiting.user = None
+    waiting.save()
+
+    send_invitation()
+    signed_in_client(guest).post(
+        ACCEPT_URL, {"token": token_from_last_email()}, content_type="application/json"
+    )
+
+    assert [person.name for person in household.persons.all()] == ["Camille", "Papa"]
+
+    claimed = signed_in_client(guest).post(
+        f"/api/households/{household.pk}/persons/{waiting.pk}/claim/"
+    )
+
+    assert claimed.status_code == 204
+    waiting.refresh_from_db()
+    assert waiting.user == guest
+    assert household.persons.count() == 2

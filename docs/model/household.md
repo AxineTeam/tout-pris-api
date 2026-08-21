@@ -68,6 +68,8 @@ La vérification de l'adresse email est obligatoire et intervient **après** cet
 
 Le second membre d'un foyer partagé arrive par l'invitation. Un foyer personnel, lui, n'en a jamais qu'un.
 
+Ce second membre n'est pas une personne pour autant : rejoindre un foyer n'y crée personne. Il choisit qui il est parmi les personnes déjà là, ou l'invitation l'a choisi pour lui. Une appartenance sans personne est donc un état normal et transitoire, et non un accident à réparer.
+
 ## Cycle de vie d'un foyer partagé
 
 Un foyer partagé se crée à la demande, et son créateur y entre par le même chemin qu'un compte dans son foyer personnel : le foyer, l'appartenance `owner` et la personne qui le représente sont écrits dans la même transaction. C'est la seule création de foyer que l'API expose ; le foyer personnel, lui, n'est créé que par l'inscription.
