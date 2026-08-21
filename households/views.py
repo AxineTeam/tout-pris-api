@@ -146,12 +146,13 @@ class PersonClaimView(HouseholdScopedView):
 
     def post(self, request, *args, **kwargs):
         person = get_object_or_404(self.household.persons, pk=self.kwargs["pk"])
-        if person.user_id:
-            raise Conflict("That person already has an account.")
         if self.household.persons.filter(user=request.user).exists():
             raise Conflict("The caller already is someone in this household.")
-        person.user = request.user
-        person.save()
+        claimed = self.household.persons.filter(pk=person.pk, user__isnull=True).update(
+            user=request.user
+        )
+        if not claimed:
+            raise Conflict("That person already has an account.")
         return Response(status=204)
 
 
