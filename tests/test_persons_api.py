@@ -148,3 +148,11 @@ def test_the_person_endpoints_refuse_an_unauthenticated_caller(household):
 
     assert anonymous.get(persons_url(household)).status_code == 401
     assert anonymous.post(persons_url(household), {"name": "Jeanne"}).status_code == 401
+
+
+def test_a_rename_whose_body_is_not_an_object_is_refused(client, household):
+    jeanne = Person.objects.create(household=household, name="Jeanne")
+
+    response = client.patch(person_url(household, jeanne), [], content_type="application/json")
+
+    assert response.status_code == 400

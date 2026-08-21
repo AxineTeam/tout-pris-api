@@ -167,3 +167,12 @@ def test_creating_a_household_refuses_an_unauthenticated_caller():
     response = Client().post(HOUSEHOLDS_URL, {"name": "Famille Martin"})
 
     assert response.status_code == 401
+
+
+def test_a_rename_whose_body_is_not_an_object_is_refused(camille):
+    shared = Household.objects.create(name="Famille Martin")
+    HouseholdMember.objects.create(household=shared, user=camille)
+
+    response = signed_in(camille).patch(household_url(shared), [], content_type="application/json")
+
+    assert response.status_code == 400

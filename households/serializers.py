@@ -1,3 +1,5 @@
+from collections.abc import Mapping
+
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
@@ -6,9 +8,9 @@ from households.models import Household, HouseholdMember, Invitation, Person
 
 class PartialWriteSerializer(serializers.ModelSerializer):
     def to_internal_value(self, data):
-        return super().to_internal_value(
-            {field: value for field, value in data.items() if value is not None}
-        )
+        if isinstance(data, Mapping):
+            data = {field: value for field, value in data.items() if value is not None}
+        return super().to_internal_value(data)
 
 
 class HouseholdSerializer(serializers.ModelSerializer):
