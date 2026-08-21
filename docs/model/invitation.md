@@ -40,7 +40,11 @@ C'est l'inviteur qui choisit, parce que c'est lui qui sait que l'adresse corresp
 
 La personne désignée est cherchée **parmi celles du foyer**, et non validée après coup : une personne d'un autre foyer est alors refusée dans les mêmes termes qu'une personne inexistante. Distinguer les deux permettrait d'énumérer les identifiants des personnes des foyers d'autrui, ce que la règle « `404` et jamais `403` » interdit partout ailleurs.
 
-Le rattachement est vérifié au moment d'accepter, pas seulement au moment d'inviter : entre les deux, la personne a pu être supprimée, changer de foyer ou recevoir un compte. Si l'une de ces conditions n'est plus remplie, l'acceptation crée une `Person` comme si aucune n'avait été désignée, plutôt que d'échouer sur un détail que l'invité ne peut pas corriger.
+Le rattachement est vérifié au moment d'accepter, pas seulement au moment d'inviter : entre les deux, la personne a pu être supprimée, changer de foyer ou recevoir un compte. Si l'une de ces conditions n'est plus remplie, l'acceptation ne rattache rien, plutôt que d'échouer sur un détail que l'invité ne peut pas corriger.
+
+**Accepter ne crée aucune `Person`.** Sans personne désignée — ou avec une désignation devenue caduque — l'invité entre dans le foyer sans y être encore quelqu'un, et c'est l'écran « qui êtes-vous ? » qui tranche, en rattachant une personne existante par `POST /api/households/{household_id}/persons/{id}/claim/`.
+
+Créer d'office une personne à l'arrivée revenait à répondre à sa place. Le cas se voit sur un ex-membre qui revient : son retrait avait vidé le compte de sa personne sans la supprimer, et l'acceptation lui en fabriquait une seconde à côté, l'ancienne restant orpheline. L'unicité `(household, user)` ne l'attrapait pas, celle qu'il avait quittée portant `user = NULL`.
 
 La `Person` que l'inscription crée pour tout nouveau compte n'entre pas en concurrence avec celle-ci : elle vit dans le foyer personnel de l'invité, pas dans le foyer qu'il rejoint.
 

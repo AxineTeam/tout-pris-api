@@ -9,7 +9,7 @@ from django.utils import timezone
 
 from accounts.models import User
 from households.memberships import display_name_of
-from households.models import HouseholdMember, Invitation, Person
+from households.models import HouseholdMember, Invitation
 
 
 def hashed(token):
@@ -75,5 +75,3 @@ def claim_person(invitation, user):
     if person and person.household_id == invitation.household_id and person.user_id is None:
         person.user = user
         person.save()
-        return
-    Person.objects.create(household=invitation.household, user=user, name=display_name_of(user))
