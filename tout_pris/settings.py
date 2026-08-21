@@ -117,6 +117,8 @@ HEADLESS_SERVE_SPECIFICATION = True
 
 HEADLESS_SPECIFICATION_TEMPLATE_NAME = None
 
+INVITATION_FRONTEND_URL = f"{FRONTEND_URL}/invitations/{{key}}"
+
 HEADLESS_FRONTEND_URLS = {
     "account_confirm_email": f"{FRONTEND_URL}/account/verify-email/{{key}}",
     "account_reset_password": f"{FRONTEND_URL}/account/password/reset",
@@ -152,6 +154,7 @@ REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_AUTHENTICATION_CLASSES": ["tout_pris.authentication.SessionAuthentication"],
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
+    "DEFAULT_THROTTLE_RATES": {"invitations": "20/day"},
 }
 
 SPECTACULAR_SETTINGS = {
