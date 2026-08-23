@@ -9,6 +9,7 @@ from django.test import Client
 from django.utils import timezone
 
 from accounts.models import User
+from households.memberships import create_household
 from households.models import Household, HouseholdMember, Invitation, Person
 from tests.test_authentication import SIGNUP_URL, VERIFY_EMAIL_URL, key_from_last_email
 
@@ -32,10 +33,7 @@ def member():
     user = User.objects.create_user(
         username="camille", email="camille@example.com", first_name="Camille"
     )
-    household = Household.objects.create(name="Famille Martin")
-    HouseholdMember.objects.create(household=household, user=user)
-    Person.objects.create(household=household, user=user, name="Camille")
-    return user, household
+    return user, create_household("Famille Martin", user)
 
 
 @pytest.fixture

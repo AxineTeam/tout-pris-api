@@ -10,6 +10,7 @@ L'API est servie par Django REST Framework sous le préfixe `/api/`, et sa spéc
 | `201` | Création d'une ressource |
 | `204` | Action réussie sans corps |
 | `401` | Requête non authentifiée |
+| `403` | Ressource de votre foyer que votre rôle n'autorise pas à toucher |
 | `429` | Limite d'envoi ou de débit atteinte |
 | `404` | Ressource inexistante **ou** appartenant à un autre foyer |
 | `409` | Conflit avec une ressource existante |
@@ -17,7 +18,11 @@ L'API est servie par Django REST Framework sous le préfixe `/api/`, et sa spéc
 
 Une session non authentifiée reçoit bien `401` et non le `403` que DRF renvoie par défaut : DRF ne choisit `401` que si une classe d'authentification annonce un en-tête `WWW-Authenticate`, et `SessionAuthentication` n'en annonce aucun. `tout_pris.authentication.SessionAuthentication` en annonce un, pour que « connecte-toi » se lise sur un seul code quel que soit l'endpoint — allauth répond déjà `401`. Le schéma annoncé est `Session` et non `Basic`, il ne déclenche donc aucune fenêtre d'authentification du navigateur, et une extension de drf-spectacular garde la description `cookieAuth` dans la spécification, que le renommage de la classe lui avait fait perdre.
 
-Le `403` n'est jamais renvoyé. Une ressource qui existe mais que l'appelant n'a pas le droit de voir répond `404`, exactement comme si elle n'existait pas : distinguer les deux cas révélerait l'existence de foyers, de personnes ou de voyages à un tiers.
+Le `403` ne dit jamais qu'une ressource existe ailleurs. Une ressource qui existe mais que l'appelant n'a pas le droit de **voir** répond `404`, exactement comme si elle n'existait pas : distinguer les deux cas révélerait l'existence de foyers, de personnes ou de voyages à un tiers.
+
+Cette règle vaut entre foyers, et seulement là. À l'intérieur d'un foyer dont on est membre, la situation est inverse : la ressource est la sienne, on la lit tous les jours, on n'a simplement pas le droit d'y toucher. Un `404` mentirait à un client légitime et rendrait l'interface inécrivable — impossible d'y distinguer « ce foyer n'existe pas » de « tu n'es pas propriétaire ». C'est donc `403`, et le `detail` dit lequel des deux refus s'applique : pas propriétaire, ou pas encore quelqu'un.
+
+Les deux codes se lisent alors sans ambiguïté : `404` pour ce qui n'est pas à vous, `403` pour ce qui est à vous et que votre rôle n'autorise pas.
 
 Le porteur de cette règle est `HouseholdScopedView`, dont dérivent les vues du domaine : elle résout le foyer du chemin **parmi ceux dont l'appelant est membre**, et répond `404` sinon. Le cloisonnement tient au type de la vue et non à la vigilance de chaque route — une route qui oublierait d'en hériter se remarquerait, alors qu'un filtre oublié dans un `get_queryset` ne se remarque pas.
 
@@ -50,6 +55,26 @@ Deux refus, tous deux en `409` : une personne qui a déjà un compte, et un appe
 Un membre peut donc exister sans personne, le temps de choisir : c'est l'état dans lequel l'acceptation d'une invitation le laisse quand elle n'en désigne aucune, et l'écran de choix est ce qui en sort.
 
 Un arrivant que personne n'attendait se crée donc sa personne puis la revendique, en deux appels. Rattacher au passage à la création aurait fait un second chemin d'écriture vers `Person.user` pour épargner une requête, alors que la revendication est déjà la seule porte et qu'elle porte les deux refus.
+
+## Rôles
+
+`HouseholdMember.role` porte enfin quelque chose. Il n'a rien porté jusqu'ici parce que le report était sans conséquence : tant que rejoindre un foyer était impossible, tous ses membres étaient la même personne.
+
+**`member`** — le quotidien : lire le foyer, créer, renommer et supprimer les personnes non rattachées, et tout ce qui viendra ensuite, catalogue, voyages, listes.
+
+**`owner`** — en plus : inviter une adresse et annuler une invitation, retirer un autre membre, distribuer les rôles, renommer le foyer et le supprimer.
+
+**Un membre sans personne** — le demi-niveau ouvert par l'écran « qui êtes-vous ? ». Il lit ce qu'il faut pour choisir, crée sa personne et la revendique, rien d'autre : aucune action de ce produit n'a de sens sans savoir *pour qui* on la fait.
+
+Les lectures restent ouvertes à tous les membres — c'est l'écriture que le rôle gouverne. La règle est portée par deux permissions DRF posées sur le type de la vue, comme `HouseholdScopedView` porte le cloisonnement : `IsSomeoneInTheHousehold` sur toutes les vues du foyer, `IsHouseholdOwner` en plus sur celles que le propriétaire seul commande. Une route qui oublierait d'en hériter se remarquerait ; un contrôle oublié dans un `perform_destroy` ne se remarque pas.
+
+Deux exceptions, et elles sont le demi-niveau lui-même : créer une personne et la revendiquer restent ouverts à un membre qui n'est encore personne, sans quoi il n'aurait aucun moyen de le devenir.
+
+Quitter le foyer n'est pas un droit de propriétaire : retirer *quelqu'un d'autre* l'est, retirer sa propre appartenance reste ouvert à tout membre — c'est la même écriture, et personne n'est retenu dans un foyer.
+
+Le dernier propriétaire ne peut ni se rétrograder ni partir, `409` dans les deux cas, pour la même raison que le dernier membre en #54 : un foyer partagé que plus personne ne peut administrer serait un foyer que plus personne ne peut ni partager ni supprimer. C'est ce qui rend `PATCH /api/households/{household_id}/members/{id}/` nécessaire plutôt que confortable : sans passation de rôle, ce refus enfermerait le créateur dans son propre foyer.
+
+Le foyer personnel n'est pas concerné : son titulaire est seul, et sa collection de membres répond déjà `404`.
 
 ## Membres
 

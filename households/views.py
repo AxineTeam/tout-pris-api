@@ -6,13 +6,19 @@ from django.utils.functional import cached_property
 from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
 from rest_framework import generics
 from rest_framework.exceptions import APIException
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
 from households.invitations import accept, invite, pending_invitation
 from households.memberships import create_household, remove_member
-from households.models import Household, Invitation
+from households.models import Household, HouseholdRole, Invitation
+from households.permissions import (
+    IsHouseholdOwner,
+    IsHouseholdOwnerOrLeavingThemselves,
+    IsSomeoneInTheHousehold,
+)
 from households.serializers import (
     HouseholdCreateSerializer,
     HouseholdSerializer,
@@ -21,6 +27,7 @@ from households.serializers import (
     InvitationCreateSerializer,
     InvitationSerializer,
     MemberSerializer,
+    MemberUpdateSerializer,
     PersonCreateSerializer,
     PersonSerializer,
     PersonUpdateSerializer,
@@ -29,6 +36,11 @@ from households.serializers import (
 
 class Conflict(APIException):
     status_code = 409
+
+
+FORBIDDEN = OpenApiResponse(
+    description="The caller is a member of this household, but their role does not allow that."
+)
 
 
 @extend_schema_view(
@@ -53,6 +65,8 @@ class HouseholdListCreateView(generics.ListCreateAPIView):
 
 
 class HouseholdScopedView(generics.GenericAPIView):
+    permission_classes = [IsAuthenticated, IsSomeoneInTheHousehold]
+
     def household_queryset(self):
         return Household.objects.filter(members__user=self.request.user)
 
@@ -67,15 +81,18 @@ class SharedHouseholdScopedView(HouseholdScopedView):
 
 
 class HouseholdDetailView(SharedHouseholdScopedView):
+    permission_classes = [IsAuthenticated, IsSomeoneInTheHousehold, IsHouseholdOwner]
     serializer_class = HouseholdUpdateSerializer
 
-    @extend_schema(request=HouseholdUpdateSerializer, responses={200: HouseholdSerializer})
+    @extend_schema(
+        request=HouseholdUpdateSerializer, responses={200: HouseholdSerializer, 403: FORBIDDEN}
+    )
     def patch(self, request, *args, **kwargs):
         serializer = self.get_serializer(self.household, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         return Response(HouseholdSerializer(serializer.save()).data)
 
-    @extend_schema(responses={204: None})
+    @extend_schema(responses={204: None, 403: FORBIDDEN})
     def delete(self, request, *args, **kwargs):
         self.household.delete()
         return Response(status=204)
@@ -85,6 +102,8 @@ class HouseholdDetailView(SharedHouseholdScopedView):
     post=extend_schema(request=PersonCreateSerializer, responses={201: PersonSerializer})
 )
 class PersonListCreateView(HouseholdScopedView, generics.ListCreateAPIView):
+    permission_classes = [IsAuthenticated]
+
     def get_serializer_class(self):
         return PersonCreateSerializer if self.request.method == "POST" else PersonSerializer
 
@@ -102,6 +121,7 @@ class PersonListCreateView(HouseholdScopedView, generics.ListCreateAPIView):
     delete=extend_schema(
         responses={
             204: None,
+            403: FORBIDDEN,
             409: OpenApiResponse(
                 description="The account of that person is still a member of the household."
             ),
@@ -115,7 +135,9 @@ class PersonDetailView(HouseholdScopedView, generics.RetrieveDestroyAPIView):
     def get_queryset(self):
         return self.household.persons.all()
 
-    @extend_schema(request=PersonUpdateSerializer, responses={200: PersonSerializer})
+    @extend_schema(
+        request=PersonUpdateSerializer, responses={200: PersonSerializer, 403: FORBIDDEN}
+    )
     def patch(self, request, *args, **kwargs):
         serializer = self.get_serializer(self.get_object(), data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
@@ -142,6 +164,7 @@ class PersonDetailView(HouseholdScopedView, generics.RetrieveDestroyAPIView):
     )
 )
 class PersonClaimView(HouseholdScopedView):
+    permission_classes = [IsAuthenticated]
     serializer_class = PersonSerializer
 
     def post(self, request, *args, **kwargs):
@@ -164,29 +187,64 @@ class MemberListView(SharedHouseholdScopedView, generics.ListAPIView):
 
 
 @extend_schema_view(
+    patch=extend_schema(
+        request=MemberUpdateSerializer,
+        responses={
+            200: MemberSerializer,
+            403: FORBIDDEN,
+            409: OpenApiResponse(
+                description="The last owner cannot step down, hand the role over first."
+            ),
+        },
+    ),
     delete=extend_schema(
         responses={
             204: None,
+            403: FORBIDDEN,
             409: OpenApiResponse(
-                description="The last member cannot leave, delete the household instead."
+                description=(
+                    "The last member cannot leave, and the last owner cannot leave either."
+                )
             ),
-        }
-    )
+        },
+    ),
 )
-class MemberDestroyView(SharedHouseholdScopedView, generics.DestroyAPIView):
-    serializer_class = MemberSerializer
+class MemberDetailView(SharedHouseholdScopedView, generics.DestroyAPIView):
+    permission_classes = [IsAuthenticated, IsHouseholdOwnerOrLeavingThemselves]
+
+    def get_serializer_class(self):
+        return MemberUpdateSerializer if self.request.method == "PATCH" else MemberSerializer
 
     def get_queryset(self):
         return self.household.members.all()
 
+    def patch(self, request, *args, **kwargs):
+        member = self.get_object()
+        serializer = self.get_serializer(member, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        if serializer.validated_data.get("role") == HouseholdRole.MEMBER and self.is_last_owner(
+            member
+        ):
+            raise Conflict("The last owner cannot step down, hand the role over first.")
+        return Response(MemberSerializer(serializer.save()).data)
+
     def perform_destroy(self, member):
         if self.household.members.count() == 1:
             raise Conflict("The last member cannot leave, delete the household instead.")
+        if self.is_last_owner(member):
+            raise Conflict("The last owner cannot leave, hand the role over first.")
         remove_member(member)
 
+    def is_last_owner(self, member):
+        owners = self.household.members.filter(role=HouseholdRole.OWNER)
+        return member.role == HouseholdRole.OWNER and owners.count() == 1
 
-@extend_schema_view(post=extend_schema(request=InvitationCreateSerializer, responses={204: None}))
+
+@extend_schema_view(
+    post=extend_schema(request=InvitationCreateSerializer, responses={204: None, 403: FORBIDDEN})
+)
 class InvitationListCreateView(SharedHouseholdScopedView, generics.ListCreateAPIView):
+    permission_classes = [IsAuthenticated, IsSomeoneInTheHousehold, IsHouseholdOwner]
     throttle_scope = "invitations"
 
     def get_throttles(self):
@@ -215,7 +273,9 @@ class InvitationListCreateView(SharedHouseholdScopedView, generics.ListCreateAPI
         return Response(status=204)
 
 
+@extend_schema_view(delete=extend_schema(responses={204: None, 403: FORBIDDEN}))
 class InvitationDestroyView(SharedHouseholdScopedView, generics.DestroyAPIView):
+    permission_classes = [IsAuthenticated, IsSomeoneInTheHousehold, IsHouseholdOwner]
     serializer_class = InvitationSerializer
 
     def get_queryset(self):

@@ -92,6 +92,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/Household'
           description: ''
+        '403':
+          description: The caller is a member of this household, but their role does
+            not allow that.
     delete:
       operationId: households_destroy
       parameters:
@@ -107,6 +110,9 @@ paths:
       responses:
         '204':
           description: No response body
+        '403':
+          description: The caller is a member of this household, but their role does
+            not allow that.
   /api/households/{household_id}/invitations/:
     get:
       operationId: households_invitations_list
@@ -156,6 +162,9 @@ paths:
       responses:
         '204':
           description: No response body
+        '403':
+          description: The caller is a member of this household, but their role does
+            not allow that.
   /api/households/{household_id}/invitations/{id}/:
     delete:
       operationId: households_invitations_destroy
@@ -177,6 +186,9 @@ paths:
       responses:
         '204':
           description: No response body
+        '403':
+          description: The caller is a member of this household, but their role does
+            not allow that.
   /api/households/{household_id}/members/:
     get:
       operationId: households_members_list
@@ -200,6 +212,46 @@ paths:
                   $ref: '#/components/schemas/Member'
           description: ''
   /api/households/{household_id}/members/{id}/:
+    patch:
+      operationId: households_members_partial_update
+      parameters:
+      - in: path
+        name: household_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - households
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedMemberUpdate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedMemberUpdate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedMemberUpdate'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Member'
+          description: ''
+        '403':
+          description: The caller is a member of this household, but their role does
+            not allow that.
+        '409':
+          description: The last owner cannot step down, hand the role over first.
     delete:
       operationId: households_members_destroy
       parameters:
@@ -220,8 +272,12 @@ paths:
       responses:
         '204':
           description: No response body
+        '403':
+          description: The caller is a member of this household, but their role does
+            not allow that.
         '409':
-          description: The last member cannot leave, delete the household instead.
+          description: The last member cannot leave, and the last owner cannot leave
+            either.
   /api/households/{household_id}/persons/:
     get:
       operationId: households_persons_list
@@ -335,6 +391,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/Person'
           description: ''
+        '403':
+          description: The caller is a member of this household, but their role does
+            not allow that.
     delete:
       operationId: households_persons_destroy
       parameters:
@@ -355,6 +414,9 @@ paths:
       responses:
         '204':
           description: No response body
+        '403':
+          description: The caller is a member of this household, but their role does
+            not allow that.
         '409':
           description: The account of that person is still a member of the household.
   /api/households/{household_id}/persons/{id}/claim/:
@@ -516,7 +578,7 @@ components:
           - $ref: '#/components/schemas/RoleEnum'
           readOnly: true
           description: |-
-            Reserved for a later differentiation of rights: every member can do everything.
+            An owner invites, removes a member, renames and deletes the household; a member does the rest.
 
             * `owner` - Owner
             * `member` - Member
@@ -532,6 +594,17 @@ components:
           type: string
           description: Display name given by the members, such as their family name.
           maxLength: 100
+    PatchedMemberUpdate:
+      type: object
+      properties:
+        role:
+          allOf:
+          - $ref: '#/components/schemas/RoleEnum'
+          description: |-
+            An owner invites, removes a member, renames and deletes the household; a member does the rest.
+
+            * `owner` - Owner
+            * `member` - Member
     PatchedPersonUpdate:
       type: object
       properties:
