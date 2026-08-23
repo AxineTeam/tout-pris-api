@@ -65,6 +65,12 @@ class MemberSerializer(serializers.ModelSerializer):
         read_only_fields = ["user", "role"]
 
 
+class MemberUpdateSerializer(PartialWriteSerializer):
+    class Meta:
+        model = HouseholdMember
+        fields = ["role"]
+
+
 class InvitationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Invitation

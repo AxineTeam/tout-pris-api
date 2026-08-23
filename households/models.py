@@ -49,7 +49,10 @@ class HouseholdMember(models.Model):
         max_length=10,
         choices=HouseholdRole,
         default=HouseholdRole.MEMBER,
-        help_text="Reserved for a later differentiation of rights: every member can do everything.",
+        help_text=(
+            "An owner invites, removes a member, renames and deletes the household; "
+            "a member does the rest."
+        ),
     )
 
     class Meta:

@@ -14,7 +14,11 @@ C'est aussi moins de tables qu'un partage par voyage, pas plus.
 
 `HouseholdMember` étant une table de liaison, un utilisateur appartient à plusieurs foyers, et c'est le cas nominal et non une porte laissée ouverte : chacun a le sien et rejoint ceux qu'on lui partage.
 
-Le champ `role` existe pour ne pas avoir à migrer le jour où les droits se différencient. Aucun système de permissions n'est construit pour l'instant : tous les membres peuvent tout faire.
+Le champ `role` porte les droits depuis #59. `owner` invite, retire un membre, distribue les rôles, renomme et supprime le foyer ; `member` fait le reste, c'est-à-dire tout le quotidien. Un membre qui n'a pas encore de personne ne peut que créer la sienne et la revendiquer.
+
+Il n'a rien porté pendant longtemps, et c'était un report assumé plutôt qu'un oubli : tant que rejoindre un foyer était impossible, ses membres étaient toujours le même compte, et des droits distincts n'auraient distingué personne. L'invitation puis les routes destructrices ont retiré cette excuse — laisser un invité de passage supprimer le foyer et ses listes n'était plus une abstraction.
+
+Le refus est un `403` et non un `404` : la ressource est bien celle de son foyer, elle n'est pas cachée, elle est interdite. Le raisonnement complet est dans [`docs/api/README.md`](../api/README.md).
 
 ## Le foyer personnel
 

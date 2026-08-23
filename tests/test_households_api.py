@@ -2,6 +2,7 @@ import pytest
 from django.test import Client
 
 from accounts.models import User
+from households.memberships import create_household
 from households.models import Household, HouseholdMember, Person
 
 pytestmark = pytest.mark.django_db
@@ -14,7 +15,7 @@ def camille():
     user = User.objects.create_user(
         username="camille", email="camille@example.com", first_name="Camille"
     )
-    Household.objects.create(name="camille", personal_of=user).members.create(user=user)
+    create_household("camille", user, personal_of=user)
     return user
 
 
@@ -31,8 +32,7 @@ def test_the_personal_household_is_listed_and_says_it_is_personal(camille):
 
 
 def test_a_shared_household_is_listed_alongside_the_personal_one(camille):
-    shared = Household.objects.create(name="Famille Martin")
-    HouseholdMember.objects.create(household=shared, user=camille)
+    create_household("Famille Martin", camille)
 
     listed = signed_in(camille).get(HOUSEHOLDS_URL).json()
 
@@ -98,8 +98,7 @@ def test_a_created_household_is_listed_after_the_personal_one(camille):
 
 
 def test_a_shared_household_is_renamed(camille):
-    shared = Household.objects.create(name="Famille Martin")
-    HouseholdMember.objects.create(household=shared, user=camille)
+    shared = create_household("Famille Martin", camille)
 
     response = signed_in(camille).patch(
         household_url(shared), {"name": "Les Martin"}, content_type="application/json"
@@ -110,8 +109,7 @@ def test_a_shared_household_is_renamed(camille):
 
 
 def test_a_rename_without_a_name_leaves_it_unchanged(camille):
-    shared = Household.objects.create(name="Famille Martin")
-    HouseholdMember.objects.create(household=shared, user=camille)
+    shared = create_household("Famille Martin", camille)
     client = signed_in(camille)
 
     empty = client.patch(household_url(shared), {}, content_type="application/json")
@@ -125,8 +123,7 @@ def test_a_rename_without_a_name_leaves_it_unchanged(camille):
 
 
 def test_deleting_a_shared_household_takes_its_members_and_persons_with_it(camille):
-    shared = Household.objects.create(name="Famille Martin")
-    HouseholdMember.objects.create(household=shared, user=camille)
+    shared = create_household("Famille Martin", camille)
     Person.objects.create(household=shared, name="Jeanne")
 
     response = signed_in(camille).delete(household_url(shared))
@@ -170,8 +167,7 @@ def test_creating_a_household_refuses_an_unauthenticated_caller():
 
 
 def test_a_rename_whose_body_is_not_an_object_is_refused(camille):
-    shared = Household.objects.create(name="Famille Martin")
-    HouseholdMember.objects.create(household=shared, user=camille)
+    shared = create_household("Famille Martin", camille)
 
     response = signed_in(camille).patch(household_url(shared), [], content_type="application/json")
 
