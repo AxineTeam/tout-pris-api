@@ -8,7 +8,9 @@ from households.models import Household, HouseholdMember, Person
 def accounts_without_a_personal_household():
     return [
         f"#{user.pk} {user.email}"
-        for user in User.objects.filter(personal_household__isnull=True).order_by("pk")
+        for user in User.objects.filter(
+            personal_household__isnull=True, is_staff=False, is_superuser=False
+        ).order_by("pk")
     ]
 
 
