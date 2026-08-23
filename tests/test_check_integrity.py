@@ -61,6 +61,8 @@ def test_a_shared_household_without_a_member_is_listed(camille, shared):
 
 
 def test_a_person_whose_account_left_the_household_is_listed(camille, shared):
+    sacha = User.objects.create_user(username="sacha", email="sacha@example.com")
+    HouseholdMember.objects.create(household=shared, user=sacha)
     HouseholdMember.objects.filter(household=shared, user=camille).delete()
     Person.objects.create(household=shared, name="Personne", user=None)
 
@@ -68,6 +70,14 @@ def test_a_person_whose_account_left_the_household_is_listed(camille, shared):
 
     assert "Camille" in report
     assert "Personne" not in report
+    assert "Famille Martin" not in report
+
+
+def test_an_administration_account_is_not_expected_to_have_a_personal_household():
+    User.objects.create_superuser(username="root", email="root@example.com", password="x")
+    User.objects.create_user(username="staff", email="staff@example.com", is_staff=True)
+
+    assert check_integrity() == ""
 
 
 def test_a_member_without_a_person_is_not_a_forbidden_state(camille, shared):

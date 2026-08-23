@@ -18,7 +18,7 @@ Le champ `role` existe pour ne pas avoir à migrer le jour où les droits se dif
 
 ## Le foyer personnel
 
-Tout compte a **toujours** un foyer à lui, créé à l'inscription et qu'il ne partage avec personne. C'est là qu'on prépare le sac de piscine ou le bagage d'un déplacement professionnel : des affaires qui n'ont rien à faire dans la liste familiale, et qu'on ne veut pas voir passer sous les yeux des autres membres.
+Tout compte a **toujours** un foyer à lui, créé à l'inscription et qu'il ne partage avec personne. Tout compte de l'application, s'entend : un compte d'administration créé par `createsuperuser` ne passe pas par l'inscription, donc pas par le signal qui crée le foyer, et n'en a aucun. Il ne se connecte pas au produit, seulement à l'admin. C'est là qu'on prépare le sac de piscine ou le bagage d'un déplacement professionnel : des affaires qui n'ont rien à faire dans la liste familiale, et qu'on ne veut pas voir passer sous les yeux des autres membres.
 
 C'est l'organisation de Notion, de Slack et de la plupart des outils partagés : un espace à soi, et des espaces qu'on rejoint. L'invitation ne convertit donc pas un compte, elle lui ajoute un foyer.
 
@@ -96,7 +96,7 @@ La garantie est donc double, et il vaut mieux le savoir avant d'écrire du SQL �
 
 Trois règles de ce document ne sont pas exprimables en contrainte, et c'est une conséquence du modèle plutôt qu'un oubli.
 
-**Un compte a exactement un foyer personnel.** C'est le foyer qui pointe vers le compte, et l'unicité de `personal_of` garantit qu'il n'y en a pas deux ; exiger qu'il y en ait au moins un demanderait au compte de pointer vers son foyer en retour, donc un cycle de clés étrangères qu'aucune des deux tables ne pourrait plus insérer en premier.
+**Un compte a exactement un foyer personnel.** C'est le foyer qui pointe vers le compte, et l'unicité de `personal_of` garantit qu'il n'y en a pas deux ; exiger qu'il y en ait au moins un demanderait au compte de pointer vers son foyer en retour, donc un cycle de clés étrangères qu'aucune des deux tables ne pourrait plus insérer en premier. L'invariant ne vaut que pour les comptes d'application : `check_integrity` écarte ceux qui portent `is_staff` ou `is_superuser`, faute de quoi le premier `createsuperuser` la rendrait rouge à demeure — et une alerte qui crie toujours finit éteinte, emportant le signalement qu'on attendait. Le filtre nomme les deux drapeaux plutôt que de deviner à l'absence de mot de passe utilisable, qui frapperait un compte de service ordinaire.
 
 **Un foyer partagé a au moins un membre.** Aucune colonne ne porte un compte de lignes d'une autre table, et le foyer doit exister avant l'appartenance qui le référence.
 
