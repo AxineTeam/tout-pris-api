@@ -189,6 +189,37 @@ def test_a_member_without_a_person_acts_on_nothing_else(household, newcomer, own
     assert renamed.status_code == 403
     assert renamed.json()["detail"] == "Choose which person you are in this household first."
     assert client.delete(camille).status_code == 403
+    assert (
+        client.patch(
+            household_url(household), {"name": "Chez Alex"}, content_type="application/json"
+        ).status_code
+        == 403
+    )
+    assert client.delete(household_url(household)).status_code == 403
+    assert (
+        client.post(
+            invitations_url(household),
+            {"email": "guest@example.com"},
+            content_type="application/json",
+        ).status_code
+        == 403
+    )
+    assert (
+        client.patch(
+            membership_url(household, owner), {"role": "member"}, content_type="application/json"
+        ).status_code
+        == 403
+    )
+    assert client.delete(membership_url(household, owner)).status_code == 403
+
+
+def test_a_member_who_is_nobody_yet_is_not_made_an_owner(household, owner, newcomer):
+    response = signed_in(owner).patch(
+        membership_url(household, newcomer), {"role": "owner"}, content_type="application/json"
+    )
+
+    assert response.status_code == 409
+    assert HouseholdMember.objects.get(household=household, user=newcomer).role == "member"
 
 
 def test_the_two_refusals_do_not_say_the_same_thing(household, member):
