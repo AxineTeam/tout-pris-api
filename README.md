@@ -62,9 +62,14 @@ It expects an empty database: run it right after `reset_db` and `migrate`, never
 ### Shell and checks
 
 ```bash
-uv run python manage.py shell_plus   # shell with every model imported (django-extensions)
-uv run python manage.py check        # run the Django system checks
+uv run python manage.py shell_plus         # shell with every model imported (django-extensions)
+uv run python manage.py check              # run the Django system checks
+uv run python manage.py check_integrity    # list the states the model forbids but the schema cannot prevent
 ```
+
+`check_integrity` reads the database and names what should not be there: an account without a personal household, a shared household without a member, a person whose account is not a member of their household. These invariants live in the application code rather than in a constraint — the first would need a foreign key cycle, the other two a count no column can hold — so nothing but this command sees them broken. It says nothing and exits `0` on a healthy database, and lists what it found and exits non-zero otherwise, which is what a scheduled run needs.
+
+It names, it never repairs: a fix applied to a state nobody has explained yet erases the trace of the bug that produced it.
 
 ### Tests, lint and format
 
@@ -189,7 +194,7 @@ The production settings live in `docker-compose.prod.yml`: the database is store
 - `manage.py` — Django entry point
 - `tout_pris/` — project package: `settings.py`, `urls.py` (admin, and the API mounted on `/api/`), `views.py`, `mail.py`, `authentication.py`, `wsgi.py`, `asgi.py`
 - `accounts/` — the custom `User` model, referenced by `AUTH_USER_MODEL` since the initial migration
-- `households/` — the household domain: `Household`, `HouseholdMember`, `Person` and `Invitation`, their admin and API, the personal household created at signup, and the `seed` command
+- `households/` — the household domain: `Household`, `HouseholdMember`, `Person` and `Invitation`, their admin and API, the personal household created at signup, and the `seed` and `check_integrity` commands
 - `.env.example` — every environment variable with a development value
 - `tests/` — pytest-django test suite
 - `docs/api/` — the API conventions: status codes, household scoping, schemas, collections

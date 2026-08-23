@@ -91,3 +91,19 @@ Son foyer personnel part avec lui, en revanche : il n'a d'existence que pour ce 
 Ces règles sont déclarées sur les clés étrangères (`on_delete=CASCADE` et `on_delete=SET_NULL`) et appliquées par l'ORM Django au moment de la suppression. Aucun pragma SQLite n'est à activer : Django active déjà les clés étrangères, et les tests vérifient le comportement en supprimant réellement les lignes plutôt qu'en relisant la déclaration.
 
 La garantie est donc double, et il vaut mieux le savoir avant d'écrire du SQL à la main : la base refuse une suppression qui laisserait des lignes orphelines, et c'est l'ORM qui sait comment l'éviter en supprimant ou en détachant d'abord. Un `DELETE` brut sur un foyer est rejeté par la base plutôt que d'orpheliner ses personnes.
+
+## Les invariants que le schéma ne porte pas
+
+Trois règles de ce document ne sont pas exprimables en contrainte, et c'est une conséquence du modèle plutôt qu'un oubli.
+
+**Un compte a exactement un foyer personnel.** C'est le foyer qui pointe vers le compte, et l'unicité de `personal_of` garantit qu'il n'y en a pas deux ; exiger qu'il y en ait au moins un demanderait au compte de pointer vers son foyer en retour, donc un cycle de clés étrangères qu'aucune des deux tables ne pourrait plus insérer en premier.
+
+**Un foyer partagé a au moins un membre.** Aucune colonne ne porte un compte de lignes d'une autre table, et le foyer doit exister avant l'appartenance qui le référence.
+
+**La personne d'un compte appartient à un foyer dont ce compte est membre.** `Person.user` et `HouseholdMember.user` désignent le même compte sans que rien ne les relie : c'est le retrait d'un membre qui délie la personne, en code.
+
+Ces trois règles vivent donc dans le code applicatif, et un bug, une commande de migration de données ou un `shell_plus` un soir de fatigue peuvent les enfreindre sans que la base bronche. `uv run python manage.py check_integrity` est ce qui les relit : une section par invariant, rien à dire sur une base saine, et un code de sortie non nul quand elle trouve quelque chose.
+
+Elle nomme et ne répare pas. Une réparation automatique sur un état qu'on ne s'explique pas encore ferait disparaître la trace du bug qui l'a produit ; le jour où le cas se présentera, elle aura sa place dans une commande séparée qu'on lance en connaissance de cause, et qui rejouera l'opération d'inscription plutôt que le signal `user_signed_up`, pour ne pas rejouer ce qu'un autre récepteur y aurait accroché.
+
+Un membre sans personne n'en fait pas partie : c'est l'état normal d'un arrivant qui n'a pas encore choisi qui il est.
