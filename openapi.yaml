@@ -251,7 +251,8 @@ paths:
           description: The caller is a member of this household, but their role does
             not allow that.
         '409':
-          description: The last owner cannot step down, hand the role over first.
+          description: The last owner cannot step down, and a member who is nobody
+            in the household yet cannot be made an owner.
     delete:
       operationId: households_members_destroy
       parameters:

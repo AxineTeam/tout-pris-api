@@ -80,6 +80,8 @@ Le foyer personnel n'est pas concerné : son titulaire est seul, et sa collectio
 
 `GET /api/households/{household_id}/members/` liste qui a accès au foyer, avec l'adresse et le rôle de chaque compte. `DELETE /api/households/{household_id}/members/{id}/` retire un membre ; se retirer soi-même, c'est quitter le foyer, il n'y a pas de route « quitter » distincte pour la même écriture.
 
+`PATCH /api/households/{household_id}/members/{id}/` change le rôle d'un membre, propriétaire seul : c'est la passation de propriété, et la seule façon d'en obtenir une seconde. Elle refuse en `409` de promouvoir quelqu'un qui n'est encore personne dans le foyer — on ne confie pas un foyer à un compte qui n'y existe pour personne — et de rétrograder le dernier propriétaire.
+
 Retirer un membre **conserve sa `Person` et vide son compte**, comme le fait déjà la suppression d'un compte. `Person.user` pointe vers un compte et non vers une appartenance : le laisser rempli rattacherait un non-membre à une personne du foyer. Les affaires de « Papa » restent dans les listes, seul le lien vers le compte disparaît.
 
 Le dernier membre ne peut pas quitter un foyer partagé : la route répond `409`. Le laisser partir abandonnerait en base un foyer que plus personne ne peut ni lire ni supprimer, avec ses personnes et ses futures listes ; supprimer le foyer d'un `DELETE` explicite dit ce que ça détruit, et évite de le détruire par accident en quittant.
