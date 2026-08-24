@@ -14,6 +14,8 @@ La saisie libre produira « chapeau », « Chapeau » et « chapeaux ». Ce n'es
 
 Ce qui compte est donc le nettoyage, et il tient en un geste : **renommer un objet vers un nom déjà pris déclenche une fusion**. Les lignes de kit de l'objet absorbé sont réaffectées au survivant, puis l'objet absorbé est supprimé. Il n'y a pas d'écran « fusionner deux objets » à trouver, seulement le renommage que l'utilisateur allait faire de toute façon.
 
+**La fusion répare le catalogue, pas les lignes qu'elle vient de déplacer.** Un kit qui contenait « 2 Chapeau » et « 3 chapeaux » contient ensuite « 2 Chapeau » et « 3 Chapeau » : deux lignes, sur le même objet. Additionner les quantités est hors de portée d'ici — les deux lignes peuvent porter des `note` ou des personnes différentes, et le doublon est parfois voulu. Le regroupement de deux lignes d'un même kit est une décision qui a besoin de l'utilisateur, donc de l'API et de l'interface, pas du renommage.
+
 C'est la contrepartie de la contrainte d'unicité, qui porte sur le **nom normalisé** — minuscules, espaces de bord retirés — et non sur le nom brut. Sans normalisation, « chapeau » et « Chapeau » cohabiteraient et la fusion n'aurait plus de déclencheur : le renommage réussirait sans rien nettoyer. En Django, cela s'exprime par une `UniqueConstraint` sur des expressions (`Lower`, `Trim`), qui fonctionne sur SQLite comme sur PostgreSQL.
 
 La recherche du survivant utilise les mêmes expressions SQL que la contrainte, plutôt qu'un `lower()` Python. Les deux ne s'accordent pas sur les accents — `LOWER` de SQLite ne touche pas les caractères non ASCII, `str.lower` si — et un désaccord donnerait le pire des deux : la fusion croirait avoir trouvé un survivant que la base considère comme un nom libre, ou l'inverse.
