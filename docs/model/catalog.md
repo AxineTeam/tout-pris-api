@@ -86,4 +86,8 @@ Les noms sont en français, comme tout ce que l'utilisateur lit. Le code, lui, r
 
 **Une ligne de kit référence un objet et une personne du même foyer que son kit.** Trois clés étrangères mènent au foyer par trois chemins différents, et aucune contrainte ne les oblige à converger. C'est à l'application de valider chaque clé étrangère reçue contre le foyer courant, comme le rappellent les conventions d'API dans [`docs/api/`](../api/README.md).
 
+`check_integrity` les liste, comme il liste les invariants du foyer : une ligne dont l'objet **ou** la personne vient d'ailleurs est un état interdit, et le seul moyen de s'en apercevoir sans le chercher.
+
 **Un foyer a au moins un statut `not_started`.** `install_base_catalog` en pose un et `delete_status` refuse de retirer le dernier, mais un foyer créé sans passer par le premier, ou une suppression par l'admin, laissent un foyer sans statut par défaut. `default_status` renvoie alors `None` plutôt que de lever : c'est un état anormal mais lisible, et l'appelant est mieux placé pour décider quoi en dire.
+
+`check_integrity` le liste lui aussi, mais restreint à ce qui est vraiment interdit **aujourd'hui** : un foyer qui a des statuts et aucun `not_started`. Un foyer qui n'en a aucun n'est pas signalé, parce que c'est encore le cas normal — l'inscription crée un foyer sans catalogue, et c'est #41 qui y branchera `install_base_catalog`. Signaler ces foyers-là ferait crier la commande sur chaque inscription, et une alerte qui crie toujours finit éteinte. Le jour où #41 est livrée, la restriction tombe et « aucun statut » devient à son tour un état interdit.
