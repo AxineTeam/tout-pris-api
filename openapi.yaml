@@ -477,8 +477,14 @@ components:
       properties:
         status:
           type: string
+        version:
+          type: string
+        commit:
+          type: string
       required:
+      - commit
       - status
+      - version
     Household:
       type: object
       properties:

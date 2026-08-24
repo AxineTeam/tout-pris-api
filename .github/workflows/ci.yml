@@ -115,6 +115,13 @@ jobs:
           file: Dockerfile.prod
           platforms: linux/amd64,linux/arm64
           push: true
+          # The dev tag carries the commit it was built from, since its version number
+          # never moves and nothing else says what is deployed. A released image says
+          # its semver instead, and does not publish the commit. The condition is
+          # negated on purpose: an expression of the form `cond && '' || value` always
+          # yields value, the empty string being falsy.
+          build-args: |
+            GIT_COMMIT=${{ !startsWith(github.ref, 'refs/tags/') && github.sha || '' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=prod
