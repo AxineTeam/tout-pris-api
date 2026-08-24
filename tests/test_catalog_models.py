@@ -1,5 +1,4 @@
 import pytest
-from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 
 from catalog.base_catalog import BASE_ITEM_STATUSES, BASE_ITEM_TYPES, install_base_catalog
@@ -7,6 +6,7 @@ from catalog.item_types import rename_item_type
 from catalog.models import ItemStatus, ItemType, Kit, KitItem, ProgressCategory
 from catalog.statuses import default_status, delete_status
 from households.models import Household, Person
+from tout_pris.exceptions import Conflict
 
 pytestmark = pytest.mark.django_db
 
@@ -229,7 +229,7 @@ def test_deleting_the_last_not_started_status_is_refused(household):
     status = make_status(household, "Pas prepare")
     make_status(household, "Dans les sacs", ProgressCategory.DONE)
 
-    with pytest.raises(ValidationError):
+    with pytest.raises(Conflict):
         delete_status(status)
 
     assert ItemStatus.objects.filter(pk=status.pk).exists()

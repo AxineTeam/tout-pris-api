@@ -1,6 +1,5 @@
-from django.core.exceptions import ValidationError
-
 from catalog.models import ItemStatus, ProgressCategory
+from tout_pris.exceptions import Conflict
 
 
 def default_status(household_id):
@@ -20,7 +19,5 @@ def delete_status(status):
         .exists()
     )
     if not another_not_started:
-        raise ValidationError(
-            "The last not started status cannot be deleted, a new line would have none."
-        )
+        raise Conflict("The last not started status cannot be deleted, a new line would have none.")
     status.delete()

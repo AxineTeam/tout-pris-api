@@ -30,6 +30,14 @@ Les routes du domaine sont donc portées par le chemin du foyer — `/api/househ
 
 Les foyers eux-mêmes échappent à cette imbrication : `/api/households/` est la racine du domaine, et sa collection est cloisonnée par l'appartenance de l'appelant plutôt que par un foyer de chemin.
 
+## Les refus du domaine
+
+Un refus décidé par le domaine — supprimer le dernier statut « pas préparé », rétrograder le dernier propriétaire — est levé comme une exception DRF, `tout_pris.exceptions.Conflict`, et c'est DRF qui la rend en `409` avec son `detail`. Aucune route n'a à l'attraper, et le message écrit dans le code métier est celui que le client lit.
+
+L'exception vit au niveau du projet et non dans les vues d'une app, parce que la règle vaut **partout** : le catalogue refuse dans `catalog/statuses.py`, le foyer refuse dans `households/views.py`, et les deux doivent répondre pareil. Une exception rangée dans les vues d'une app obligerait la suivante à l'importer de là, ou à inventer la sienne.
+
+Ce n'est pas un détail de rangement. Le gestionnaire d'exceptions par défaut de DRF ne convertit que trois choses : ses propres `APIException`, `Http404` et la `PermissionDenied` de Django. **Une `ValidationError` de `django.core.exceptions` levée dans le code métier n'est donc pas convertie** : elle remonte, Django répond `500`, et le message du refus n'arrive jamais au client — un refus prévu se lit alors comme une panne. C'est la raison d'être de cette règle, et elle s'applique à tout code de domaine à venir, pas seulement à celui qui l'a fait apparaître.
+
 ## Foyers
 
 `GET /api/households/` liste les foyers dont l'appelant est membre : son foyer personnel et ceux qu'on lui a partagés. C'est l'écran de sélection décrit dans [`docs/model/household.md`](../model/household.md). Chaque entrée porte `personal`, un booléen, plutôt qu'un nom à afficher pour le foyer personnel : ce nom existe en base pour l'admin, et l'interface écrit « Personnel ».

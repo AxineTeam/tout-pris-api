@@ -5,7 +5,6 @@ from django.utils import timezone
 from django.utils.functional import cached_property
 from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
 from rest_framework import generics
-from rest_framework.exceptions import APIException
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
@@ -32,11 +31,7 @@ from households.serializers import (
     PersonSerializer,
     PersonUpdateSerializer,
 )
-
-
-class Conflict(APIException):
-    status_code = 409
-
+from tout_pris.exceptions import Conflict
 
 FORBIDDEN = OpenApiResponse(
     description="The caller is a member of this household, but their role does not allow that."
