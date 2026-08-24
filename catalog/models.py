@@ -1,3 +1,4 @@
+from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models.functions import Lower, Trim
 from ordered_model.models import OrderedModelBase
@@ -57,6 +58,7 @@ class ItemStatus(OrderedModelBase):
     )
     color = models.CharField(
         max_length=7,
+        validators=[RegexValidator(r"^#[0-9a-fA-F]{6}$", "Give a color as #rrggbb.")],
         help_text="Hexadecimal color the clients paint the status with, such as #f59e0b.",
     )
     progress = models.CharField(

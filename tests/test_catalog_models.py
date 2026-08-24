@@ -1,4 +1,5 @@
 import pytest
+from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 
 from catalog.base_catalog import BASE_ITEM_STATUSES, BASE_ITEM_TYPES, install_base_catalog
@@ -260,3 +261,14 @@ def test_installing_the_base_catalog_fills_the_household(household):
     assert list(household.item_statuses.values_list("name", "progress")) == [
         (name, progress) for name, _, progress in BASE_ITEM_STATUSES
     ]
+
+
+def test_a_status_color_is_refused_unless_it_is_hexadecimal(household):
+    status = ItemStatus(household=household, name="Commande en ligne", color="orange")
+
+    with pytest.raises(ValidationError):
+        status.full_clean()
+
+
+def test_a_hexadecimal_status_color_is_accepted(household):
+    ItemStatus(household=household, name="Commande en ligne", color="#f59e0b").full_clean()
