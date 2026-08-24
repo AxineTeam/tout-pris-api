@@ -4,6 +4,7 @@ from django.core.management.base import CommandError
 
 from accounts.models import User
 from catalog.base_catalog import BASE_ITEM_STATUSES, BASE_ITEM_TYPES
+from catalog.models import Kit, KitItem
 from households.models import Household, HouseholdMember, HouseholdRole, Person
 
 pytestmark = pytest.mark.django_db
@@ -23,6 +24,16 @@ def household_snapshot():
             HouseholdMember.objects.values_list("user__email", "role").order_by("user__email")
         ),
         "persons": list(Person.objects.values_list("name", "user__email").order_by("name")),
+        "kits": list(
+            Kit.objects.values_list("household__name", "name", "position").order_by(
+                "household__name", "position"
+            )
+        ),
+        "kit_lines": list(
+            KitItem.objects.values_list(
+                "kit__name", "item_type__name", "person__name", "quantity", "position"
+            ).order_by("kit__name", "position")
+        ),
     }
 
 
@@ -95,3 +106,39 @@ def test_every_seeded_household_starts_from_the_base_catalog():
     for household in Household.objects.all():
         assert household.item_types.count() == len(BASE_ITEM_TYPES)
         assert household.item_statuses.count() == len(BASE_ITEM_STATUSES)
+
+
+def test_the_shared_household_is_seeded_with_kits():
+    call_command("seed")
+
+    shared = Household.objects.get(personal_of=None)
+
+    assert list(shared.kits.values_list("name", flat=True)) == [
+        "Sac à langer",
+        "Affaires de rando",
+        "Affaires enfants",
+    ]
+    assert shared.kits.get(name="Sac à langer").items.count() == 4
+
+
+def test_the_seeded_children_kit_repeats_its_lines_for_each_child():
+    call_command("seed")
+
+    children_kit = Kit.objects.get(name="Affaires enfants")
+
+    assert list(children_kit.items.values_list("person__name", "item_type__name")) == [
+        ("Jeanne", "T-shirt"),
+        ("Jeanne", "Pantalon"),
+        ("Jeanne", "Pyjama"),
+        ("Jeanne", "Doudou"),
+        ("Louis", "T-shirt"),
+        ("Louis", "Pantalon"),
+        ("Louis", "Pyjama"),
+        ("Louis", "Doudou"),
+    ]
+
+
+def test_the_seeded_personal_households_hold_no_kit():
+    call_command("seed")
+
+    assert not Kit.objects.filter(household__personal_of__isnull=False).exists()

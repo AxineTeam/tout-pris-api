@@ -71,6 +71,7 @@ Le comportement à connaître avant d'écrire les routes de réordonnancement :
 - la position est attribuée à la création, à la fin de son groupe, et le champ n'est pas modifiable dans un formulaire (`editable=False`) ;
 - une suppression referme le trou : les positions suivantes descendent d'un cran, y compris quand la ligne part en cascade avec son foyer ou son kit, parce que l'app `ordered_model` branche un récepteur `post_delete` sur chaque modèle ordonné — d'où sa présence dans `INSTALLED_APPS`, qui ne sert pas qu'à l'admin ;
 - `up()`, `down()`, `to()` et `swap()` déplacent une ligne, chacun en plusieurs écritures ; une route de réordonnancement les appelle dans une transaction ;
+- `model_bakery` remplit `position` d'une valeur au hasard au lieu de laisser `save()` l'attribuer, malgré `editable=False` : les objets ordonnés se créent avec `objects.create`, comme le fait `seed`, sinon l'ordre est celui du tirage ;
 - changer le foyer d'un statut ou le kit d'une ligne le renumérote dans son nouveau groupe et referme le trou laissé dans l'ancien, ce qui est le bon comportement mais reste une écriture large derrière un `save()` d'apparence anodine.
 
 ## Le catalogue de base
