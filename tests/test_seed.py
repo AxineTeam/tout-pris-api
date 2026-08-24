@@ -3,6 +3,7 @@ from django.core.management import call_command
 from django.core.management.base import CommandError
 
 from accounts.models import User
+from catalog.base_catalog import BASE_ITEM_STATUSES, BASE_ITEM_TYPES
 from households.models import Household, HouseholdMember, HouseholdRole, Person
 
 pytestmark = pytest.mark.django_db
@@ -86,3 +87,11 @@ def test_seeding_a_database_that_already_holds_a_household_is_refused():
 
     with pytest.raises(CommandError):
         call_command("seed")
+
+
+def test_every_seeded_household_starts_from_the_base_catalog():
+    call_command("seed")
+
+    for household in Household.objects.all():
+        assert household.item_types.count() == len(BASE_ITEM_TYPES)
+        assert household.item_statuses.count() == len(BASE_ITEM_STATUSES)

@@ -28,8 +28,10 @@ INSTALLED_APPS = [
     "allauth.socialaccount",
     "allauth.socialaccount.providers.google",
     "allauth.headless",
+    "ordered_model",
     "accounts",
     "households",
+    "catalog",
 ]
 
 MIDDLEWARE = [
