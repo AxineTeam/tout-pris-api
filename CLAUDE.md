@@ -20,6 +20,7 @@ Backend Django du projet Tout Pris. Soit extrêmement concis.
 - Deux façons de déclarer un schéma : `ModelSerializer` quand il y a une table derrière, Pydantic via `drf-pydantic` quand il n'y en a pas (sortie d'un modèle de langage, réponse calculée)
 - ORM et migrations Django (SQLite par défaut, `DATABASE_URL` lu par dj-database-url), migrations appliquées par l'entrypoint Docker, jamais par le code applicatif
 - django-extensions pour `shell_plus`, `runserver_plus`, `reset_db` et `graph_models`
+- django-ordered-model pour les colonnes `position`, l'équivalent d'`acts_as_list` ; son app est dans `INSTALLED_APPS` pour l'admin et pour le récepteur `post_delete` qui referme les trous d'ordre
 - model_bakery pour construire des objets depuis le modèle Django sans déclarer de factory, utilisé par la commande `seed`
 - graphviz est une dépendance système : `graph_models` appelle le binaire `dot` via pydot, il est installé dans l'image de dev, donc dans le devcontainer
 - Dépendances gérées par uv (`uv sync`, groupe `dev` dans `pyproject.toml`, lock dans `uv.lock`)
@@ -39,6 +40,7 @@ Backend Django du projet Tout Pris. Soit extrêmement concis.
 - `.env.example` : toutes les variables d'environnement avec une valeur de développement
 - `accounts/` : app du `User` custom, référencé par `AUTH_USER_MODEL` dès la migration initiale
 - `households/` : app du domaine foyer — `Household`, `HouseholdMember`, `Person`, `Invitation` — son admin, son API, le foyer personnel créé à l'inscription, et la commande `seed`
+- `catalog/` : app du référentiel d'objets — `ItemType`, `ItemStatus`, `Kit`, `KitItem` — son admin, la fusion au renommage, les règles de statut et le catalogue de base copié dans un nouveau foyer
 - `tests/` : suite pytest-django, une base de test isolée fournie par Django
 - `docs/api/` : conventions de l'API — codes de retour, cloisonnement par foyer, schémas, collections
 - `docs/model/` : besoin fonctionnel derrière le modèle de données, indépendant du framework, et `schema.png`, le diagramme ER généré
@@ -54,7 +56,7 @@ Backend Django du projet Tout Pris. Soit extrêmement concis.
 - `uv run python manage.py reset_db --noinput` puis `migrate` puis `seed` : reconstruit la base de dev (jamais versionnée, `*.db` ignoré) et la remplit d'un foyer réaliste
 - `seed` attend une base vide : rejoué par-dessus lui-même il échoue sur l'unicité de l'email, et sa transaction n'écrit rien
 - `uv run python manage.py shell_plus` / `createsuperuser` / `changepassword` / `check`
-- `uv run python manage.py graph_models accounts households --no-inheritance --exclude-models "Abstract*" | grep -v '// Created:' > docs/model/schema.dot` puis `uv run python manage.py graph_models accounts households --no-inheritance --exclude-models "Abstract*" --output docs/model/schema.png` : régénèrent le `.dot` vérifié en CI et l'image affichée dans le README
+- `uv run python manage.py graph_models accounts households catalog --no-inheritance --exclude-models "Abstract*,OrderedModelBase" | grep -v '// Created:' > docs/model/schema.dot` puis `uv run python manage.py graph_models accounts households catalog --no-inheritance --exclude-models "Abstract*,OrderedModelBase" --output docs/model/schema.png` : régénèrent le `.dot` vérifié en CI et l'image affichée dans le README
 - `uv run pytest` : tests, échec sous 100 % de couverture
 - `uv run ruff check .` / `ruff check --fix .` / `ruff format .` / `ruff format --check .`
 - `uv run python manage.py spectacular --file openapi.yaml` : régénère `openapi.yaml` (obligatoire après tout changement de routes ou de schémas, la CI vérifie qu'il est à jour)
