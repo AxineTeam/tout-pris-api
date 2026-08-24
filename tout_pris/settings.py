@@ -157,6 +157,8 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_RATES": {"invitations": "20/day"},
 }
 
+GIT_COMMIT = os.environ.get("GIT_COMMIT", "")
+
 SPECTACULAR_SETTINGS = {
     "TITLE": "Tout Pris API",
     "DESCRIPTION": "Backend API of the Tout Pris project.",

@@ -43,6 +43,9 @@ RUN mkdir /data && chown nonroot:nonroot /data
 # Put the venv on PATH so the CMD can call gunicorn directly (uv is absent here).
 ENV PATH="/app/.venv/bin:$PATH" PYTHONUNBUFFERED=1
 
+ARG GIT_COMMIT=""
+ENV GIT_COMMIT=${GIT_COMMIT}
+
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
