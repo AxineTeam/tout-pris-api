@@ -5,6 +5,7 @@ from django.core.management import call_command
 from django.core.management.base import CommandError
 
 from accounts.models import User
+from catalog.models import ItemStatus, ItemType, Kit, KitItem, ProgressCategory
 from households.memberships import create_household
 from households.models import Household, HouseholdMember, Person
 
@@ -94,3 +95,52 @@ def test_every_forbidden_state_is_reported_in_one_run(camille):
 
     assert "camille@example.com" in report
     assert f"#{orphan.pk}" in report
+
+
+def test_a_kit_line_whose_item_type_belongs_to_another_household_is_listed(camille, shared):
+    elsewhere = Household.objects.create(name="Chez les grands-parents")
+    kit = Kit.objects.create(household=shared, name="Sac a langer")
+    KitItem.objects.create(
+        kit=kit, item_type=ItemType.objects.create(household=elsewhere, name="Bavoir")
+    )
+
+    assert "Bavoir" in failing_check_integrity()
+
+
+def test_a_kit_line_whose_person_belongs_to_another_household_is_listed(camille, shared):
+    elsewhere = Household.objects.create(name="Chez les grands-parents")
+    kit = Kit.objects.create(household=shared, name="Affaires enfants")
+    KitItem.objects.create(
+        kit=kit,
+        item_type=ItemType.objects.create(household=shared, name="T-shirt"),
+        person=Person.objects.create(household=elsewhere, name="Enfant 1"),
+    )
+
+    assert "T-shirt" in failing_check_integrity()
+
+
+def test_a_kit_line_of_its_own_household_is_not_a_forbidden_state(camille, shared):
+    kit = Kit.objects.create(household=shared, name="Sac a langer")
+    KitItem.objects.create(
+        kit=kit,
+        item_type=ItemType.objects.create(household=shared, name="Bavoir"),
+        person=Person.objects.create(household=shared, name="Enfant 1"),
+    )
+
+    assert check_integrity() == ""
+
+
+def test_a_household_whose_statuses_lost_their_starting_point_is_listed(camille, shared):
+    ItemStatus.objects.create(
+        household=shared,
+        name="Dans les sacs",
+        color="#22c55e",
+        progress=ProgressCategory.DONE,
+    )
+
+    assert "Famille Martin" in failing_check_integrity()
+
+
+def test_a_household_that_holds_no_status_at_all_is_not_a_forbidden_state(camille, shared):
+    assert not shared.item_statuses.exists()
+    assert check_integrity() == ""

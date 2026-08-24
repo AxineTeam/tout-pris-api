@@ -1,7 +1,8 @@
 from django.core.management.base import BaseCommand, CommandError
-from django.db.models import Exists, OuterRef
+from django.db.models import Exists, F, OuterRef, Q
 
 from accounts.models import User
+from catalog.models import ItemStatus, KitItem, ProgressCategory
 from households.models import Household, HouseholdMember, Person
 
 
@@ -36,12 +37,45 @@ def persons_whose_account_is_not_a_member():
     ]
 
 
+def kit_lines_reaching_outside_their_household():
+    foreign_item_type = ~Q(item_type__household=F("kit__household"))
+    foreign_person = Q(person__isnull=False) & ~Q(person__household=F("kit__household"))
+    return [
+        f"#{line.pk} {line.item_type.name} in kit #{line.kit_id} "
+        f"of household #{line.kit.household_id}"
+        for line in KitItem.objects.filter(foreign_item_type | foreign_person)
+        .select_related("item_type", "kit")
+        .order_by("pk")
+    ]
+
+
+def households_whose_statuses_have_no_starting_point():
+    not_started = ItemStatus.objects.filter(
+        household=OuterRef("pk"), progress=ProgressCategory.NOT_STARTED
+    )
+    return [
+        f"#{household.pk} {household.name}"
+        for household in Household.objects.filter(item_statuses__isnull=False)
+        .exclude(Exists(not_started))
+        .distinct()
+        .order_by("pk")
+    ]
+
+
 INVARIANTS = [
     ("Accounts without a personal household", accounts_without_a_personal_household),
     ("Shared households without a member", shared_households_without_a_member),
     (
         "Persons whose account is not a member of their household",
         persons_whose_account_is_not_a_member,
+    ),
+    (
+        "Kit lines whose item type or person belongs to another household",
+        kit_lines_reaching_outside_their_household,
+    ),
+    (
+        "Households whose statuses hold no not started one",
+        households_whose_statuses_have_no_starting_point,
     ),
 ]
 
