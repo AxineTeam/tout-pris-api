@@ -40,7 +40,7 @@ Les lignes portant le statut supprimé sont réaffectées au statut par défaut.
 
 Seule la suppression du **dernier `not_started`** est refusée : sans lui, plus de cible de réaffectation ni de statut à donner à une nouvelle ligne. Dans le cas normal — un seul `not_started` — le défaut est donc indéboulonnable, sans drapeau à maintenir pour autant.
 
-Le refus vit dans `delete_status`, pas dans `ItemStatus.delete()`. L'admin peut donc encore supprimer le dernier `not_started`, et c'est cohérent avec ce qu'est l'admin ici : la porte de service qu'on ouvre en connaissance de cause pour réparer un état que l'application ne sait pas produire.
+Le refus est un `Conflict`, l'exception de refus du domaine que DRF rend en `409` sur n'importe quelle route ; le raisonnement est dans [`docs/api/`](../api/README.md). Il vit dans `delete_status`, pas dans `ItemStatus.delete()`. L'admin peut donc encore supprimer le dernier `not_started`, et c'est cohérent avec ce qu'est l'admin ici : la porte de service qu'on ouvre en connaissance de cause pour réparer un état que l'application ne sait pas produire.
 
 La réaffectation des lignes, elle, n'est pas encore écrite : rien ne référence `ItemStatus` tant que `TripItem` n'existe pas. Elle arrive avec lui. Le raffinement à prévoir alors est de réaffecter d'abord vers un statut de même catégorie de progression quand il en existe un, pour qu'un « commandé en ligne » supprimé ne fasse pas régresser les objets jusqu'à « pas préparé ».
 
