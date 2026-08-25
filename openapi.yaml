@@ -479,9 +479,8 @@ components:
           type: string
         version:
           type: string
-          nullable: true
           description: Git ref the running image was built from, the tag on a release
-            and the branch otherwise. Null unless the caller is an administrator.
+            and the branch otherwise.
         commit:
           type: string
           nullable: true

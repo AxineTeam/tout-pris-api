@@ -98,7 +98,7 @@ DJANGO_SECRET_KEY=... docker compose -f docker-compose.prod.yml up -d
 
 ## API
 
-- `GET /api/health/` — health check, and the running build for an administrator
+- `GET /api/health/` — health check and running version, with the exact commit for an administrator
 - `GET /api/households/` — the households the caller belongs to, their personal one first
 - `POST /api/households/` — create a shared household, joined as its owner
 - `/api/households/{household_id}/` — rename or delete a shared household
@@ -158,8 +158,8 @@ Settings are read from the environment. [`.env.example`](.env.example) lists eve
 | `EMAIL_PORT` | `1025` | Port of that SMTP host. |
 | `MAIL_FROM_EMAIL` | `no-reply@tout-pris.app` | Sender address, must be a sender validated in Brevo. |
 | `MAIL_FROM_NAME` | `Tout Pris` | Sender display name. |
-| `APP_VERSION` | `dev` | Git ref the running image was built from — the tag on a release, the branch otherwise. Served by `/api/health/` to an administrator only, and baked in by the release workflow. |
-| `APP_COMMIT` | empty | Short commit the running image was built from, served alongside `APP_VERSION` and under the same restriction. |
+| `APP_VERSION` | `dev` | Git ref the running image was built from — the tag on a release, the branch otherwise. Served by `/api/health/` to every caller, and baked in by the release workflow. |
+| `APP_COMMIT` | empty | Short commit the running image was built from, served by `/api/health/` to an administrator only. |
 
 The Brevo key and the Django secret key are secrets: never commit them, pass them through the environment.
 
