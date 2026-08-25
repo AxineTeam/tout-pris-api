@@ -111,14 +111,6 @@ class Invitation(models.Model):
         unique=True,
         help_text="SHA-256 of the secret carried by the link, the secret itself is never stored.",
     )
-    person = models.ForeignKey(
-        Person,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="invitations",
-        help_text="Person the guest is expected to be, so accepting fills that person in.",
-    )
     invited_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,

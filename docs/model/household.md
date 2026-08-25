@@ -66,13 +66,13 @@ Le foyer créé à l'inscription est le foyer personnel du compte : `personal_of
 
 Le foyer et la personne prennent pour nom celui du compte : son nom complet quand le fournisseur l'a transmis, sinon la partie locale de son adresse email. Le nom du foyer personnel n'est jamais affiché, il ne sert qu'à l'admin ; la personne, elle, est immédiatement visible et reste renommable.
 
-Le membre créé porte le rôle `owner`. Aucun droit n'en découle aujourd'hui — tous les membres peuvent tout faire — mais l'inscription est le seul moment où l'on sait qui a ouvert le foyer.
+Le membre créé porte le rôle `owner`, qui porte des droits depuis #59 : l'inscription est le seul moment où l'on sait qui a ouvert le foyer.
 
 La vérification de l'adresse email est obligatoire et intervient **après** cette création : le compte, son foyer et sa personne existent dès l'inscription, alors que la session ne s'ouvre qu'une fois l'adresse confirmée. Un compte jamais confirmé laisse donc un foyer vide en base, sans aucune conséquence fonctionnelle.
 
 Le second membre d'un foyer partagé arrive par l'invitation. Un foyer personnel, lui, n'en a jamais qu'un.
 
-Ce second membre n'est pas une personne pour autant : rejoindre un foyer n'y crée personne. Il choisit qui il est parmi les personnes déjà là, ou l'invitation l'a choisi pour lui. Une appartenance sans personne est donc un état normal et transitoire, et non un accident à réparer.
+Ce second membre n'est pas une personne pour autant : rejoindre un foyer n'y crée personne. Il choisit qui il est parmi les personnes déjà là, ou se crée la sienne — l'invitation ne le choisit pas pour lui. Une appartenance sans personne est donc un état normal et transitoire, et non un accident à réparer.
 
 ## Cycle de vie d'un foyer partagé
 

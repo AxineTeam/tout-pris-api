@@ -74,20 +74,13 @@ class MemberUpdateSerializer(PartialWriteSerializer):
 class InvitationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Invitation
-        fields = ["id", "email", "person", "created_at", "expires_at"]
+        fields = ["id", "email", "created_at", "expires_at"]
 
 
 class InvitationCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Invitation
-        fields = ["email", "person"]
-
-    def get_fields(self):
-        fields = super().get_fields()
-        household = self.context.get("household")
-        if household:
-            fields["person"].queryset = household.persons.all()
-        return fields
+        fields = ["email"]
 
 
 class InvitationAcceptSerializer(serializers.Serializer):

@@ -255,9 +255,6 @@ class InvitationListCreateView(SharedHouseholdScopedView, generics.ListCreateAPI
     def get_serializer_class(self):
         return InvitationCreateSerializer if self.request.method == "POST" else InvitationSerializer
 
-    def get_serializer_context(self):
-        return super().get_serializer_context() | {"household": self.household}
-
     def get_queryset(self):
         return Invitation.objects.filter(
             household=self.household, accepted_at=None, expires_at__gt=timezone.now()
@@ -266,12 +263,7 @@ class InvitationListCreateView(SharedHouseholdScopedView, generics.ListCreateAPI
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        invite(
-            self.household,
-            serializer.validated_data["email"],
-            request.user,
-            serializer.validated_data.get("person"),
-        )
+        invite(self.household, serializer.validated_data["email"], request.user)
         return Response(status=204)
 
 

@@ -211,35 +211,33 @@ def test_an_expired_token_is_refused(send_invitation, guest):
     assert response.status_code == 404
 
 
-def test_accepting_fills_in_the_person_the_guest_was_expected_to_be(
-    send_invitation, signed_in, guest
-):
+def test_a_guest_nobody_was_waiting_for_creates_their_own_person(send_invitation, signed_in, guest):
+    _, household = signed_in
+    send_invitation()
+    client = signed_in_client(guest)
+    client.post(ACCEPT_URL, {"token": token_from_last_email()}, content_type="application/json")
+
+    created = client.post(
+        f"/api/households/{household.pk}/persons/",
+        {"name": "Sacha"},
+        content_type="application/json",
+    )
+    claimed = client.post(f"/api/households/{household.pk}/persons/{created.json()['id']}/claim/")
+
+    assert created.status_code == 201
+    assert claimed.status_code == 204
+    assert household.persons.get(user=guest).name == "Sacha"
+
+
+def test_an_invitation_does_not_choose_who_the_guest_will_be(send_invitation, signed_in):
     _, household = signed_in
     waiting = Person.objects.create(household=household, name="Sacha")
-    send_invitation(person=waiting.pk)
-    token = token_from_last_email()
 
-    signed_in_client(guest).post(ACCEPT_URL, {"token": token}, content_type="application/json")
+    response = send_invitation(person=waiting.pk)
 
+    assert response.status_code == 204
     waiting.refresh_from_db()
-    assert waiting.user == guest
-    assert household.persons.filter(user=guest).count() == 1
-
-
-def test_a_person_of_another_household_is_refused_like_one_that_does_not_exist(send_invitation):
-    stranger = Person.objects.create(
-        household=Household.objects.create(name="Chez les autres"), name="Inconnu"
-    )
-
-    missing = stranger.pk + 10_000
-
-    refused = send_invitation(person=stranger.pk)
-    unknown = send_invitation(person=missing)
-
-    assert refused.status_code == unknown.status_code == 400
-    assert refused.json() == {"person": [f'Invalid pk "{stranger.pk}" - object does not exist.']}
-    assert unknown.json() == {"person": [f'Invalid pk "{missing}" - object does not exist.']}
-    assert not Invitation.objects.exists()
+    assert waiting.user is None
 
 
 def test_the_token_is_never_stored(send_invitation):
@@ -347,10 +345,11 @@ def test_a_returning_member_is_offered_the_person_they_left_behind(
 ):
     client, household = signed_in
     waiting = Person.objects.create(household=household, name="Papa")
-    send_invitation(person=waiting.pk)
+    send_invitation()
     signed_in_client(guest).post(
         ACCEPT_URL, {"token": token_from_last_email()}, content_type="application/json"
     )
+    signed_in_client(guest).post(f"/api/households/{household.pk}/persons/{waiting.pk}/claim/")
     membership = HouseholdMember.objects.get(household=household, user=guest)
     client.delete(f"/api/households/{household.pk}/members/{membership.pk}/")
 

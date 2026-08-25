@@ -8,7 +8,7 @@ Un membre saisit une adresse, l'invité reçoit un lien, il le suit et rejoint l
 
 ## La table
 
-`Invitation` porte le foyer partagé, l'adresse invitée, l'empreinte d'un jeton, l'auteur de l'invitation, une date d'expiration, et — une fois l'invitation acceptée — la date et le compte qui l'ont acceptée. Elle porte aussi une `Person` optionnelle, expliquée plus bas.
+`Invitation` porte le foyer partagé, l'adresse invitée, l'empreinte d'un jeton, l'auteur de l'invitation, une date d'expiration, et — une fois l'invitation acceptée — la date et le compte qui l'ont acceptée. Rien d'autre : elle ouvre une porte, elle ne décide pas de ce qui se passe derrière.
 
 Le jeton est un secret opaque tiré par `secrets.token_urlsafe`, pas un identifiant devinable : quiconque le détient rejoint le foyer, il vaut donc un mot de passe à usage unique. `accepted_at` le neutralise après usage.
 
@@ -32,19 +32,17 @@ Il est personnel par définition, et son propriétaire en est le seul membre pos
 
 C'est `404` et non une erreur de validation parce que la collection n'existe pas : un foyer personnel n'a pas de sous-ressource « invitations », pas plus qu'il n'a d'invitations à lister ou à annuler. Répondre `422` sur la seule création laisserait entendre que le reste de la collection, lui, existe.
 
-## La personne est désignée en invitant, pas en acceptant
+## Qui est l'invité se décide après, par l'invité
 
-Le foyer partagé contient déjà des `Person` sans compte, et l'invité correspond souvent à l'une d'elles, déjà créée sous le nom « Papa ». L'invitation peut donc désigner cette personne, et l'acceptation y inscrit le compte au lieu d'en créer une deuxième.
+**Inviter ne porte qu'une adresse.** L'invitation a un temps désigné la `Person` que l'invité était censé être — « Papa », déjà créée sans compte — et l'acceptation y inscrivait le compte. C'est retiré : le choix appartient à celui qu'il concerne, et le faire à sa place demandait à l'inviteur d'avoir raison sur quelqu'un d'autre, au moment où il tape une adresse.
 
-C'est l'inviteur qui choisit, parce que c'est lui qui sait que l'adresse correspond à « Papa » : l'invité, lui, ne connaît pas les personnes du foyer avant d'y entrer, et lui demander de se reconnaître dans une liste lui montrerait la composition d'un foyer qu'il n'a pas encore rejoint.
+Ce que ça coûtait dépassait le confort qu'on croyait offrir. Une colonne à valider contre le foyer de l'inviteur, une désignation à revérifier à l'acceptation parce qu'entre les deux la personne a pu être supprimée, changer de main ou recevoir un compte, et un chemin d'écriture vers `Person.user` en concurrence avec la revendication. Une désignation devenue caduque ne rattachait alors rien, et l'invité retombait de toute façon sur l'écran « qui êtes-vous ? » — celui qu'on voulait lui épargner.
 
-La personne désignée est cherchée **parmi celles du foyer**, et non validée après coup : une personne d'un autre foyer est alors refusée dans les mêmes termes qu'une personne inexistante. Distinguer les deux permettrait d'énumérer les identifiants des personnes des foyers d'autrui, ce que la règle « `404` et jamais `403` » interdit partout ailleurs.
+**Accepter fait donc une seule chose : ajouter le membre.** Aucune `Person` n'est créée ni rattachée. L'invité entre dans le foyer sans y être encore quelqu'un, voit les personnes qui l'attendent, et revendique la sienne par `POST /api/households/{household_id}/persons/{id}/claim/`. Personne ne l'attendait ? Il crée la sienne puis la revendique, en deux appels, tous deux ouverts à un membre qui n'est encore personne.
 
-Le rattachement est vérifié au moment d'accepter, pas seulement au moment d'inviter : entre les deux, la personne a pu être supprimée, changer de foyer ou recevoir un compte. Si l'une de ces conditions n'est plus remplie, l'acceptation ne rattache rien, plutôt que d'échouer sur un détail que l'invité ne peut pas corriger.
+Il découvre alors la composition du foyer, ce que la désignation évitait. C'est un foyer qu'il vient de rejoindre sur invitation, pas un inconnu : il en verra les personnes à son premier écran de toute façon.
 
-**Accepter ne crée aucune `Person`.** Sans personne désignée — ou avec une désignation devenue caduque — l'invité entre dans le foyer sans y être encore quelqu'un, et c'est l'écran « qui êtes-vous ? » qui tranche, en rattachant une personne existante par `POST /api/households/{household_id}/persons/{id}/claim/`.
-
-Créer d'office une personne à l'arrivée revenait à répondre à sa place. Le cas se voit sur un ex-membre qui revient : son retrait avait vidé le compte de sa personne sans la supprimer, et l'acceptation lui en fabriquait une seconde à côté, l'ancienne restant orpheline. L'unicité `(household, user)` ne l'attrapait pas, celle qu'il avait quittée portant `user = NULL`.
+Créer d'office une personne à l'arrivée reste hors de question, et c'est un problème distinct de la désignation. Le cas se voit sur un ex-membre qui revient : son retrait avait vidé le compte de sa personne sans la supprimer, et une création automatique lui en fabriquerait une seconde à côté, l'ancienne restant orpheline. L'unicité `(household, user)` ne l'attraperait pas, celle qu'il a quittée portant `user = NULL`.
 
 La `Person` que l'inscription crée pour tout nouveau compte n'entre pas en concurrence avec celle-ci : elle vit dans le foyer personnel de l'invité, pas dans le foyer qu'il rejoint.
 
