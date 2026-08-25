@@ -111,14 +111,9 @@ jobs:
 
       # Read from the workflow environment, never from the repository: .git is kept
       # out of the build context, so the image cannot answer this question itself.
-      - name: Version the image answers with
-        id: version
-        run: |
-          if [ "$GITHUB_REF_TYPE" = tag ]; then
-            echo "value=$GITHUB_REF_NAME" >> "$GITHUB_OUTPUT"
-          else
-            echo "value=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
-          fi
+      - name: Short commit the image answers with
+        id: build
+        run: echo "commit=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
 
       - uses: docker/build-push-action@v6
         with:
@@ -127,7 +122,8 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           build-args: |
-            APP_VERSION=${{ steps.version.outputs.value }}
+            APP_VERSION=${{ github.ref_name }}
+            APP_COMMIT=${{ steps.build.outputs.commit }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=prod

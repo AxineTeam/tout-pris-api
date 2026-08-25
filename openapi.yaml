@@ -480,7 +480,11 @@ components:
         version:
           type: string
           nullable: true
+        commit:
+          type: string
+          nullable: true
       required:
+      - commit
       - status
       - version
     Household:
