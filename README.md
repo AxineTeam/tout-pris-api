@@ -158,7 +158,7 @@ Settings are read from the environment. [`.env.example`](.env.example) lists eve
 | `EMAIL_PORT` | `1025` | Port of that SMTP host. |
 | `MAIL_FROM_EMAIL` | `no-reply@tout-pris.app` | Sender address, must be a sender validated in Brevo. |
 | `MAIL_FROM_NAME` | `Tout Pris` | Sender display name. |
-| `GIT_COMMIT` | empty | Commit the running image was built from, served by `/api/health/`. Baked into the `dev` image by the release workflow, empty everywhere else. |
+| `APP_VERSION` | `dev` | What `/api/health/` answers as the running version, to an administrator only. The release workflow bakes the tag, or the short commit outside a release, into the published image. |
 
 The Brevo key and the Django secret key are secrets: never commit them, pass them through the environment.
 

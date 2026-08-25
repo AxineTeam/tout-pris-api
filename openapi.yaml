@@ -479,10 +479,8 @@ components:
           type: string
         version:
           type: string
-        commit:
-          type: string
+          nullable: true
       required:
-      - commit
       - status
       - version
     Household:

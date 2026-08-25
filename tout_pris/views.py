@@ -8,8 +8,7 @@ from rest_framework.response import Response
 
 class Health(BaseModel):
     status: str
-    version: str
-    commit: str
+    version: str | None
 
 
 @extend_schema(
@@ -23,7 +22,6 @@ def health(request):
     return Response(
         Health(
             status="ok",
-            version=settings.SPECTACULAR_SETTINGS["VERSION"],
-            commit=settings.GIT_COMMIT,
+            version=settings.APP_VERSION if request.user.is_staff else None,
         ).model_dump()
     )
