@@ -27,6 +27,7 @@ Backend Django du projet Tout Pris. Soit extrêmement concis.
 - pytest-django pour les tests, ruff pour lint et format
 - Docker + docker compose, devcontainer basé sur le service `api`
 - Le mailer est choisi dans `settings.py` : clé Brevo, Brevo ; hôte SMTP, ce serveur (Mailpit en dev) ; ni l'un ni l'autre, la console. La branche console garantit que le lien de vérification est lisible sans aucune configuration. Les variables s'appellent `EMAIL_HOST` et `EMAIL_PORT` mais sont stockées en minuscules : Django refuse de démarrer si ces deux *settings* existent à côté de `MAILERS`
+- `.git` est exclu du contexte de build (`.dockerignore`) : aucune image n'en contient, donc **le code ne peut pas et ne doit pas interroger git**. Ce qui vient de git — la version que sert `/api/health/` — est calculé par la CI depuis ses variables d'environnement et passé en `ARG`
 - Deux Dockerfiles (pratiques uv officielles) : `Dockerfile` dev (uv, deps dev, `runserver`, monté sur `/app`), `Dockerfile.prod` multistage (image finale sans uv ni pip, non-root, gunicorn, base dans le volume `/data`)
 
 ## Structure
