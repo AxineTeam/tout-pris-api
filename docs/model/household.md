@@ -66,7 +66,7 @@ Le foyer créé à l'inscription est le foyer personnel du compte : `personal_of
 
 Le foyer et la personne prennent pour nom celui du compte : son nom complet quand le fournisseur l'a transmis, sinon la partie locale de son adresse email. Le nom du foyer personnel n'est jamais affiché, il ne sert qu'à l'admin ; la personne, elle, est immédiatement visible et reste renommable.
 
-Le membre créé porte le rôle `owner`, qui porte des droits depuis #59 : l'inscription est le seul moment où l'on sait qui a ouvert le foyer.
+Le membre créé porte le rôle `owner` : l'inscription est le seul moment où l'on sait qui a ouvert le foyer.
 
 La vérification de l'adresse email est obligatoire et intervient **après** cette création : le compte, son foyer et sa personne existent dès l'inscription, alors que la session ne s'ouvre qu'une fois l'adresse confirmée. Un compte jamais confirmé laisse donc un foyer vide en base, sans aucune conséquence fonctionnelle.
 

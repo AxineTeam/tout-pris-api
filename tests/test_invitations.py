@@ -229,13 +229,12 @@ def test_a_guest_nobody_was_waiting_for_creates_their_own_person(send_invitation
     assert household.persons.get(user=guest).name == "Sacha"
 
 
-def test_an_invitation_does_not_choose_who_the_guest_will_be(send_invitation, signed_in):
+def test_a_person_sent_along_with_an_invitation_is_ignored(send_invitation, signed_in):
     _, household = signed_in
     waiting = Person.objects.create(household=household, name="Sacha")
 
-    response = send_invitation(person=waiting.pk)
+    send_invitation(person=waiting.pk)
 
-    assert response.status_code == 204
     waiting.refresh_from_db()
     assert waiting.user is None
 

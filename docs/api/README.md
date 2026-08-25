@@ -122,7 +122,7 @@ Comme pour les invitations, un foyer personnel répond `404` sur ces deux routes
 
 Un membre invite une adresse dans un foyer partagé, l'invité suit le lien reçu et rejoint. Les routes sont `POST` et `GET /api/households/{household_id}/invitations/`, `DELETE /api/households/{household_id}/invitations/{id}/`, et `POST /api/invitations/accept/`.
 
-Le corps de la création ne porte que l'adresse. L'invitation a un temps désigné la personne que l'invité serait ; ce choix lui revient, et le raisonnement est dans [`docs/model/invitation.md`](../model/invitation.md).
+Le corps de la création ne porte que l'adresse : qui l'invité sera dans le foyer se décide après, et par lui. Le raisonnement est dans [`docs/model/invitation.md`](../model/invitation.md).
 
 Inviter répond `204` sans corps, **y compris quand rien n'est créé**. Une adresse déjà titulaire d'un compte, une adresse inconnue et une adresse déjà membre du foyer donnent la même réponse au bit près : distinguer les cas ferait de la route un oracle d'énumération d'adresses.
 
