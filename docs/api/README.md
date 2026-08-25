@@ -38,11 +38,17 @@ Les foyers eux-mêmes échappent à cette imbrication : `/api/households/` est l
 {"status": "ok", "version": "v1.2.0", "commit": "abc1234"}
 ```
 
-`version` est le ref git de l'image — le tag sur une release, la branche sinon — et `commit` son SHA court. Les deux valent `null` pour un appelant qui n'est pas administrateur, y compris anonyme, la réponse gardant la même forme dans tous les cas : un client n'a qu'un chemin à écrire, et un champ nul se distingue d'un champ absent.
+**`version` est public, `commit` ne l'est pas.** Le ref git de l'image — le tag sur une release, la branche sinon — est renvoyé à tout le monde, y compris à un appelant anonyme. Le SHA court n'est renvoyé qu'à un administrateur, et vaut `null` pour les autres ; la réponse garde la même forme dans tous les cas, un client n'a qu'un chemin à écrire et un champ nul se distingue d'un champ absent.
 
-**Ce n'est pas un `403`, et c'est la seule exception à la règle des rôles.** Ailleurs, un droit refusé sur sa propre ressource répond `403`. Ici la ressource — l'état du service — reste lisible par tous, seuls deux champs de diagnostic sont tus : répondre `403` fermerait la sonde de santé, qui doit rester interrogeable sans session. Un refus ne porte que sur ce qu'il refuse.
+Le partage tombe là parce que les deux valeurs ne disent pas la même chose. Un tag existe déjà publiquement dans le dépôt, et sur l'image `dev` le ref vaut `main` : le publier n'apprend rien à personne. Le SHA court, lui, désigne le build exact, et le dépôt étant public il dit de quels correctifs le déploiement est en retard. C'est lui, et lui seul, qu'il y a lieu de protéger.
 
-**Le garde est `is_staff`, pas un rôle de foyer.** C'est l'accès à l'admin Django, un axe d'autorisation distinct de `owner`/`member`, et c'est le seul endroit de l'API où il décide de quelque chose. Le dépôt étant public, un commit publié dirait à n'importe qui de quels correctifs le déploiement est en retard ; réservé aux administrateurs, il n'apprend rien à personne qui ne puisse déjà tout lire.
+Ce que ça donne concrètement : un utilisateur qui signale un bug peut joindre la version, ce qui est le besoin d'origine, sans que l'endpoint devienne un inventaire de ce qui manque au déploiement.
+
+**Ce n'est pas un `403`, et c'est la seule exception à la règle des rôles.** Ailleurs, un droit refusé sur sa propre ressource répond `403`. Ici la ressource — l'état du service — reste lisible par tous, et un seul champ de diagnostic est tu : répondre `403` fermerait la sonde de santé, qui doit rester interrogeable sans session. Un refus ne porte que sur ce qu'il refuse.
+
+**Le garde est `is_staff`, pas un rôle de foyer.** C'est l'accès à l'admin Django, un axe d'autorisation distinct de `owner`/`member`, et c'est le seul endroit de l'API où il décide de quelque chose.
+
+Un angle mort à connaître : sur l'image `dev`, `version` vaut `main` pour tout le monde, ce qui ne distingue pas deux builds de pré-production l'un de l'autre. Un rapport venu de la pré-prod dira donc « main » et rien de plus, et c'est le `commit` — réservé — qui reste le seul moyen d'y voir clair. C'est la conséquence assumée du partage retenu.
 
 Les deux valeurs sont posées au build de l'image et ne peuvent pas être devinées depuis l'intérieur : `.git` est exclu du contexte de build. Le [README](../../README.md) décrit les variables qui les portent.
 
