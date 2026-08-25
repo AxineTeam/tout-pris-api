@@ -480,9 +480,13 @@ components:
         version:
           type: string
           nullable: true
+          description: Git ref the running image was built from, the tag on a release
+            and the branch otherwise. Null unless the caller is an administrator.
         commit:
           type: string
           nullable: true
+          description: Short commit the running image was built from. Null unless
+            the caller is an administrator.
       required:
       - commit
       - status

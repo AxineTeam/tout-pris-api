@@ -30,6 +30,22 @@ Les routes du domaine sont donc portées par le chemin du foyer — `/api/househ
 
 Les foyers eux-mêmes échappent à cette imbrication : `/api/households/` est la racine du domaine, et sa collection est cloisonnée par l'appartenance de l'appelant plutôt que par un foyer de chemin.
 
+## État du service
+
+`GET /api/health/` répond `200` sans authentification. C'est la sonde de santé, et c'est aussi le seul appel qu'un client fait au chargement pour savoir quel code lui répond.
+
+```json
+{"status": "ok", "version": "v1.2.0", "commit": "abc1234"}
+```
+
+`version` est le ref git de l'image — le tag sur une release, la branche sinon — et `commit` son SHA court. Les deux valent `null` pour un appelant qui n'est pas administrateur, y compris anonyme, la réponse gardant la même forme dans tous les cas : un client n'a qu'un chemin à écrire, et un champ nul se distingue d'un champ absent.
+
+**Ce n'est pas un `403`, et c'est la seule exception à la règle des rôles.** Ailleurs, un droit refusé sur sa propre ressource répond `403`. Ici la ressource — l'état du service — reste lisible par tous, seuls deux champs de diagnostic sont tus : répondre `403` fermerait la sonde de santé, qui doit rester interrogeable sans session. Un refus ne porte que sur ce qu'il refuse.
+
+**Le garde est `is_staff`, pas un rôle de foyer.** C'est l'accès à l'admin Django, un axe d'autorisation distinct de `owner`/`member`, et c'est le seul endroit de l'API où il décide de quelque chose. Le dépôt étant public, un commit publié dirait à n'importe qui de quels correctifs le déploiement est en retard ; réservé aux administrateurs, il n'apprend rien à personne qui ne puisse déjà tout lire.
+
+Les deux valeurs sont posées au build de l'image et ne peuvent pas être devinées depuis l'intérieur : `.git` est exclu du contexte de build. Le [README](../../README.md) décrit les variables qui les portent.
+
 ## Les refus du domaine
 
 Un refus décidé par le domaine — supprimer le dernier statut « pas préparé », rétrograder le dernier propriétaire — est levé comme une exception DRF, `tout_pris.exceptions.Conflict`, et c'est DRF qui la rend en `409` avec son `detail`. Aucune route n'a à l'attraper, et le message écrit dans le code métier est celui que le client lit.

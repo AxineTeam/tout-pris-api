@@ -98,7 +98,7 @@ DJANGO_SECRET_KEY=... docker compose -f docker-compose.prod.yml up -d
 
 ## API
 
-- `GET /api/health` — health check
+- `GET /api/health/` — health check, and the running build for an administrator
 - `GET /api/households/` — the households the caller belongs to, their personal one first
 - `POST /api/households/` — create a shared household, joined as its owner
 - `/api/households/{household_id}/` — rename or delete a shared household
