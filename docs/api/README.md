@@ -74,15 +74,15 @@ C'est cette route qui débloque le partage : inviter exige un foyer partagé, et
 
 CRUD complet sous le foyer : `GET` et `POST /api/households/{household_id}/persons/`, puis `GET`, `PATCH` et `DELETE /api/households/{household_id}/persons/{id}/`. Tous les foyers en ont, le foyer personnel compris.
 
-Le corps ne porte que le nom. Le compte lié est en lecture seule dans le schéma : il est rempli par l'inscription ou par l'acceptation d'une invitation, jamais par un client qui désignerait un compte à rattacher.
+Le corps ne porte que le nom. Le compte lié est en lecture seule dans le schéma : il est rempli par l'inscription ou par la revendication, jamais par un client qui désignerait un compte à rattacher.
 
 Supprimer une personne dont le compte est encore membre du foyer répond `409` : ça retirerait sa représentation à quelqu'un qui a toujours accès, et chaque écran « pour qui » se retrouverait sans lui. Retirer le membre d'abord délie la personne et rend sa suppression possible.
 
-`POST /api/households/{household_id}/persons/{id}/claim/` répond `204` et rattache la personne au compte appelant. C'est l'écran « qui êtes-vous ? » à l'arrivée dans un foyer : l'invité choisit la personne qui l'attendait — « Papa » créé par le foyer avant qu'il ne rejoigne — au lieu qu'une deuxième soit créée à côté d'elle. Rien dans le corps, l'identité vient du chemin et de la session.
+`POST /api/households/{household_id}/persons/{id}/claim/` répond `204` et rattache la personne au compte appelant. C'est l'écran « qui êtes-vous ? » à l'arrivée dans un foyer, et c'est **le seul** chemin : l'invité choisit la personne qui l'attendait — « Papa » créé par le foyer avant qu'il ne rejoigne — au lieu qu'une deuxième soit créée à côté d'elle. Rien dans le corps, l'identité vient du chemin et de la session.
 
 Deux refus, tous deux en `409` : une personne qui a déjà un compte, et un appelant qui est déjà quelqu'un dans ce foyer. Le premier protège la représentation d'un autre membre, le second l'invariant « un compte, une personne par foyer » que la base porte déjà — répondre `409` plutôt que laisser passer une violation de contrainte donne à l'appelant une réponse qu'il peut lire.
 
-Un membre peut donc exister sans personne, le temps de choisir : c'est l'état dans lequel l'acceptation d'une invitation le laisse quand elle n'en désigne aucune, et l'écran de choix est ce qui en sort.
+Un membre peut donc exister sans personne, le temps de choisir : c'est l'état dans lequel l'acceptation d'une invitation le laisse **toujours**, et l'écran de choix est ce qui en sort.
 
 Un arrivant que personne n'attendait se crée donc sa personne puis la revendique, en deux appels. Rattacher au passage à la création aurait fait un second chemin d'écriture vers `Person.user` pour épargner une requête, alors que la revendication est déjà la seule porte et qu'elle porte les deux refus.
 
@@ -121,6 +121,8 @@ Comme pour les invitations, un foyer personnel répond `404` sur ces deux routes
 ## Invitations
 
 Un membre invite une adresse dans un foyer partagé, l'invité suit le lien reçu et rejoint. Les routes sont `POST` et `GET /api/households/{household_id}/invitations/`, `DELETE /api/households/{household_id}/invitations/{id}/`, et `POST /api/invitations/accept/`.
+
+Le corps de la création ne porte que l'adresse. L'invitation a un temps désigné la personne que l'invité serait ; ce choix lui revient, et le raisonnement est dans [`docs/model/invitation.md`](../model/invitation.md).
 
 Inviter répond `204` sans corps, **y compris quand rien n'est créé**. Une adresse déjà titulaire d'un compte, une adresse inconnue et une adresse déjà membre du foyer donnent la même réponse au bit près : distinguer les cas ferait de la route un oracle d'énumération d'adresses.
 

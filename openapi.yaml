@@ -528,11 +528,6 @@ components:
           description: Address the invitation was sent to, which may or may not have
             an account.
           maxLength: 254
-        person:
-          type: integer
-          nullable: true
-          description: Person the guest is expected to be, so accepting fills that
-            person in.
         created_at:
           type: string
           format: date-time
@@ -563,11 +558,6 @@ components:
           description: Address the invitation was sent to, which may or may not have
             an account.
           maxLength: 254
-        person:
-          type: integer
-          nullable: true
-          description: Person the guest is expected to be, so accepting fills that
-            person in.
       required:
       - email
     Member:

@@ -17,7 +17,7 @@ def hashed(token):
 
 
 @transaction.atomic
-def invite(household, email, invited_by, person=None):
+def invite(household, email, invited_by):
     Invitation.objects.filter(household=household, email=email, accepted_at=None).delete()
     if HouseholdMember.objects.filter(household=household, user__email=email).exists():
         return None
@@ -26,7 +26,6 @@ def invite(household, email, invited_by, person=None):
         household=household,
         email=email,
         invited_by=invited_by,
-        person=person,
         token_hash=hashed(token),
     )
     transaction.on_commit(lambda: send_invitation(invitation, token))
@@ -66,12 +65,4 @@ def accept(invitation, user):
         return household
 
     HouseholdMember.objects.create(household=household, user=user)
-    attach_designated_person(invitation, user)
     return household
-
-
-def attach_designated_person(invitation, user):
-    person = invitation.person
-    if person and person.household_id == invitation.household_id and person.user_id is None:
-        person.user = user
-        person.save()

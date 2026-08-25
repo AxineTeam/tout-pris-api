@@ -290,14 +290,6 @@ digraph model_graph {
   
   
     <TR><TD ALIGN="LEFT" BORDER="0">
-    <FONT COLOR="#7B7B7B" FACE="Roboto"><B>person</B></FONT>
-    </TD><TD ALIGN="LEFT">
-    <FONT COLOR="#7B7B7B" FACE="Roboto"><B>ForeignKey (id)</B></FONT>
-    </TD></TR>
-  
-  
-  
-    <TR><TD ALIGN="LEFT" BORDER="0">
     <FONT COLOR="#7B7B7B" FACE="Roboto">accepted_at</FONT>
     </TD><TD ALIGN="LEFT">
     <FONT COLOR="#7B7B7B" FACE="Roboto">DateTimeField</FONT>
@@ -599,9 +591,6 @@ digraph model_graph {
 
   households_models_Invitation -> households_models_Household
   [label=" household (invitations)"] [arrowhead=none, arrowtail=dot, dir=both];
-
-  households_models_Invitation -> households_models_Person
-  [label=" person (invitations)"] [arrowhead=none, arrowtail=dot, dir=both];
 
   households_models_Invitation -> accounts_models_User
   [label=" invited_by (sent_invitations)"] [arrowhead=none, arrowtail=dot, dir=both];
