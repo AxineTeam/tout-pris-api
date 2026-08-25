@@ -46,11 +46,11 @@ ENV PATH="/app/.venv/bin:$PATH" PYTHONUNBUFFERED=1
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-# Commit the image was built from, served by /api/health/. Declared here, at the very
-# end, so that a new commit rebuilds this layer alone instead of the whole venv chain.
-# Empty unless the release workflow passes it, which it does for the dev tag only.
-ARG GIT_COMMIT=""
-ENV GIT_COMMIT=$GIT_COMMIT
+# What the image answers when an administrator asks which code is running: the tag it
+# was built from, or the short commit outside a release. Declared here, at the very end,
+# so that a new build rebuilds this layer alone instead of the whole venv chain.
+ARG APP_VERSION="dev"
+ENV APP_VERSION=$APP_VERSION
 
 USER nonroot
 WORKDIR /app

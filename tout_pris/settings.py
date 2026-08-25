@@ -13,7 +13,7 @@ DEBUG = os.environ.get("DJANGO_DEBUG", "true").lower() == "true"
 
 ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "*").split(",")
 
-GIT_COMMIT = os.environ.get("GIT_COMMIT", "")
+APP_VERSION = os.environ.get("APP_VERSION", "dev")
 
 INSTALLED_APPS = [
     "django.contrib.admin",
