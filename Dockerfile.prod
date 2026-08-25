@@ -47,8 +47,9 @@ COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 # What the image answers when an administrator asks which code is running: the tag it
-# was built from, or the short commit outside a release. Declared here, at the very end,
-# so that a new build rebuilds this layer alone instead of the whole venv chain.
+# was built from, or the short commit outside a release. It has to be passed in — .git
+# is excluded from the build context, and nothing in the image can work it out. Declared
+# at the very end so that a new build rebuilds this layer alone, not the venv chain.
 ARG APP_VERSION="dev"
 ENV APP_VERSION=$APP_VERSION
 
