@@ -12,11 +12,15 @@ Le référentiel appartient au foyer et n'est jamais partagé entre foyers. Un c
 
 La saisie libre produira « chapeau », « Chapeau » et « chapeaux ». Ce n'est pas grave, et surtout ce n'est pas évitable : refuser un nom proche à la saisie ferait perdre plus de temps qu'il n'en ferait gagner. L'utilisateur verra le problème de lui-même, parce que ses regroupements cesseront de fonctionner — quatre t-shirts affichés en deux lignes de deux.
 
-Ce qui compte est donc le nettoyage, et il tient en un geste : **renommer un objet vers un nom déjà pris déclenche une fusion**. Les lignes de kit de l'objet absorbé sont réaffectées au survivant, puis l'objet absorbé est supprimé. Il n'y a pas d'écran « fusionner deux objets » à trouver, seulement le renommage que l'utilisateur allait faire de toute façon.
+Ce qui compte est donc le nettoyage, et il tient en un geste : **renommer un objet vers un nom déjà pris déclenche une fusion**. Les lignes de kit de l'objet absorbé sont réaffectées au survivant ; ses lignes de voyage le sont aussi, **sauf celles qui feraient doublon avec une ligne déjà présente**, qui sont supprimées. L'objet absorbé disparaît ensuite. Il n'y a pas d'écran « fusionner deux objets » à trouver, seulement le renommage que l'utilisateur allait faire de toute façon.
 
 **Unifier le type est la réparation ; le regroupement en découle.** Un kit qui contenait « 2 Chapeau » et « 3 chapeaux » contient ensuite deux lignes du même objet, et ce n'est pas un résidu : avant, les deux lignes ne partageaient rien et rien ne pouvait les rapprocher — c'est exactement le symptôme décrit plus haut. Après, elles partagent un `item_type_id`, et toute vue qui lit des lignes peut les présenter ensemble. Le regroupement se fait donc là où les lignes sont lues, dans le kit et dans le voyage, pas au renommage.
 
 Additionner les quantités en base serait résoudre au mauvais endroit. « 2 le bob » et « 3 celui de paille » deviendraient « 5 » sans note, et le chapeau de Jeanne et celui de Louis n'en feraient plus qu'un. Les `note` et les `person` distinctes ne sont pas une limite de la fusion, elles sont ce qu'il faut garder : un regroupement à l'affichage rend les trois cas correctement, une somme en détruit deux.
+
+**Les deux tables ne se comportent pas pareil, et c'est voulu.** `KitItem` garde le droit au doublon : aucune contrainte ne l'interdit, la fusion y réaffecte tout, et deux lignes du même objet dans un kit sont l'état de sortie décrit juste au-dessus. `TripItem` ne l'a pas : deux contraintes d'unicité y interdisent qu'un objet entre deux fois dans le même voyage pour la même personne, et le raisonnement est dans [`trips.md`](trips.md). La fusion ne peut donc pas y produire le même résultat, et elle supprime la ligne en trop au lieu de la créer.
+
+Ce qui se perd alors est **la quantité de la ligne supprimée**. Un voyage qui contenait « 2 Chapeau » et « 3 chapeaux » garde « 2 Chapeau » : la survivante est celle qui portait déjà le nom retenu, et l'utilisateur ajuste s'il le veut. C'est le comportement demandé, préféré ici encore à une addition qui inventerait un nombre que personne n'a saisi. La divergence joue aussi en retour : un kit contenant deux fois le même objet n'instancie qu'une seule ligne de voyage, la seconde étant vue comme déjà présente.
 
 C'est la contrepartie de la contrainte d'unicité, qui porte sur le **nom normalisé** — minuscules, espaces de bord retirés — et non sur le nom brut. Sans normalisation, « chapeau » et « Chapeau » cohabiteraient et la fusion n'aurait plus de déclencheur : le renommage réussirait sans rien nettoyer. En Django, cela s'exprime par une `UniqueConstraint` sur des expressions (`Lower`, `Trim`), qui fonctionne sur SQLite comme sur PostgreSQL.
 
@@ -44,7 +48,7 @@ La promotion d'office vit dans `ItemStatus.save()` et non dans la vue. L'inscrip
 
 ### Supprimer un statut
 
-Les lignes portant le statut supprimé sont réaffectées au statut par défaut. Tout statut se supprime, **sauf le défaut** : sans lui, plus de cible de réaffectation ni de statut à donner à une nouvelle ligne, et le foyer se retrouverait sans aucun statut le jour où c'est le dernier.
+Les lignes portant le statut supprimé sont réaffectées à un autre statut. Tout statut se supprime, **sauf le défaut** : sans lui, plus de cible de réaffectation ni de statut à donner à une nouvelle ligne, et le foyer se retrouverait sans aucun statut le jour où c'est le dernier.
 
 Le défaut se libère en en désignant un autre — `is_default: true` sur un `PATCH`, qui retire le drapeau au précédent dans la même transaction — après quoi l'ancien se supprime comme n'importe quel autre. Sans cette désignation, le premier statut créé serait indéboulonnable sans recours.
 
@@ -52,15 +56,19 @@ La **catégorie de progression** se change librement, y compris celle du défaut
 
 Le refus est un `Conflict`, l'exception de refus du domaine que DRF rend en `409` sur n'importe quelle route ; le raisonnement est dans [`docs/api/`](../api/README.md). Il vit dans `delete_status`, pas dans `ItemStatus.delete()`. L'admin peut donc encore supprimer le statut par défaut, et c'est cohérent avec ce qu'est l'admin ici : la porte de service qu'on ouvre en connaissance de cause pour réparer un état que l'application ne sait pas produire.
 
-La réaffectation des lignes, elle, n'est pas encore écrite : rien ne référence `ItemStatus` tant que `TripItem` n'existe pas. Elle arrive avec lui. Le raffinement à prévoir alors est de réaffecter d'abord vers un statut de même catégorie de progression quand il en existe un, pour qu'un « commandé en ligne » supprimé ne fasse pas régresser les objets jusqu'à « pas préparé ».
+La réaffectation des lignes de voyage vit dans `delete_status` : les lignes rejoignent d'abord un statut de même catégorie de progression quand il en existe un, sinon le statut par défaut, pour qu'un « commandé en ligne » supprimé ne fasse pas régresser jusqu'à « pas préparé » des objets que quelqu'un avait avancés. La clé étrangère est en `RESTRICT`, si bien qu'un statut encore porté par des lignes ne se supprime que par ce chemin — le raisonnement complet est dans [`trips.md`](trips.md).
 
 ## Les kits
 
 Un kit est un bloc réutilisable et nommé : « sac à langer », « affaires enfants », « affaires de rando ». C'est la brique qui rend l'initialisation d'un voyage rapide — on coche trois kits et l'essentiel de la liste est là.
 
-Il joue aussi le rôle de section d'affichage dans le voyage, et ces deux rôles sont volontairement portés par la même notion.
+Il sert aussi de **tag** : une ligne de voyage affiche les kits auxquels son objet appartient, ce qui donne de quoi s'y retrouver dans une longue liste sans qu'aucune section n'existe. Ces deux rôles sont volontairement portés par la même notion.
 
-C'est ce qui écarte le tag. Un tag posé sur l'objet qualifie l'objet partout à la fois : « bavoir » taggé « sac à langer » taggerait aussi bien les deux bavoirs du sac à langer que les six bavoirs du séjour. Le kit, lui, est le **bloc d'origine de la ligne** : la même chose peut entrer deux fois dans un voyage, par deux blocs différents, et rester distinguable. C'est précisément ce que l'utilisateur veut voir, et c'est ce qu'un tag ne sait pas dire.
+**Le tag est lu dans le catalogue, jamais stocké sur la ligne de voyage.** C'est la décision retenue, et elle renverse celle qui figurait ici. L'argument d'alors : un tag posé sur l'objet qualifie l'objet partout à la fois — « bavoir » taggé « sac à langer » taggerait aussi bien les deux bavoirs du sac à langer que les six bavoirs du séjour — alors qu'une colonne portée par la ligne de voyage en aurait fait le **bloc d'origine**, si bien que la même chose pouvait entrer deux fois dans un voyage, par deux blocs différents, et rester distinguable.
+
+Ce que cet argument supposait est justement ce que le besoin a écarté : **un objet n'entre dans un voyage qu'une seule fois**, quel que soit le nombre de kits qui le contiennent. Il n'y a donc pas deux lignes à distinguer, et la seule question qui reste est ce que l'on affiche à côté d'une ligne — la liste des kits de son objet, que le catalogue donne à la lecture, sans rien copier. La colonne d'origine n'aurait plus servi qu'à répondre à une question que personne ne pose.
+
+Ce que l'on perd est réel : plus rien ne dit par quel bloc une ligne est arrivée, si « crème solaire » vient de « sac à langer » ou de « plage ». C'est assumé, au même titre que le passé qui change quand on supprime un objet du référentiel — la même décision confirme ce `CASCADE`. La contrepartie joue d'ailleurs dans l'autre sens : ranger un objet dans un kit le tagge aussitôt partout, y compris sur les voyages déjà faits, là où une colonne d'origine aurait laissé ces lignes muettes pour toujours.
 
 Une ligne de kit peut désigner une personne : « affaires enfants » contient « 5 t-shirts pour Enfant 1 » et « 5 t-shirts pour Enfant 2 ». À l'instanciation dans un voyage, les lignes visant une personne qui n'y participe pas sont ignorées.
 
@@ -68,7 +76,7 @@ Supprimer une personne emporte donc ses lignes de kit. Les rendre génériques e
 
 **Pas de contrainte d'unicité sur `KitItem`.** La personne étant facultative, une unicité SQL serait faussée — `NULL` n'entre pas en conflit avec lui-même — et il existe des doublons légitimes. Le garde-fou est applicatif, au moment où l'on promeut un objet dans un kit.
 
-**Pas de table de liaison entre le voyage et le kit** non plus : `TripItem.kit` suffira à regrouper les lignes d'un voyage par section, et une table de plus n'apporterait que la possibilité de cocher un kit sans en garder aucune ligne.
+**Pas de table de liaison entre le voyage et le kit** non plus, et le renversement du tag ne la ramène pas : le regroupement à l'affichage n'a besoin de rien, le tag se lisant des `KitItem` de l'objet. Ce qu'elle apporterait est la mémoire d'un kit coché — savoir qu'il a été appliqué même quand il n'en reste aucune ligne — et ça ne vaut pas une table : le recochage est idempotent et sans mémoire, ce que [`trips.md`](trips.md) assume ligne à ligne.
 
 ## L'ordre
 

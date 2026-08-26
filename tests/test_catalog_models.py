@@ -1,3 +1,5 @@
+import datetime
+
 import pytest
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError
@@ -9,6 +11,7 @@ from catalog.models import ItemStatus, ItemType, Kit, KitItem, ProgressCategory
 from catalog.statuses import default_status, delete_status, make_default
 from households.models import Household, Person
 from tout_pris.exceptions import Conflict
+from trips.models import Trip, TripItem
 
 pytestmark = pytest.mark.django_db
 
@@ -26,6 +29,20 @@ def other_household():
 def make_status(household, name, progress=ProgressCategory.NOT_STARTED):
     return ItemStatus.objects.create(
         household=household, name=name, color="#94a3b8", progress=progress
+    )
+
+
+def make_trip(household):
+    return Trip.objects.create(
+        household=household,
+        name="Une semaine en Bretagne",
+        date=datetime.date(2026, 7, 4),
+    )
+
+
+def make_trip_line(household, item_type, status, **fields):
+    return TripItem.objects.create(
+        trip=make_trip(household), item_type=item_type, status=status, **fields
     )
 
 
@@ -111,6 +128,60 @@ def test_renaming_an_item_type_ignores_a_namesake_of_another_household(household
     renamed = rename_item_type(item_type, "Chapeau")
 
     assert renamed.pk == item_type.pk
+
+
+def test_renaming_an_item_type_to_a_taken_name_moves_the_trip_lines_to_the_survivor(household):
+    survivor = ItemType.objects.create(household=household, name="Chapeau")
+    absorbed = ItemType.objects.create(household=household, name="Chapeaux")
+    status = make_status(household, "Pas prepare")
+    line = make_trip_line(household, absorbed, status)
+
+    rename_item_type(absorbed, "chapeau")
+
+    line.refresh_from_db()
+
+    assert line.item_type_id == survivor.pk
+
+
+def test_merging_two_item_types_drops_the_line_the_trip_already_packs_under_the_survivor(
+    household,
+):
+    survivor = ItemType.objects.create(household=household, name="Chapeau")
+    absorbed = ItemType.objects.create(household=household, name="Chapeaux")
+    sunscreen = ItemType.objects.create(household=household, name="Creme solaire")
+    status = make_status(household, "Pas prepare")
+    trip = make_trip(household)
+    kept = TripItem.objects.create(trip=trip, item_type=survivor, status=status, quantity=2)
+    TripItem.objects.create(trip=trip, item_type=absorbed, status=status, quantity=3)
+    tail = TripItem.objects.create(trip=trip, item_type=sunscreen, status=status)
+
+    rename_item_type(absorbed, "chapeau")
+
+    kept.refresh_from_db()
+    tail.refresh_from_db()
+
+    assert list(trip.items.all()) == [kept, tail]
+    assert kept.quantity == 2
+    assert [kept.position, tail.position] == [0, 1]
+
+
+def test_merging_two_item_types_keeps_the_lines_of_a_trip_that_aim_at_different_people(household):
+    survivor = ItemType.objects.create(household=household, name="Chapeau")
+    absorbed = ItemType.objects.create(household=household, name="Chapeaux")
+    child = Person.objects.create(household=household, name="Enfant 1")
+    status = make_status(household, "Pas prepare")
+    trip = make_trip(household)
+    common = TripItem.objects.create(trip=trip, item_type=survivor, status=status)
+    aimed = TripItem.objects.create(
+        trip=trip, item_type=absorbed, status=status, person=child, quantity=3
+    )
+
+    rename_item_type(absorbed, "chapeau")
+
+    aimed.refresh_from_db()
+
+    assert list(trip.items.all()) == [common, aimed]
+    assert aimed.item_type_id == survivor.pk
 
 
 def test_statuses_are_numbered_in_creation_order_within_their_household(household):
@@ -284,6 +355,35 @@ def test_two_default_statuses_cannot_coexist_in_a_household(household):
 
     with pytest.raises(IntegrityError):
         other.save()
+
+
+def test_deleting_a_status_hands_its_trip_lines_to_the_next_one_of_the_same_progress(household):
+    make_status(household, "Pas prepare")
+    dropped = make_status(household, "Commande en ligne", ProgressCategory.IN_PROGRESS)
+    successor = make_status(household, "Sorti du placard", ProgressCategory.IN_PROGRESS)
+    item_type = ItemType.objects.create(household=household, name="Bavoir")
+    line = make_trip_line(household, item_type, dropped)
+
+    delete_status(dropped)
+
+    line.refresh_from_db()
+
+    assert line.status_id == successor.pk
+
+
+def test_deleting_the_last_status_of_its_progress_sends_its_trip_lines_back_to_the_default(
+    household,
+):
+    default = make_status(household, "Pas prepare")
+    dropped = make_status(household, "Dans les sacs", ProgressCategory.DONE)
+    item_type = ItemType.objects.create(household=household, name="Bavoir")
+    line = make_trip_line(household, item_type, dropped)
+
+    delete_status(dropped)
+
+    line.refresh_from_db()
+
+    assert line.status_id == default.pk
 
 
 def test_installing_the_base_catalog_fills_the_household(household):

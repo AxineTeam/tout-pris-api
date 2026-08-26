@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     "accounts",
     "households",
     "catalog",
+    "trips",
 ]
 
 MIDDLEWARE = [
