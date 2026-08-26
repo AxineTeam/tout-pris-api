@@ -1,5 +1,5 @@
 {
-  "name": "tout-pris-back",
+  "name": "tout-pris-api",
   "dockerComposeFile": "../docker-compose.yml",
   "service": "api",
   "workspaceFolder": "/app",

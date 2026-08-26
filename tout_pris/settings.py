@@ -164,8 +164,8 @@ REST_FRAMEWORK = {
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "Tout Pris API",
-    "DESCRIPTION": "Backend API of the Tout Pris project.",
-    "VERSION": version("tout-pris-back"),
+    "DESCRIPTION": "API of the Tout Pris project.",
+    "VERSION": version("tout-pris-api"),
     "SERVE_INCLUDE_SCHEMA": False,
 }
 
