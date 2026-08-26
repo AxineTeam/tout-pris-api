@@ -1,6 +1,6 @@
-# tout-pris-back
+# tout-pris-api
 
-Backend Django du projet Tout Pris. Soit extrêmement concis.
+API Django du projet Tout Pris. Soit extrêmement concis.
 
 ## Langue
 

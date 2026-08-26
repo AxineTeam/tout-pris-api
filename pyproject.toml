@@ -1,7 +1,7 @@
 [project]
-name = "tout-pris-back"
+name = "tout-pris-api"
 version = "0.1.0"
-description = "Tout Pris backend API"
+description = "Tout Pris API"
 requires-python = ">=3.12"
 dependencies = [
     "django>=6.1",

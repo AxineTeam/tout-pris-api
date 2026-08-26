@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: Tout Pris API
   version: 0.1.0
-  description: Backend API of the Tout Pris project.
+  description: API of the Tout Pris project.
 paths:
   /api/health/:
     get:
