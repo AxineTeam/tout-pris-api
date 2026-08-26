@@ -83,8 +83,13 @@ jobs:
     needs: [lint-and-test, build-image]
     if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
+    # Both names for the duration of the rename: the front CI and the deployment
+    # repository still pull the tout-pris-back tags. Dropping the old name is a
+    # follow-up, once they both point at tout-pris-api.
     env:
-      IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/tout-pris-back
+      IMAGE_NAMES: |
+        ${{ secrets.DOCKERHUB_USERNAME }}/tout-pris-api
+        ${{ secrets.DOCKERHUB_USERNAME }}/tout-pris-back
     steps:
       - uses: actions/checkout@v4
 
@@ -101,7 +106,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.IMAGE_NAME }}
+          images: ${{ env.IMAGE_NAMES }}
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
