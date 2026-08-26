@@ -14,6 +14,17 @@ def matching_item_type(household_id, name):
     )
 
 
+def merge_trip_lines(absorbed, survivor):
+    taken = set(survivor.trip_items.values_list("trip_id", "person_id"))
+    for line in absorbed.trip_items.all():
+        if (line.trip_id, line.person_id) in taken:
+            line.delete()
+        else:
+            taken.add((line.trip_id, line.person_id))
+            line.item_type = survivor
+            line.save(update_fields=["item_type"])
+
+
 @transaction.atomic
 def rename_item_type(item_type, name):
     survivor = matching_item_type(item_type.household_id, name)
@@ -22,5 +33,6 @@ def rename_item_type(item_type, name):
         item_type.save()
         return item_type
     item_type.kit_items.update(item_type=survivor)
+    merge_trip_lines(item_type, survivor)
     item_type.delete()
     return survivor

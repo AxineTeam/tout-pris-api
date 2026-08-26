@@ -17,9 +17,19 @@ def make_default(status):
     status.save()
 
 
+@transaction.atomic
 def delete_status(status):
     if status.is_default:
         raise Conflict(
             "The default status cannot be deleted, make another status the default one first."
         )
+    siblings = (
+        ItemStatus.objects.filter(household_id=status.household_id)
+        .exclude(pk=status.pk)
+        .order_by("position")
+    )
+    replacement = siblings.filter(progress=status.progress).first() or default_status(
+        status.household_id
+    )
+    status.trip_items.update(status=replacement)
     status.delete()

@@ -43,7 +43,7 @@ jobs:
 
       - name: Schema diagram is up to date
         run: |
-          uv run python manage.py graph_models accounts households catalog --no-inheritance --exclude-models "Abstract*,OrderedModelBase" | grep -v '// Created:' > docs/model/schema.dot
+          uv run python manage.py graph_models accounts households catalog trips --no-inheritance --exclude-models "Abstract*,OrderedModelBase" | grep -v '// Created:' > docs/model/schema.dot
           git diff --exit-code docs/model/schema.dot
 
       - uses: DavidAnson/markdownlint-cli2-action@v19

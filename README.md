@@ -127,13 +127,13 @@ Schema migrations are Django migrations, applied by the Docker entrypoint at con
 
 ## Schema diagram
 
-![Entity-relationship diagram of the accounts, households and catalog models](docs/model/schema.png)
+![Entity-relationship diagram of the accounts, households, catalog and trips models](docs/model/schema.png)
 
 `graph_models` (django-extensions) draws it from the models, and the image is committed as `docs/model/schema.png`:
 
 ```bash
-uv run python manage.py graph_models accounts households catalog --no-inheritance --exclude-models "Abstract*,OrderedModelBase" | grep -v '// Created:' > docs/model/schema.dot
-uv run python manage.py graph_models accounts households catalog --no-inheritance --exclude-models "Abstract*,OrderedModelBase" --output docs/model/schema.png
+uv run python manage.py graph_models accounts households catalog trips --no-inheritance --exclude-models "Abstract*,OrderedModelBase" | grep -v '// Created:' > docs/model/schema.dot
+uv run python manage.py graph_models accounts households catalog trips --no-inheritance --exclude-models "Abstract*,OrderedModelBase" --output docs/model/schema.png
 ```
 
 Rendering needs the `dot` binary from graphviz — installed in the dev image, therefore in the devcontainer too, and `apt install graphviz` or `brew install graphviz` on a host running without Docker.
@@ -200,6 +200,7 @@ The production settings live in `docker-compose.prod.yml`: the database is store
 - `accounts/` — the custom `User` model, referenced by `AUTH_USER_MODEL` since the initial migration
 - `households/` — the household domain: `Household`, `HouseholdMember`, `Person` and `Invitation`, their admin and API, the personal household created at signup, and the `seed` and `check_integrity` commands
 - `catalog/` — the item catalog of a household: `ItemType`, `ItemStatus`, `Kit` and `KitItem`, their admin, and the base catalog copied into a new household
+- `trips/` — the trip domain: `Trip`, `TripParticipant` and `TripItem`, the preparation lines a household moves forward, and their admin
 - `.env.example` — every environment variable with a development value
 - `tests/` — pytest-django test suite
 - `docs/api/` — the API conventions: status codes, household scoping, schemas, collections
