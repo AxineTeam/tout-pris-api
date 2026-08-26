@@ -4,6 +4,7 @@ from django.db.models import Exists, F, OuterRef, Q
 from accounts.models import User
 from catalog.models import ItemStatus, KitItem
 from households.models import Household, HouseholdMember, Person
+from trips.models import TripItem, TripParticipant
 
 
 def accounts_without_a_personal_household():
@@ -60,6 +61,29 @@ def households_whose_statuses_have_no_default():
     ]
 
 
+def trip_lines_reaching_outside_their_household():
+    foreign_item_type = ~Q(item_type__household=F("trip__household"))
+    foreign_status = ~Q(status__household=F("trip__household"))
+    foreign_person = Q(person__isnull=False) & ~Q(person__household=F("trip__household"))
+    return [
+        f"#{line.pk} {line.item_type.name} in trip #{line.trip_id} "
+        f"of household #{line.trip.household_id}"
+        for line in TripItem.objects.filter(foreign_item_type | foreign_status | foreign_person)
+        .select_related("item_type", "trip")
+        .order_by("pk")
+    ]
+
+
+def trip_participants_from_another_household():
+    return [
+        f"#{participant.pk} {participant.person.name} in trip #{participant.trip_id} "
+        f"of household #{participant.trip.household_id}"
+        for participant in TripParticipant.objects.exclude(person__household=F("trip__household"))
+        .select_related("person", "trip")
+        .order_by("pk")
+    ]
+
+
 INVARIANTS = [
     ("Accounts without a personal household", accounts_without_a_personal_household),
     ("Shared households without a member", shared_households_without_a_member),
@@ -74,6 +98,14 @@ INVARIANTS = [
     (
         "Households whose statuses hold no default one",
         households_whose_statuses_have_no_default,
+    ),
+    (
+        "Trip lines whose item type, status or person belongs to another household",
+        trip_lines_reaching_outside_their_household,
+    ),
+    (
+        "Trip participants who belong to another household",
+        trip_participants_from_another_household,
     ),
 ]
 

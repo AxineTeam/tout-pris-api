@@ -1,3 +1,4 @@
+import datetime
 import io
 
 import pytest
@@ -8,6 +9,7 @@ from accounts.models import User
 from catalog.models import ItemStatus, ItemType, Kit, KitItem
 from households.memberships import create_household
 from households.models import Household, HouseholdMember, Person
+from trips.models import Trip, TripItem, TripParticipant
 
 pytestmark = pytest.mark.django_db
 
@@ -139,4 +141,79 @@ def test_a_household_whose_statuses_lost_their_default_one_is_listed(camille, sh
 
 def test_a_household_that_holds_no_status_at_all_is_not_a_forbidden_state(camille, shared):
     assert not shared.item_statuses.exists()
+    assert check_integrity() == ""
+
+
+def make_trip(household):
+    return Trip.objects.create(
+        household=household,
+        name="Une semaine en Bretagne",
+        date=datetime.date(2026, 7, 4),
+    )
+
+
+def make_status(household):
+    return ItemStatus.objects.create(household=household, name="Pas prepare", color="#94a3b8")
+
+
+def test_a_trip_line_whose_item_type_belongs_to_another_household_is_listed(camille, shared):
+    elsewhere = Household.objects.create(name="Chez les grands-parents")
+    TripItem.objects.create(
+        trip=make_trip(shared),
+        item_type=ItemType.objects.create(household=elsewhere, name="T-shirt"),
+        status=make_status(shared),
+    )
+
+    assert "T-shirt" in failing_check_integrity()
+
+
+def test_a_trip_line_whose_person_belongs_to_another_household_is_listed(camille, shared):
+    elsewhere = Household.objects.create(name="Chez les grands-parents")
+    TripItem.objects.create(
+        trip=make_trip(shared),
+        item_type=ItemType.objects.create(household=shared, name="T-shirt"),
+        status=make_status(shared),
+        person=Person.objects.create(household=elsewhere, name="Enfant 1"),
+    )
+
+    assert "T-shirt" in failing_check_integrity()
+
+
+def test_a_trip_line_whose_status_belongs_to_another_household_is_listed(camille, shared):
+    elsewhere = Household.objects.create(name="Chez les grands-parents")
+    TripItem.objects.create(
+        trip=make_trip(shared),
+        item_type=ItemType.objects.create(household=shared, name="Bavoir"),
+        status=make_status(elsewhere),
+    )
+
+    assert "Bavoir" in failing_check_integrity()
+
+
+def test_a_trip_line_of_its_own_household_is_not_a_forbidden_state(camille, shared):
+    TripItem.objects.create(
+        trip=make_trip(shared),
+        item_type=ItemType.objects.create(household=shared, name="Bavoir"),
+        status=make_status(shared),
+        person=Person.objects.create(household=shared, name="Enfant 1"),
+    )
+
+    assert check_integrity() == ""
+
+
+def test_a_participant_from_another_household_is_listed(camille, shared):
+    elsewhere = Household.objects.create(name="Chez les grands-parents")
+    TripParticipant.objects.create(
+        trip=make_trip(shared),
+        person=Person.objects.create(household=elsewhere, name="Enfant 1"),
+    )
+
+    assert "Enfant 1" in failing_check_integrity()
+
+
+def test_a_participant_of_the_household_of_the_trip_is_not_a_forbidden_state(camille, shared):
+    TripParticipant.objects.create(
+        trip=make_trip(shared), person=Person.objects.create(household=shared, name="Enfant 1")
+    )
+
     assert check_integrity() == ""
