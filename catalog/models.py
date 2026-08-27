@@ -1,5 +1,6 @@
 from django.core.validators import RegexValidator
 from django.db import models
+from django.db.models import Q
 from django.db.models.functions import Lower, Trim
 from ordered_model.models import OrderedModelBase
 
@@ -70,12 +71,33 @@ class ItemStatus(OrderedModelBase):
     position = models.PositiveIntegerField(
         editable=False,
         db_index=True,
-        help_text="Rank in the household status list, which also decides the default one.",
+        help_text="Rank in the household status list.",
+    )
+    is_default = models.BooleanField(
+        default=False,
+        help_text="Whether a new line gets this status, true for one status of the household.",
     )
 
     class Meta:
         ordering = ["position"]
         verbose_name_plural = "item statuses"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["household"],
+                condition=Q(is_default=True),
+                name="unique_default_item_status_per_household",
+            )
+        ]
+
+    def save(self, *args, **kwargs):
+        if (
+            self._state.adding
+            and not ItemStatus.objects.filter(
+                household_id=self.household_id, is_default=True
+            ).exists()
+        ):
+            self.is_default = True
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.name

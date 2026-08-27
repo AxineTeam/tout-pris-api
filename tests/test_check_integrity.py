@@ -5,7 +5,7 @@ from django.core.management import call_command
 from django.core.management.base import CommandError
 
 from accounts.models import User
-from catalog.models import ItemStatus, ItemType, Kit, KitItem, ProgressCategory
+from catalog.models import ItemStatus, ItemType, Kit, KitItem
 from households.memberships import create_household
 from households.models import Household, HouseholdMember, Person
 
@@ -130,13 +130,9 @@ def test_a_kit_line_of_its_own_household_is_not_a_forbidden_state(camille, share
     assert check_integrity() == ""
 
 
-def test_a_household_whose_statuses_lost_their_starting_point_is_listed(camille, shared):
-    ItemStatus.objects.create(
-        household=shared,
-        name="Dans les sacs",
-        color="#22c55e",
-        progress=ProgressCategory.DONE,
-    )
+def test_a_household_whose_statuses_lost_their_default_one_is_listed(camille, shared):
+    status = ItemStatus.objects.create(household=shared, name="Dans les sacs", color="#22c55e")
+    ItemStatus.objects.filter(pk=status.pk).update(is_default=False)
 
     assert "Famille Martin" in failing_check_integrity()
 

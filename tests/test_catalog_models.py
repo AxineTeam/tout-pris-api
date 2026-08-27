@@ -2,10 +2,11 @@ import pytest
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 
+from catalog import base_catalog
 from catalog.base_catalog import BASE_ITEM_STATUSES, BASE_ITEM_TYPES, install_base_catalog
 from catalog.item_types import rename_item_type
 from catalog.models import ItemStatus, ItemType, Kit, KitItem, ProgressCategory
-from catalog.statuses import default_status, delete_status
+from catalog.statuses import default_status, delete_status, make_default
 from households.models import Household, Person
 from tout_pris.exceptions import Conflict
 
@@ -212,21 +213,39 @@ def test_deleting_a_household_takes_away_its_catalog(household):
     assert not KitItem.objects.exists()
 
 
-def test_the_default_status_is_the_first_not_started_one(household):
-    make_status(household, "Dans les sacs", ProgressCategory.DONE)
-    expected = make_status(household, "Pas prepare")
-    make_status(household, "A acheter sur place")
+def test_the_first_status_of_a_household_becomes_its_default_one(household):
+    first = make_status(household, "Dans les sacs", ProgressCategory.DONE)
+    second = make_status(household, "Pas prepare")
 
-    assert default_status(household.pk) == expected
+    assert first.is_default
+    assert not second.is_default
+    assert default_status(household.pk) == first
 
 
-def test_a_household_without_any_not_started_status_has_no_default(household):
-    make_status(household, "Dans les sacs", ProgressCategory.DONE)
+def test_a_household_gets_its_own_default_status(household, other_household):
+    make_status(household, "Pas prepare")
 
+    elsewhere = make_status(other_household, "Pas prepare")
+
+    assert elsewhere.is_default
+
+
+def test_a_household_without_any_status_has_no_default(household):
     assert default_status(household.pk) is None
 
 
-def test_deleting_the_last_not_started_status_is_refused(household):
+def test_making_a_status_the_default_one_takes_the_role_from_the_previous_one(household):
+    previous = make_status(household, "Pas prepare")
+    status = make_status(household, "Dans les sacs", ProgressCategory.DONE)
+
+    make_default(status)
+    previous.refresh_from_db()
+
+    assert default_status(household.pk) == status
+    assert not previous.is_default
+
+
+def test_deleting_the_default_status_is_refused(household):
     status = make_status(household, "Pas prepare")
     make_status(household, "Dans les sacs", ProgressCategory.DONE)
 
@@ -236,22 +255,35 @@ def test_deleting_the_last_not_started_status_is_refused(household):
     assert ItemStatus.objects.filter(pk=status.pk).exists()
 
 
-def test_deleting_the_default_status_hands_the_role_to_the_next_not_started_one(household):
-    status = make_status(household, "Pas prepare")
-    successor = make_status(household, "A acheter sur place")
-
-    delete_status(status)
-
-    assert default_status(household.pk) == successor
-
-
-def test_deleting_a_status_that_is_not_the_last_not_started_one_is_allowed(household):
+def test_deleting_a_status_that_is_not_the_default_one_is_allowed(household):
     make_status(household, "Pas prepare")
     status = make_status(household, "Dans les sacs", ProgressCategory.DONE)
 
     delete_status(status)
 
     assert not ItemStatus.objects.filter(pk=status.pk).exists()
+
+
+def test_the_default_status_is_deleted_once_another_one_took_the_role(household):
+    status = make_status(household, "Pas prepare")
+    successor = make_status(household, "A acheter sur place")
+
+    make_default(successor)
+    status.refresh_from_db()
+    delete_status(status)
+
+    assert default_status(household.pk) == successor
+    assert not ItemStatus.objects.filter(pk=status.pk).exists()
+
+
+def test_two_default_statuses_cannot_coexist_in_a_household(household):
+    make_status(household, "Pas prepare")
+    other = make_status(household, "A acheter sur place")
+
+    other.is_default = True
+
+    with pytest.raises(IntegrityError):
+        other.save()
 
 
 def test_installing_the_base_catalog_fills_the_household(household):
@@ -261,6 +293,16 @@ def test_installing_the_base_catalog_fills_the_household(household):
     assert list(household.item_statuses.values_list("name", "progress")) == [
         (name, progress) for name, _, progress in BASE_ITEM_STATUSES
     ]
+    assert default_status(household.pk).name == "Pas préparé"
+
+
+def test_the_base_catalog_marks_one_default_status_whatever_its_order(household, monkeypatch):
+    monkeypatch.setattr(base_catalog, "BASE_ITEM_STATUSES", BASE_ITEM_STATUSES[::-1])
+
+    install_base_catalog(household)
+
+    assert household.item_statuses.filter(is_default=True).count() == 1
+    assert default_status(household.pk).name == "Dans les sacs"
 
 
 def test_a_status_color_is_refused_unless_it_is_hexadecimal(household):

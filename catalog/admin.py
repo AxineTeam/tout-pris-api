@@ -27,8 +27,8 @@ class ItemTypeAdmin(admin.ModelAdmin):
 
 @admin.register(ItemStatus)
 class ItemStatusAdmin(OrderedModelAdmin):
-    list_display = ["name", "household", "progress", "color", "move_up_down_links"]
-    list_filter = ["household", "progress"]
+    list_display = ["name", "household", "progress", "color", "is_default", "move_up_down_links"]
+    list_filter = ["household", "progress", "is_default"]
     search_fields = ["name", "household__name"]
     autocomplete_fields = ["household"]
 
