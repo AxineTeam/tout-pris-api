@@ -2,7 +2,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db.models import Exists, F, OuterRef, Q
 
 from accounts.models import User
-from catalog.models import ItemStatus, KitItem, ProgressCategory
+from catalog.models import ItemStatus, KitItem
 from households.models import Household, HouseholdMember, Person
 
 
@@ -49,14 +49,12 @@ def kit_lines_reaching_outside_their_household():
     ]
 
 
-def households_whose_statuses_have_no_starting_point():
-    not_started = ItemStatus.objects.filter(
-        household=OuterRef("pk"), progress=ProgressCategory.NOT_STARTED
-    )
+def households_whose_statuses_have_no_default():
+    default = ItemStatus.objects.filter(household=OuterRef("pk"), is_default=True)
     return [
         f"#{household.pk} {household.name}"
         for household in Household.objects.filter(item_statuses__isnull=False)
-        .exclude(Exists(not_started))
+        .exclude(Exists(default))
         .distinct()
         .order_by("pk")
     ]
@@ -74,8 +72,8 @@ INVARIANTS = [
         kit_lines_reaching_outside_their_household,
     ),
     (
-        "Households whose statuses hold no not started one",
-        households_whose_statuses_have_no_starting_point,
+        "Households whose statuses hold no default one",
+        households_whose_statuses_have_no_default,
     ),
 ]
 

@@ -32,19 +32,25 @@ Un statut porte en plus une **catégorie de progression** — `not_started`, `in
 
 Effet de bord utile : un foyer qui crée « pas besoin cette fois » le classera en `done`, et la ligne cesse de bloquer la progression sans qu'on ait eu à modéliser le cas.
 
-### Le statut par défaut est déduit, pas marqué
+### Le statut par défaut est marqué, pas déduit
 
-Le statut d'une ligne nouvellement créée est **le premier `not_started` dans l'ordre d'affichage**. Aucune colonne ne le désigne.
+Le statut d'une ligne nouvellement créée est celui que porte le drapeau `is_default`, et il y en a un par foyer.
 
-Un drapeau `is_default` obligerait à garantir « exactement un par foyer » à chaque création, chaque suppression, chaque réordonnancement et chaque import — le même reproche que celui adressé à un booléen `is_personal` sur le foyer, sauf qu'ici aucune contrainte d'unicité ne peut le porter, puisque la règle est « exactement un », pas « au plus un ». La déduction n'a rien à maintenir.
+Une version précédente le déduisait — le premier `not_started` dans l'ordre d'affichage — pour n'avoir rien à maintenir, et reprochait au drapeau qu'aucune contrainte d'unicité ne puisse porter « exactement un ». L'objection tombe parce que la règle se coupe en deux moitiés qui ont chacune leur garant : une `UniqueConstraint` partielle par foyer, conditionnée à `is_default=True`, porte « au plus un » en base ; « au moins un » vient de ce que le premier statut d'un foyer devient son défaut d'office et que le défaut est indéboulonnable, sa suppression étant refusée tant qu'un autre statut n'a pas repris le rôle.
+
+Surtout, la déduction protégeait la mauvaise chose : elle imposait au foyer de garder un statut `not_started`, alors que le besoin est qu'il reste **un statut, peu importe sa catégorie**, et que les catégories se changent librement. Elle rendait aussi le refus inexplicable — « le dernier `not_started` » ne veut rien dire pour qui utilise l'application, « désigne d'abord un autre statut par défaut » se comprend.
+
+La promotion d'office vit dans `ItemStatus.save()` et non dans la vue. L'inscription ne pose pas encore de catalogue de base — c'est #41 — donc un foyer réel démarre à zéro statut et son premier statut arrive par l'API : un `is_default` laissé à `False` rouvrirait exactement le trou que le drapeau vient boucher, un foyer qui a des statuts et aucun défaut. Dans le modèle, la promotion vaut aussi pour l'admin, le `seed` et le catalogue de base.
 
 ### Supprimer un statut
 
-Les lignes portant le statut supprimé sont réaffectées au statut par défaut. Le défaut lui-même est supprimable tant qu'il reste un autre `not_started` : le suivant devient alors le défaut et sert de cible.
+Les lignes portant le statut supprimé sont réaffectées au statut par défaut. Tout statut se supprime, **sauf le défaut** : sans lui, plus de cible de réaffectation ni de statut à donner à une nouvelle ligne, et le foyer se retrouverait sans aucun statut le jour où c'est le dernier.
 
-Seule la suppression du **dernier `not_started`** est refusée : sans lui, plus de cible de réaffectation ni de statut à donner à une nouvelle ligne. Dans le cas normal — un seul `not_started` — le défaut est donc indéboulonnable, sans drapeau à maintenir pour autant.
+Le défaut se libère en en désignant un autre — `is_default: true` sur un `PATCH`, qui retire le drapeau au précédent dans la même transaction — après quoi l'ancien se supprime comme n'importe quel autre. Sans cette désignation, le premier statut créé serait indéboulonnable sans recours.
 
-Le refus est un `Conflict`, l'exception de refus du domaine que DRF rend en `409` sur n'importe quelle route ; le raisonnement est dans [`docs/api/`](../api/README.md). Il vit dans `delete_status`, pas dans `ItemStatus.delete()`. L'admin peut donc encore supprimer le dernier `not_started`, et c'est cohérent avec ce qu'est l'admin ici : la porte de service qu'on ouvre en connaissance de cause pour réparer un état que l'application ne sait pas produire.
+La **catégorie de progression** se change librement, y compris celle du défaut : elle alimente la barre d'avancement, elle ne décide plus de rien. Un foyer qui ne veut qu'un statut « à faire » classé `done` est libre de l'avoir.
+
+Le refus est un `Conflict`, l'exception de refus du domaine que DRF rend en `409` sur n'importe quelle route ; le raisonnement est dans [`docs/api/`](../api/README.md). Il vit dans `delete_status`, pas dans `ItemStatus.delete()`. L'admin peut donc encore supprimer le statut par défaut, et c'est cohérent avec ce qu'est l'admin ici : la porte de service qu'on ouvre en connaissance de cause pour réparer un état que l'application ne sait pas produire.
 
 La réaffectation des lignes, elle, n'est pas encore écrite : rien ne référence `ItemStatus` tant que `TripItem` n'existe pas. Elle arrive avec lui. Le raffinement à prévoir alors est de réaffecter d'abord vers un statut de même catégorie de progression quand il en existe un, pour qu'un « commandé en ligne » supprimé ne fasse pas régresser les objets jusqu'à « pas préparé ».
 
@@ -80,7 +86,9 @@ Le comportement à connaître avant d'écrire les routes de réordonnancement :
 
 ## Le catalogue de base
 
-Un foyer vide n'est pas utilisable : il faudrait saisir « brosse à dents » avant de pouvoir la cocher. `install_base_catalog` copie donc dans un nouveau foyer une trentaine d'objets courants et les trois statuts par défaut — « pas préparé » (`not_started`), « sorti du placard » (`in_progress`), « dans les sacs » (`done`).
+Un foyer vide n'est pas utilisable : il faudrait saisir « brosse à dents » avant de pouvoir la cocher. `install_base_catalog` copie donc dans un nouveau foyer une trentaine d'objets courants et trois statuts — « pas préparé » (`not_started`), « sorti du placard » (`in_progress`), « dans les sacs » (`done`).
+
+**L'ordre de `BASE_ITEM_STATUSES` désigne le statut par défaut du foyer** : aucune entrée ne porte de drapeau, c'est la promotion d'office de `ItemStatus.save()` qui marque le premier statut créé. Réordonner la liste déplace donc le défaut d'un nouveau foyer, silencieusement. Un drapeau dans les entrées ne rendrait pas la réorganisation plus sûre, il la ferait échouer : la promotion d'office marquerait quand même la nouvelle tête de liste, et l'entrée marquée arriverait ensuite sur une contrainte `unique_default_item_status_per_household` déjà satisfaite, donc une `IntegrityError` à la création du foyer.
 
 C'est une copie, pas une référence : le foyer peut renommer, supprimer et réordonner tout ce qu'il reçoit, et rien ne remonte à la source. La commande `seed` s'en sert pour que la base de développement ressemble à un foyer réel ; son déclenchement à l'inscription relève de #41.
 
@@ -92,6 +100,6 @@ Les noms sont en français, comme tout ce que l'utilisateur lit. Le code, lui, r
 
 `check_integrity` les liste, comme il liste les invariants du foyer : une ligne dont l'objet **ou** la personne vient d'ailleurs est un état interdit, et le seul moyen de s'en apercevoir sans le chercher.
 
-**Un foyer a au moins un statut `not_started`.** `install_base_catalog` en pose un et `delete_status` refuse de retirer le dernier, mais un foyer créé sans passer par le premier, ou une suppression par l'admin, laissent un foyer sans statut par défaut. `default_status` renvoie alors `None` plutôt que de lever : c'est un état anormal mais lisible, et l'appelant est mieux placé pour décider quoi en dire.
+**Un foyer qui a des statuts en a un par défaut.** La contrainte partielle porte « au plus un » ; elle ne sait pas exiger qu'il y en ait un, et une suppression par l'admin ou une écriture en masse peut retirer le dernier drapeau. `default_status` renvoie alors `None` plutôt que de lever : c'est un état anormal mais lisible, et l'appelant est mieux placé pour décider quoi en dire.
 
-`check_integrity` le liste lui aussi, mais restreint à ce qui est vraiment interdit **aujourd'hui** : un foyer qui a des statuts et aucun `not_started`. Un foyer qui n'en a aucun n'est pas signalé, parce que c'est encore le cas normal — l'inscription crée un foyer sans catalogue, et c'est #41 qui y branchera `install_base_catalog`. Signaler ces foyers-là ferait crier la commande sur chaque inscription, et une alerte qui crie toujours finit éteinte. Le jour où #41 est livrée, la restriction tombe et « aucun statut » devient à son tour un état interdit.
+`check_integrity` le liste, restreint à ce qui est vraiment interdit **aujourd'hui** : un foyer qui a des statuts et aucun défaut. Un foyer qui n'a aucun statut n'est pas signalé, parce que c'est encore le cas normal — l'inscription crée un foyer sans catalogue, et c'est #41 qui y branchera `install_base_catalog`. Signaler ces foyers-là ferait crier la commande sur chaque inscription, et une alerte qui crie toujours finit éteinte. Le jour où #41 est livrée, la restriction tombe et « aucun statut » devient à son tour un état interdit.
