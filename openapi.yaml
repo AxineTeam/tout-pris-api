@@ -189,6 +189,302 @@ paths:
         '403':
           description: The caller is a member of this household, but their role does
             not allow that.
+  /api/households/{household_id}/item-statuses/:
+    get:
+      operationId: households_item_statuses_list
+      parameters:
+      - in: path
+        name: household_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - households
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ItemStatus'
+          description: ''
+    post:
+      operationId: households_item_statuses_create
+      parameters:
+      - in: path
+        name: household_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - households
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ItemStatusCreate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ItemStatusCreate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ItemStatusCreate'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemStatus'
+          description: ''
+        '403':
+          description: The caller is a member of this household, but their role does
+            not allow that.
+  /api/households/{household_id}/item-statuses/{id}/:
+    get:
+      operationId: households_item_statuses_retrieve
+      parameters:
+      - in: path
+        name: household_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - households
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemStatus'
+          description: ''
+    patch:
+      operationId: households_item_statuses_partial_update
+      parameters:
+      - in: path
+        name: household_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - households
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedItemStatusUpdate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedItemStatusUpdate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedItemStatusUpdate'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemStatus'
+          description: ''
+        '403':
+          description: The caller is a member of this household, but their role does
+            not allow that.
+    delete:
+      operationId: households_item_statuses_destroy
+      parameters:
+      - in: path
+        name: household_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - households
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+        '403':
+          description: The caller is a member of this household, but their role does
+            not allow that.
+        '409':
+          description: The default status cannot be deleted, make another status the
+            default one first.
+  /api/households/{household_id}/item-types/:
+    get:
+      operationId: households_item_types_list
+      parameters:
+      - in: path
+        name: household_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - households
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ItemType'
+          description: ''
+    post:
+      operationId: households_item_types_create
+      parameters:
+      - in: path
+        name: household_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - households
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ItemTypeCreate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ItemTypeCreate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ItemTypeCreate'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemType'
+          description: An entry of this household already went by that name, and it
+            is returned untouched instead of a second one being created.
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemType'
+          description: ''
+        '403':
+          description: The caller is a member of this household, but their role does
+            not allow that.
+  /api/households/{household_id}/item-types/{id}/:
+    get:
+      operationId: households_item_types_retrieve
+      parameters:
+      - in: path
+        name: household_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - households
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemType'
+          description: ''
+    patch:
+      operationId: households_item_types_partial_update
+      parameters:
+      - in: path
+        name: household_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - households
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedItemTypeUpdate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedItemTypeUpdate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedItemTypeUpdate'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemType'
+          description: The renamed entry, or the entry that absorbed it when the name
+            was already taken. The body then carries an id different from the one
+            in the path, and the one in the path no longer exists.
+        '403':
+          description: The caller is a member of this household, but their role does
+            not allow that.
+    delete:
+      operationId: households_item_types_destroy
+      parameters:
+      - in: path
+        name: household_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - households
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+        '403':
+          description: The caller is a member of this household, but their role does
+            not allow that.
   /api/households/{household_id}/members/:
     get:
       operationId: households_members_list
@@ -560,6 +856,97 @@ components:
           maxLength: 254
       required:
       - email
+    ItemStatus:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          description: Wording shown on a line, such as taken out of the closet.
+          maxLength: 100
+        color:
+          type: string
+          description: 'Hexadecimal color the clients paint the status with, such
+            as #f59e0b.'
+          pattern: ^#[0-9a-fA-F]{6}$
+          maxLength: 7
+        progress:
+          allOf:
+          - $ref: '#/components/schemas/ProgressEnum'
+          description: |-
+            What the status counts as in the progress bar of a trip.
+
+            * `not_started` - Not started
+            * `in_progress` - In progress
+            * `done` - Done
+        position:
+          type: integer
+          readOnly: true
+          description: Rank in the household status list.
+        is_default:
+          type: boolean
+          description: Whether a new line gets this status, true for one status of
+            the household.
+      required:
+      - color
+      - id
+      - name
+      - position
+    ItemStatusCreate:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Wording shown on a line, such as taken out of the closet.
+          maxLength: 100
+        color:
+          type: string
+          default: '#7b8189'
+          description: 'Hexadecimal color the clients paint the status with, such
+            as #f59e0b.'
+          pattern: ^#[0-9a-fA-F]{6}$
+          maxLength: 7
+        progress:
+          allOf:
+          - $ref: '#/components/schemas/ProgressEnum'
+          description: |-
+            What the status counts as in the progress bar of a trip.
+
+            * `not_started` - Not started
+            * `in_progress` - In progress
+            * `done` - Done
+      required:
+      - name
+    ItemType:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          description: What the thing is called when picking it, such as bib or sandals.
+          maxLength: 100
+        description:
+          type: string
+          description: Optional details telling apart two entries that share a name.
+      required:
+      - id
+      - name
+    ItemTypeCreate:
+      type: object
+      properties:
+        name:
+          type: string
+          description: What the thing is called when picking it, such as bib or sandals.
+          maxLength: 100
+        description:
+          type: string
+          description: Optional details telling apart two entries that share a name.
+      required:
+      - name
     Member:
       type: object
       properties:
@@ -596,6 +983,42 @@ components:
           type: string
           description: Display name given by the members, such as their family name.
           maxLength: 100
+    PatchedItemStatusUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Wording shown on a line, such as taken out of the closet.
+          maxLength: 100
+        color:
+          type: string
+          description: 'Hexadecimal color the clients paint the status with, such
+            as #f59e0b.'
+          pattern: ^#[0-9a-fA-F]{6}$
+          maxLength: 7
+        progress:
+          allOf:
+          - $ref: '#/components/schemas/ProgressEnum'
+          description: |-
+            What the status counts as in the progress bar of a trip.
+
+            * `not_started` - Not started
+            * `in_progress` - In progress
+            * `done` - Done
+        is_default:
+          type: boolean
+          description: Whether a new line gets this status, true for one status of
+            the household.
+    PatchedItemTypeUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          description: What the thing is called when picking it, such as bib or sandals.
+          maxLength: 100
+        description:
+          type: string
+          description: Optional details telling apart two entries that share a name.
     PatchedMemberUpdate:
       type: object
       properties:
@@ -643,6 +1066,16 @@ components:
           maxLength: 100
       required:
       - name
+    ProgressEnum:
+      enum:
+      - not_started
+      - in_progress
+      - done
+      type: string
+      description: |-
+        * `not_started` - Not started
+        * `in_progress` - In progress
+        * `done` - Done
     RoleEnum:
       enum:
       - owner

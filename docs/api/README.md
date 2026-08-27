@@ -54,7 +54,7 @@ Les deux valeurs sont posées au build de l'image et ne peuvent pas être devin�
 
 ## Les refus du domaine
 
-Un refus décidé par le domaine — supprimer le dernier statut « pas préparé », rétrograder le dernier propriétaire — est levé comme une exception DRF, `tout_pris.exceptions.Conflict`, et c'est DRF qui la rend en `409` avec son `detail`. Aucune route n'a à l'attraper, et le message écrit dans le code métier est celui que le client lit.
+Un refus décidé par le domaine — supprimer le statut par défaut d'un foyer, rétrograder le dernier propriétaire — est levé comme une exception DRF, `tout_pris.exceptions.Conflict`, et c'est DRF qui la rend en `409` avec son `detail`. Aucune route n'a à l'attraper, et le message écrit dans le code métier est celui que le client lit.
 
 L'exception vit au niveau du projet et non dans les vues d'une app, parce que la règle vaut **partout** : le catalogue refuse dans `catalog/statuses.py`, le foyer refuse dans `households/views.py`, et les deux doivent répondre pareil. Une exception rangée dans les vues d'une app obligerait la suivante à l'importer de là, ou à inventer la sienne.
 
@@ -131,6 +131,30 @@ Un foyer personnel répond `404` sur ces trois routes, y compris à son proprié
 L'acceptation fait exception au chemin porté par le foyer, l'appelant n'étant justement pas encore membre. C'est le jeton qui porte l'autorisation, et il voyage dans le corps plutôt que dans l'URL — un secret dans un chemin se retrouve dans les journaux du serveur, l'historique du navigateur et l'en-tête `Referer`. allauth fait le même choix pour ses clés de vérification d'email et de réinitialisation.
 
 Le raisonnement complet et les décisions du flux sont dans [`docs/model/invitation.md`](../model/invitation.md).
+
+## Objets et statuts
+
+Le référentiel du foyer est exposé sous son chemin, comme les personnes : `GET` et `POST /api/households/{household_id}/item-types/`, puis `GET`, `PATCH` et `DELETE /api/households/{household_id}/item-types/{id}/`, et les mêmes quatre routes sur `item-statuses/`. Les objets sont listés par nom, les statuts dans leur ordre d'affichage. C'est le quotidien du foyer et non son administration : un `member` en fait autant qu'un `owner`, et seule `IsSomeoneInTheHousehold` s'applique. Le besoin derrière le référentiel est dans [`docs/model/catalog.md`](../model/catalog.md).
+
+**Renommer un objet vers un nom déjà pris fusionne, et la réponse porte alors un `id` différent de celui de l'URL.** Le `PATCH` appelle `rename_item_type` : les lignes de l'objet absorbé passent au survivant, l'absorbé est supprimé, et c'est le survivant qui est renvoyé en `200`, **tel quel**. Les autres champs du corps sont ignorés quand la fusion a lieu, pour la même raison que la création tolérante renvoie l'existant sans le toucher : un formulaire d'édition renvoie l'objet entier, et sa description écraserait celle que le foyer avait écrite sur l'objet survivant, qu'il ne visait pas. Ce n'est pas un `409` : la fusion est le nettoyage que l'utilisateur cherchait, pas un accident. **Un client qui garde l'ancien `id` en mémoire pointe alors sur une ligne supprimée** — il doit relire l'`id` de la réponse après chaque renommage, exactement comme il en relit le nom.
+
+Le `204` suivi d'un `GET` a été écarté : il imposerait un aller-retour après *chaque* renommage, y compris ceux qui ne fusionnent rien, pour un corps que la route tient déjà. Il ne rendrait pas la surprise plus douce non plus — l'ancien `id` aurait tout autant disparu, sans que rien dans la réponse ne le dise.
+
+**Créer un objet dont le nom est déjà pris renvoie l'existant en `200`**, sans rien créer ni rien modifier. Deux créations simultanées du même nom donnent la même réponse : la seconde voit la contrainte d'unicité lui refuser l'insertion, relit l'objet que la première vient de créer et le renvoie, plutôt que de laisser fuiter une `IntegrityError` en `500`. La saisie d'un voyage crée un objet à la volée quand aucun ne correspond, et c'est ce `POST` qu'elle appelle : répondre `409` obligerait chaque client à chercher d'abord, donc à réimplémenter une comparaison de noms qui porte sur le nom normalisé et ne se devine pas. `201` reste la réponse d'une vraie création, et c'est le code de statut qui distingue les deux cas. L'existant est renvoyé tel quel : ce `POST` demande « donne-moi l'objet appelé X », il n'écrase pas la description que le foyer avait donnée à celui qui existait déjà.
+
+La comparaison emploie les mêmes expressions SQL que la contrainte d'unicité, `Lower` et `Trim`, et non un `lower()` Python : les deux ne s'accordent pas sur les accents, et le désaccord ferait renvoyer un objet existant là où la base voit un nom libre, ou l'inverse.
+
+**Supprimer le statut par défaut répond `409`** avec le message de `delete_status` : sans lui, une nouvelle ligne n'aurait plus aucun statut à recevoir. Tous les autres se suppriment, et le refus est explicable au client qui le reçoit — désigner un autre défaut débloque la suppression.
+
+**Le statut par défaut se désigne par `is_default: true` sur le `PATCH`**, et le drapeau est retiré au précédent dans la même transaction. Sans cette route, le premier statut d'un foyer serait indéboulonnable : c'est lui que l'API marque comme défaut à la création, un foyer démarrant à zéro statut tant que l'inscription n'installe pas le catalogue de base.
+
+**`is_default: false` est refusé comme un corps invalide**, au même titre qu'une couleur qui n'est pas hexadécimale, et non comme un conflit : un foyer sans statut par défaut est précisément l'état interdit, et aucun état du foyer ne rendrait la demande acceptable — il n'y a rien à changer ailleurs pour qu'elle passe, seulement un autre statut à désigner. Un champ absent ou `null` laisse le drapeau tel quel, comme partout ailleurs en `PATCH`.
+
+**La catégorie de progression se change librement**, celle du statut par défaut comprise : elle alimente la barre d'avancement du voyage, elle ne décide plus quel statut une nouvelle ligne reçoit. Un statut se renomme, se repeint et se reclasse sans condition ; seul son drapeau de défaut protège quelque chose.
+
+**La couleur d'un statut est facultative à la création** et vaut `#7b8189`, un gris neutre, quand le client n'en donne pas. Imposer un hexadécimal pour créer « à acheter sur place » alourdirait la saisie fluide que la création tolérante cherche justement à obtenir, et une couleur est ce qu'on ajuste ensuite, jamais ce qui manque pour reconnaître un statut. Le modèle, lui, garde le champ obligatoire : le défaut est une commodité d'API, l'admin et le catalogue de base continuent de choisir explicitement.
+
+`position` est en lecture seule : elle est attribuée à la fin de la liste à la création, et la déplacer relève d'une route de réordonnancement qui n'existe pas encore.
 
 ## Chemins
 
