@@ -485,6 +485,315 @@ paths:
         '403':
           description: The caller is a member of this household, but their role does
             not allow that.
+  /api/households/{household_id}/kits/:
+    get:
+      operationId: households_kits_list
+      parameters:
+      - in: path
+        name: household_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - households
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Kit'
+          description: ''
+    post:
+      operationId: households_kits_create
+      parameters:
+      - in: path
+        name: household_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - households
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KitCreate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/KitCreate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/KitCreate'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Kit'
+          description: ''
+        '403':
+          description: The caller is a member of this household, but their role does
+            not allow that.
+  /api/households/{household_id}/kits/{kit_id}/items/:
+    get:
+      operationId: households_kits_items_list
+      parameters:
+      - in: path
+        name: household_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: kit_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - households
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/KitItem'
+          description: ''
+    post:
+      operationId: households_kits_items_create
+      parameters:
+      - in: path
+        name: household_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: kit_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - households
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KitItemCreate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/KitItemCreate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/KitItemCreate'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KitItem'
+          description: ''
+        '403':
+          description: The caller is a member of this household, but their role does
+            not allow that.
+  /api/households/{household_id}/kits/{kit_id}/items/{id}/:
+    get:
+      operationId: households_kits_items_retrieve
+      parameters:
+      - in: path
+        name: household_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: kit_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - households
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KitItem'
+          description: ''
+    patch:
+      operationId: households_kits_items_partial_update
+      parameters:
+      - in: path
+        name: household_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: kit_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - households
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedKitItemUpdate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedKitItemUpdate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedKitItemUpdate'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KitItem'
+          description: ''
+        '403':
+          description: The caller is a member of this household, but their role does
+            not allow that.
+    delete:
+      operationId: households_kits_items_destroy
+      parameters:
+      - in: path
+        name: household_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: kit_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - households
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+        '403':
+          description: The caller is a member of this household, but their role does
+            not allow that.
+  /api/households/{household_id}/kits/{id}/:
+    get:
+      operationId: households_kits_retrieve
+      parameters:
+      - in: path
+        name: household_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - households
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Kit'
+          description: ''
+    patch:
+      operationId: households_kits_partial_update
+      parameters:
+      - in: path
+        name: household_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - households
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedKitUpdate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedKitUpdate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedKitUpdate'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Kit'
+          description: ''
+        '403':
+          description: The caller is a member of this household, but their role does
+            not allow that.
+    delete:
+      operationId: households_kits_destroy
+      parameters:
+      - in: path
+        name: household_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - households
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+        '403':
+          description: The caller is a member of this household, but their role does
+            not allow that.
   /api/households/{household_id}/members/:
     get:
       operationId: households_members_list
@@ -947,6 +1256,98 @@ components:
           description: Optional details telling apart two entries that share a name.
       required:
       - name
+    Kit:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          description: What the block is called, such as diaper bag or hiking gear.
+          maxLength: 100
+        description:
+          type: string
+          description: Optional reminder of what the block is meant to cover.
+        position:
+          type: integer
+          readOnly: true
+          description: Rank of the section the kit displays as in a trip.
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/KitItem'
+          readOnly: true
+      required:
+      - id
+      - items
+      - name
+      - position
+    KitCreate:
+      type: object
+      properties:
+        name:
+          type: string
+          description: What the block is called, such as diaper bag or hiking gear.
+          maxLength: 100
+        description:
+          type: string
+          description: Optional reminder of what the block is meant to cover.
+      required:
+      - name
+    KitItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        item_type:
+          allOf:
+          - $ref: '#/components/schemas/ItemType'
+          readOnly: true
+        person:
+          allOf:
+          - $ref: '#/components/schemas/Person'
+          readOnly: true
+          nullable: true
+        quantity:
+          type: integer
+          maximum: 32767
+          minimum: 1
+          description: How many of the thing the block asks for, such as five t-shirts.
+        note:
+          type: string
+          description: Free reminder carried to the trip, such as the warm one.
+          maxLength: 200
+        position:
+          type: integer
+          readOnly: true
+          description: Rank in the block, which is the preparation order and follows
+            into a trip.
+      required:
+      - id
+      - item_type
+      - person
+      - position
+    KitItemCreate:
+      type: object
+      properties:
+        item_type:
+          type: integer
+        person:
+          type: integer
+          nullable: true
+        quantity:
+          type: integer
+          maximum: 32767
+          minimum: 1
+          description: How many of the thing the block asks for, such as five t-shirts.
+        note:
+          type: string
+          description: Free reminder carried to the trip, such as the warm one.
+          maxLength: 200
+      required:
+      - item_type
     Member:
       type: object
       properties:
@@ -1019,6 +1420,33 @@ components:
         description:
           type: string
           description: Optional details telling apart two entries that share a name.
+    PatchedKitItemUpdate:
+      type: object
+      properties:
+        item_type:
+          type: integer
+        person:
+          type: integer
+          nullable: true
+        quantity:
+          type: integer
+          maximum: 32767
+          minimum: 1
+          description: How many of the thing the block asks for, such as five t-shirts.
+        note:
+          type: string
+          description: Free reminder carried to the trip, such as the warm one.
+          maxLength: 200
+    PatchedKitUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          description: What the block is called, such as diaper bag or hiking gear.
+          maxLength: 100
+        description:
+          type: string
+          description: Optional reminder of what the block is meant to cover.
     PatchedMemberUpdate:
       type: object
       properties:

@@ -1,4 +1,4 @@
-from django.core.validators import RegexValidator
+from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
 from django.db import models
 from django.db.models import Q
 from django.db.models.functions import Lower, Trim
@@ -160,6 +160,7 @@ class KitItem(OrderedModelBase):
     )
     quantity = models.PositiveSmallIntegerField(
         default=1,
+        validators=[MinValueValidator(1), MaxValueValidator(32767)],
         help_text="How many of the thing the block asks for, such as five t-shirts.",
     )
     note = models.CharField(

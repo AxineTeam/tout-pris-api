@@ -1,16 +1,22 @@
-from collections.abc import Mapping
-
+from django.http import Http404
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from households.models import Household, HouseholdMember, Invitation, Person
 
 
-class PartialWriteSerializer(serializers.ModelSerializer):
-    def to_internal_value(self, data):
-        if isinstance(data, Mapping):
-            data = {field: value for field, value in data.items() if value is not None}
-        return super().to_internal_value(data)
+class HouseholdScopedRelation(serializers.PrimaryKeyRelatedField):
+    def __init__(self, collection, **kwargs):
+        self.collection = collection
+        super().__init__(**kwargs)
+
+    def get_queryset(self):
+        return getattr(self.context["household"], self.collection).all()
+
+    def fail(self, key, **kwargs):
+        if key == "does_not_exist":
+            raise Http404
+        super().fail(key, **kwargs)
 
 
 class HouseholdSerializer(serializers.ModelSerializer):
@@ -31,7 +37,7 @@ class HouseholdCreateSerializer(serializers.ModelSerializer):
         fields = ["name"]
 
 
-class HouseholdUpdateSerializer(PartialWriteSerializer):
+class HouseholdUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Household
         fields = ["name"]
@@ -50,7 +56,7 @@ class PersonCreateSerializer(serializers.ModelSerializer):
         fields = ["name"]
 
 
-class PersonUpdateSerializer(PartialWriteSerializer):
+class PersonUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Person
         fields = ["name"]
@@ -65,7 +71,7 @@ class MemberSerializer(serializers.ModelSerializer):
         read_only_fields = ["user", "role"]
 
 
-class MemberUpdateSerializer(PartialWriteSerializer):
+class MemberUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = HouseholdMember
         fields = ["role"]

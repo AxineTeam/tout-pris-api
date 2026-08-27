@@ -16,13 +16,11 @@ L'API est servie par Django REST Framework sous le préfixe `/api/`, et sa spéc
 | `409` | Conflit avec une ressource existante |
 | `422` | Corps invalide au sens des schémas |
 
-Une session non authentifiée reçoit bien `401` et non le `403` que DRF renvoie par défaut : DRF ne choisit `401` que si une classe d'authentification annonce un en-tête `WWW-Authenticate`, et `SessionAuthentication` n'en annonce aucun. `tout_pris.authentication.SessionAuthentication` en annonce un, pour que « connecte-toi » se lise sur un seul code quel que soit l'endpoint — allauth répond déjà `401`. Le schéma annoncé est `Session` et non `Basic`, il ne déclenche donc aucune fenêtre d'authentification du navigateur, et une extension de drf-spectacular garde la description `cookieAuth` dans la spécification, que le renommage de la classe lui avait fait perdre.
+Une session non authentifiée reçoit bien `401` et non le `403` que DRF renvoie par défaut : DRF ne choisit `401` que si une classe d'authentification annonce un en-tête `WWW-Authenticate`, et `SessionAuthentication` n'en annonce aucun. `tout_pris.authentication.SessionAuthentication` en annonce un, pour que « connecte-toi » se lise sur un seul code quel que soit l'endpoint — allauth répond déjà `401`. Le schéma annoncé est `Session` et non `Basic`, il ne déclenche donc aucune fenêtre d'authentification du navigateur, et une extension de drf-spectacular garde la description `cookieAuth` dans la spécification.
 
 Le `403` ne dit jamais qu'une ressource existe ailleurs. Une ressource qui existe mais que l'appelant n'a pas le droit de **voir** répond `404`, exactement comme si elle n'existait pas : distinguer les deux cas révélerait l'existence de foyers, de personnes ou de voyages à un tiers.
 
 Cette règle vaut entre foyers, et seulement là. À l'intérieur d'un foyer dont on est membre, la situation est inverse : la ressource est la sienne, on la lit tous les jours, on n'a simplement pas le droit d'y toucher. Un `404` mentirait à un client légitime et rendrait l'interface inécrivable — impossible d'y distinguer « ce foyer n'existe pas » de « tu n'es pas propriétaire ». C'est donc `403`, et le `detail` dit lequel des deux refus s'applique : pas propriétaire, ou pas encore quelqu'un.
-
-Les deux codes se lisent alors sans ambiguïté : `404` pour ce qui n'est pas à vous, `403` pour ce qui est à vous et que votre rôle n'autorise pas.
 
 Le porteur de cette règle est `HouseholdScopedView`, dont dérivent les vues du domaine : elle résout le foyer du chemin **parmi ceux dont l'appelant est membre**, et répond `404` sinon. Le cloisonnement tient au type de la vue et non à la vigilance de chaque route — une route qui oublierait d'en hériter se remarquerait, alors qu'un filtre oublié dans un `get_queryset` ne se remarque pas.
 
@@ -42,13 +40,13 @@ Les foyers eux-mêmes échappent à cette imbrication : `/api/households/` est l
 
 Le partage tombe là parce que les deux valeurs ne disent pas la même chose. Un tag existe déjà publiquement dans le dépôt, et sur l'image `dev` le ref vaut `main` : le publier n'apprend rien à personne. Le SHA court, lui, désigne le build exact, et le dépôt étant public il dit de quels correctifs le déploiement est en retard. C'est lui, et lui seul, qu'il y a lieu de protéger.
 
-Ce que ça donne concrètement : un utilisateur qui signale un bug peut joindre la version, ce qui est le besoin d'origine, sans que l'endpoint devienne un inventaire de ce qui manque au déploiement.
+Un utilisateur qui signale un bug peut donc joindre la version sans que l'endpoint devienne un inventaire de ce qui manque au déploiement.
 
 **Ce n'est pas un `403`, et c'est la seule exception à la règle des rôles.** Ailleurs, un droit refusé sur sa propre ressource répond `403`. Ici la ressource — l'état du service — reste lisible par tous, et un seul champ de diagnostic est tu : répondre `403` fermerait la sonde de santé, qui doit rester interrogeable sans session. Un refus ne porte que sur ce qu'il refuse.
 
 **Le garde est `is_staff`, pas un rôle de foyer.** C'est l'accès à l'admin Django, un axe d'autorisation distinct de `owner`/`member`, et c'est le seul endroit de l'API où il décide de quelque chose.
 
-Un angle mort à connaître : sur l'image `dev`, `version` vaut `main` pour tout le monde, ce qui ne distingue pas deux builds de pré-production l'un de l'autre. Un rapport venu de la pré-prod dira donc « main » et rien de plus, et c'est le `commit` — réservé — qui reste le seul moyen d'y voir clair. C'est la conséquence assumée du partage retenu.
+Un angle mort à connaître : sur l'image `dev`, `version` vaut `main` pour tout le monde, ce qui ne distingue pas deux builds de pré-production l'un de l'autre. Un rapport venu de la pré-prod dira donc « main » et rien de plus, et c'est le `commit` — réservé — qui reste le seul moyen d'y voir clair.
 
 Les deux valeurs sont posées au build de l'image et ne peuvent pas être devinées depuis l'intérieur : `.git` est exclu du contexte de build. Le [README](../../README.md) décrit les variables qui les portent.
 
@@ -58,7 +56,7 @@ Un refus décidé par le domaine — supprimer le statut par défaut d'un foyer,
 
 L'exception vit au niveau du projet et non dans les vues d'une app, parce que la règle vaut **partout** : le catalogue refuse dans `catalog/statuses.py`, le foyer refuse dans `households/views.py`, et les deux doivent répondre pareil. Une exception rangée dans les vues d'une app obligerait la suivante à l'importer de là, ou à inventer la sienne.
 
-Ce n'est pas un détail de rangement. Le gestionnaire d'exceptions par défaut de DRF ne convertit que trois choses : ses propres `APIException`, `Http404` et la `PermissionDenied` de Django. **Une `ValidationError` de `django.core.exceptions` levée dans le code métier n'est donc pas convertie** : elle remonte, Django répond `500`, et le message du refus n'arrive jamais au client — un refus prévu se lit alors comme une panne. C'est la raison d'être de cette règle, et elle s'applique à tout code de domaine à venir, pas seulement à celui qui l'a fait apparaître.
+Le gestionnaire d'exceptions par défaut de DRF ne convertit que trois choses : ses propres `APIException`, `Http404` et la `PermissionDenied` de Django. **Une `ValidationError` de `django.core.exceptions` levée dans le code métier n'est donc pas convertie** : elle remonte, Django répond `500`, et le message du refus n'arrive jamais au client — un refus prévu se lit alors comme une panne. C'est la raison d'être de cette règle, et elle s'applique à tout code de domaine.
 
 ## Foyers
 
@@ -84,11 +82,9 @@ Deux refus, tous deux en `409` : une personne qui a déjà un compte, et un appe
 
 Un membre peut donc exister sans personne, le temps de choisir : c'est l'état dans lequel l'acceptation d'une invitation le laisse **toujours**, et l'écran de choix est ce qui en sort.
 
-Un arrivant que personne n'attendait se crée donc sa personne puis la revendique, en deux appels. Rattacher au passage à la création aurait fait un second chemin d'écriture vers `Person.user` pour épargner une requête, alors que la revendication est déjà la seule porte et qu'elle porte les deux refus.
+Un arrivant que personne n'attendait se crée donc sa personne puis la revendique, en deux appels.
 
 ## Rôles
-
-`HouseholdMember.role` porte enfin quelque chose. Il n'a rien porté jusqu'ici parce que le report était sans conséquence : tant que rejoindre un foyer était impossible, tous ses membres étaient la même personne.
 
 **`member`** — le quotidien : lire le foyer, créer, renommer et supprimer les personnes non rattachées, et tout ce qui viendra ensuite, catalogue, voyages, listes.
 
@@ -102,7 +98,7 @@ Deux exceptions, et elles sont le demi-niveau lui-même : créer une personne et
 
 Quitter le foyer n'est pas un droit de propriétaire : retirer *quelqu'un d'autre* l'est, retirer sa propre appartenance reste ouvert à tout membre — c'est la même écriture, et personne n'est retenu dans un foyer.
 
-Le dernier propriétaire ne peut ni se rétrograder ni partir, `409` dans les deux cas, pour la même raison que le dernier membre en #54 : un foyer partagé que plus personne ne peut administrer serait un foyer que plus personne ne peut ni partager ni supprimer. C'est ce qui rend `PATCH /api/households/{household_id}/members/{id}/` nécessaire plutôt que confortable : sans passation de rôle, ce refus enfermerait le créateur dans son propre foyer.
+Le dernier propriétaire ne peut ni se rétrograder ni partir, `409` dans les deux cas, pour la même raison que le dernier membre d'un foyer : un foyer partagé que plus personne ne peut administrer serait un foyer que plus personne ne peut ni partager ni supprimer. C'est ce qui rend `PATCH /api/households/{household_id}/members/{id}/` nécessaire plutôt que confortable : sans passation de rôle, ce refus enfermerait le créateur dans son propre foyer.
 
 Le foyer personnel n'est pas concerné : son titulaire est seul, et sa collection de membres répond déjà `404`.
 
@@ -138,8 +134,6 @@ Le référentiel du foyer est exposé sous son chemin, comme les personnes : `GE
 
 **Renommer un objet vers un nom déjà pris fusionne, et la réponse porte alors un `id` différent de celui de l'URL.** Le `PATCH` appelle `rename_item_type` : les lignes de l'objet absorbé passent au survivant, l'absorbé est supprimé, et c'est le survivant qui est renvoyé en `200`, **tel quel**. Les autres champs du corps sont ignorés quand la fusion a lieu, pour la même raison que la création tolérante renvoie l'existant sans le toucher : un formulaire d'édition renvoie l'objet entier, et sa description écraserait celle que le foyer avait écrite sur l'objet survivant, qu'il ne visait pas. Ce n'est pas un `409` : la fusion est le nettoyage que l'utilisateur cherchait, pas un accident. **Un client qui garde l'ancien `id` en mémoire pointe alors sur une ligne supprimée** — il doit relire l'`id` de la réponse après chaque renommage, exactement comme il en relit le nom.
 
-Le `204` suivi d'un `GET` a été écarté : il imposerait un aller-retour après *chaque* renommage, y compris ceux qui ne fusionnent rien, pour un corps que la route tient déjà. Il ne rendrait pas la surprise plus douce non plus — l'ancien `id` aurait tout autant disparu, sans que rien dans la réponse ne le dise.
-
 **Créer un objet dont le nom est déjà pris renvoie l'existant en `200`**, sans rien créer ni rien modifier. Deux créations simultanées du même nom donnent la même réponse : la seconde voit la contrainte d'unicité lui refuser l'insertion, relit l'objet que la première vient de créer et le renvoie, plutôt que de laisser fuiter une `IntegrityError` en `500`. La saisie d'un voyage crée un objet à la volée quand aucun ne correspond, et c'est ce `POST` qu'elle appelle : répondre `409` obligerait chaque client à chercher d'abord, donc à réimplémenter une comparaison de noms qui porte sur le nom normalisé et ne se devine pas. `201` reste la réponse d'une vraie création, et c'est le code de statut qui distingue les deux cas. L'existant est renvoyé tel quel : ce `POST` demande « donne-moi l'objet appelé X », il n'écrase pas la description que le foyer avait donnée à celui qui existait déjà.
 
 La comparaison emploie les mêmes expressions SQL que la contrainte d'unicité, `Lower` et `Trim`, et non un `lower()` Python : les deux ne s'accordent pas sur les accents, et le désaccord ferait renvoyer un objet existant là où la base voit un nom libre, ou l'inverse.
@@ -148,13 +142,35 @@ La comparaison emploie les mêmes expressions SQL que la contrainte d'unicité, 
 
 **Le statut par défaut se désigne par `is_default: true` sur le `PATCH`**, et le drapeau est retiré au précédent dans la même transaction. Sans cette route, le premier statut d'un foyer serait indéboulonnable : c'est lui que l'API marque comme défaut à la création, un foyer démarrant à zéro statut tant que l'inscription n'installe pas le catalogue de base.
 
-**`is_default: false` est refusé comme un corps invalide**, au même titre qu'une couleur qui n'est pas hexadécimale, et non comme un conflit : un foyer sans statut par défaut est précisément l'état interdit, et aucun état du foyer ne rendrait la demande acceptable — il n'y a rien à changer ailleurs pour qu'elle passe, seulement un autre statut à désigner. Un champ absent ou `null` laisse le drapeau tel quel, comme partout ailleurs en `PATCH`.
+**`is_default: false` est refusé comme un corps invalide**, au même titre qu'une couleur qui n'est pas hexadécimale, et non comme un conflit : un foyer sans statut par défaut est précisément l'état interdit, et aucun état du foyer ne rendrait la demande acceptable — il n'y a rien à changer ailleurs pour qu'elle passe, seulement un autre statut à désigner. Un champ absent laisse le drapeau tel quel ; `null` est refusé, la colonne n'étant pas nullable.
 
 **La catégorie de progression se change librement**, celle du statut par défaut comprise : elle alimente la barre d'avancement du voyage, elle ne décide plus quel statut une nouvelle ligne reçoit. Un statut se renomme, se repeint et se reclasse sans condition ; seul son drapeau de défaut protège quelque chose.
 
 **La couleur d'un statut est facultative à la création** et vaut `#7b8189`, un gris neutre, quand le client n'en donne pas. Imposer un hexadécimal pour créer « à acheter sur place » alourdirait la saisie fluide que la création tolérante cherche justement à obtenir, et une couleur est ce qu'on ajuste ensuite, jamais ce qui manque pour reconnaître un statut. Le modèle, lui, garde le champ obligatoire : le défaut est une commodité d'API, l'admin et le catalogue de base continuent de choisir explicitement.
 
 `position` est en lecture seule : elle est attribuée à la fin de la liste à la création, et la déplacer relève d'une route de réordonnancement qui n'existe pas encore.
+
+## Kits
+
+Un kit est le bloc réutilisable décrit dans [`docs/model/catalog.md`](../model/catalog.md), et ses lignes sont exposées **sous lui** : `GET` et `POST /api/households/{household_id}/kits/`, `GET`, `PATCH` et `DELETE /api/households/{household_id}/kits/{id}/`, puis les mêmes quatre routes sur `kits/{kit_id}/items/`. Comme le reste du référentiel, c'est le quotidien du foyer : seule `IsSomeoneInTheHousehold` s'applique, un `member` en fait autant qu'un `owner`.
+
+**Les lignes sont imbriquées plutôt qu'à plat.** Une ligne n'a aucune existence hors de son bloc et sa `position` ne veut rien dire ailleurs ; une collection `/api/households/{household_id}/kit-items/` obligerait à porter le kit dans chaque corps, et le cloisonnement du kit — la vérification que ce kit-là est bien du foyer — serait à réécrire dans chaque route au lieu d'être porté par le chemin.
+
+Le chemin étant l'appartenance, **une ligne ne change pas de kit** : le corps ne porte pas de `kit`, et déplacer une ligne d'un bloc à l'autre se fait en la supprimant et en la recréant. Accepter un `kit` en écriture ferait du `PATCH` un déménagement silencieux qui renumérote deux blocs d'un coup, pour un geste que personne n'a demandé. Supprimer un kit emporte ses lignes, c'est la cascade du modèle : le bloc est ce qui leur donne un sens.
+
+**Un kit est toujours renvoyé avec ses lignes, l'objet et la personne développés**, dans la collection comme à l'unité. Un client qui recevrait des identifiants nus devrait recharger le catalogue et les personnes pour afficher « 5 t-shirts pour Louis », dans chaque écran qui montre un kit, et deux clients le feraient différemment. Une liste sans les lignes aurait le défaut inverse : l'écran de sélection des kits montre ce qu'ils contiennent, et une liste allégée se paierait d'un appel par kit. L'objet et la personne développés portent exactement la représentation que servent `item-types/` et `persons/` — une forme par ressource, pas une par contexte.
+
+**Chaque clé étrangère reçue est validée contre le foyer du chemin.** `KitItem` mène au foyer par trois chemins — son kit, son `item_type`, sa `person` — et aucune contrainte de base ne les oblige à converger : c'est un invariant que le schéma ne porte pas, et l'API en est le seul garant. Un `item_type` ou une `person` d'un autre foyer répond donc `404`, comme s'il n'existait pas, sans jamais dire qu'il existe ailleurs.
+
+C'est `404` et non `400` parce qu'un identifiant désigne une ressource, et que la réponse à « tu désignes une ressource que tu n'as pas le droit de voir » est la même partout dans cette API, qu'elle vienne du chemin ou du corps. Un `400` en ferait un problème de forme du corps, alors que le corps est parfaitement formé — et il rangerait dans la même case l'objet d'un autre foyer et un identifiant qui n'est pas un nombre, qui reste, lui, un `400`. La règle est portée par le type du champ, `HouseholdScopedRelation`, et non par une vérification réécrite dans chaque route.
+
+**Deux lignes du même objet dans le même kit sont légitimes**, et rien ne les refuse : « 2 chapeaux, le bob » et « 3 chapeaux pour Jeanne » sont deux demandes différentes, et c'est ce que la fusion des objets produit délibérément. Le raisonnement est dans [`docs/model/catalog.md`](../model/catalog.md).
+
+La personne est facultative — une ligne sans personne est pour tout le foyer — et `person: null` la vide, ce qui rend commune une ligne qui visait quelqu'un.
+
+**`quantity` va de 1 à 32767.** Une ligne à zéro n'existe pas : un client qui décrémente jusqu'à zéro envoie un `DELETE`, et demander confirmation avant est son affaire. Les bornes sont posées sur la colonne et non sur le serializer, elles valent donc aussi pour l'admin et pour tout code qui écrira une ligne ; la haute est celle du `smallint`, que PostgreSQL rendrait en `500` sans elle.
+
+`position` est en lecture seule, sur un kit comme sur une ligne : elle est attribuée à la fin de son groupe à la création, et la déplacer relève d'une route de réordonnancement qui n'existe pas encore.
 
 ## Chemins
 
@@ -170,9 +186,11 @@ Rien du corps ne porte d'identité : les identifiants de ressource viennent du c
 
 ## Écriture partielle
 
-`PATCH`, pas `PUT`. Le client édite un champ à la fois ; un `PUT` l'obligerait à réémettre une représentation complète, donc à écraser des champs qu'il ne connaît pas. Un champ absent et un `null` explicite laissent tous deux la valeur inchangée, et un corps vide est une requête valide sans effet.
+`PATCH`, pas `PUT`. Le client édite un champ à la fois ; un `PUT` l'obligerait à réémettre une représentation complète, donc à écraser des champs qu'il ne connaît pas.
 
-La règle est portée par `PartialWriteSerializer`, dont dérivent les serializers `XUpdate` : il retire du corps les champs à `null` avant la validation, plutôt que de laisser chaque route s'en souvenir.
+**Un champ absent laisse la valeur inchangée, un champ à `null` la vide.** Un corps vide est donc une requête valide sans effet, et `null` sur une colonne qui ne l'accepte pas répond `400` plutôt que de laisser croire que la demande a été appliquée. C'est la sémantique du JSON Merge Patch ([RFC 7386](https://www.rfc-editor.org/rfc/rfc7386)), et DRF la porte seul : `partial=True` sur le serializer, `allow_null` sur les champs nullables.
+
+**Vider n'est pas un geste unique, c'est la colonne qui décide.** `person` sur une ligne de kit est nullable et se vide avec `null` ; `note` et `description` sont des chaînes facultatives et se vident avec `""`, un `null` y répondant `400`. `openapi.yaml` le dit champ par champ avec `nullable`.
 
 ## Collections
 
@@ -184,7 +202,7 @@ Une collection vide renvoie `[]` et non `404` : la collection existe, elle est v
 
 Assurée par django-allauth en mode headless (`HEADLESS_ONLY`), monté sur `/api/auth/`, sans qu'aucun template ne soit rendu : les vues d'allauth qui rendaient des pages ne sont même pas déclarées dans l'URLconf, seuls subsistent les endpoints JSON et les callbacks des fournisseurs sur `/accounts/`.
 
-Un seul client allauth est activé, le client `browser` : la session est portée par le cookie `sessionid`, `httpOnly` et marqué `Secure` en production. Le front étant servi sur le même domaine, ce cookie bat le jeton sur la révocation immédiate et sur l'exposition aux XSS, et évite une danse de refresh côté client. Le client `app` d'allauth, qui authentifie par jeton `X-Session-Token`, reste désactivé : l'activer ouvrirait un second chemin d'authentification à côté de la session, exactement ce que le retrait de `BasicAuthentication` avait fermé. `SessionAuthentication` de DRF lit cette même session, sans classe d'authentification supplémentaire.
+Un seul client allauth est activé, le client `browser` : la session est portée par le cookie `sessionid`, `httpOnly` et marqué `Secure` en production. Le front étant servi sur le même domaine, ce cookie bat le jeton sur la révocation immédiate et sur l'exposition aux XSS, et évite une danse de refresh côté client. Le client `app` d'allauth, qui authentifie par jeton `X-Session-Token`, reste désactivé : l'activer ouvrirait un second chemin d'authentification à côté de la session. `SessionAuthentication` de DRF lit cette même session, sans classe d'authentification supplémentaire.
 
 Les endpoints suivent la spécification d'allauth, préfixés par `/api/auth/browser/v1/` : `auth/signup`, `auth/login`, `auth/session` (`GET` pour lire la session, `DELETE` pour se déconnecter), `auth/email/verify`, `auth/password/request`, `auth/password/reset`, `auth/provider/redirect`, `account/password/change`, `account/email`, `config`. Ils sont tous décrits dans `openapi.yaml`.
 
@@ -204,11 +222,9 @@ Une connexion par fournisseur ne se rattachera pas d'elle-même à un compte loc
 
 Les limitations de débit d'allauth (`ACCOUNT_RATE_LIMITS`) sont laissées à leurs valeurs par défaut et s'appuient sur le cache Django. Le cache par défaut étant local au processus, les compteurs sont par worker : un cache partagé sera nécessaire le jour où l'API tournera sur plusieurs processus.
 
-Le socle précédent était écrit à la main sur PyJWT et pwdlib, avec ses propres tables d'identités et de jetons de rafraîchissement. Il a été abandonné avec la migration vers Django : allauth couvre l'inscription, la connexion, la vérification d'email, la réinitialisation de mot de passe et les fournisseurs externes, c'est-à-dire précisément ce qu'il aurait fallu continuer d'écrire et de faire relire.
-
 ### Les endpoints d'authentification dans la spécification
 
-drf-spectacular ne décrit que les vues DRF ; les vues d'allauth lui sont invisibles. **Il y a donc deux spécifications, et c'est assumé** — leur absence de fusion n'est pas une régression.
+drf-spectacular ne décrit que les vues DRF ; les vues d'allauth lui sont invisibles. **Il y a donc deux spécifications, et c'est assumé.**
 
 `openapi.yaml`, committé à la racine et vérifié en CI, décrit l'API du domaine. allauth publie la sienne sur `/api/auth/openapi.yaml` et `/api/auth/openapi.json`, servies par l'application sans qu'on ait rien à câbler, dérivées de son code et élaguées selon la configuration réellement chargée : les endpoints non montés en sont retirés.
 
@@ -225,5 +241,3 @@ Pydantic ne quitte pas le projet pour autant, et `drf-pydantic` est câblé : un
 Deux façons de déclarer un schéma coexistent donc, et le choix n'est pas laissé au goût : `ModelSerializer` pour ce qui est adossé à l'ORM, puisqu'il dérive les champs du modèle Django, et Pydantic pour ce qui n'a pas de table derrière lui — la sortie d'un modèle de langage, une réponse calculée. C'est la vraie contrepartie de DRF : l'uniformité de déclaration, pas Pydantic lui-même.
 
 La spécification est émise en OpenAPI 3.0.3, défaut de drf-spectacular ; `OAS_VERSION` force 3.1.0 si un générateur de client le réclame.
-
-Le raisonnement complet, les candidats écartés et la correspondance brique par brique sont dans l'issue de migration plutôt que répétés ici.
