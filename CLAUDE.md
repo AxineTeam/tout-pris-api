@@ -103,6 +103,12 @@ API Django du projet Tout Pris. Soit extrêmement concis.
 - Ne committe jamais des fichiers que tu n'as ni écrits ni modifiés : c'est peut-être le travail d'un autre agent
 - Titre de commit en anglais, au présent impératif ; le corps doit être assez explicite et détaillé pour comprendre le changement sans contexte
 - Préfère les commits atomiques (un changement logique = un commit)
+- L'historique qui arrive sur `main` est celui de la bonne version, pas celui des allers-retours. Le dépôt merge en rebase-merge : les commits de la branche atterrissent tels quels, donc ils doivent déjà être propres
+- Avant de déclarer la PR prête, réécris **ta** branche pour qu'aucun de ses commits n'en corrige un autre. Pendant l'itération, `git commit --fixup=<sha>` ; à la fin, `git rebase --autosquash origin/main` — `rebase -i` n'est pas disponible en session agent, `GIT_SEQUENCE_EDITOR=true` le remplace
+- Vérifie que la réécriture n'a rien perdu : `git diff <ancienne-tête> HEAD` doit être vide. Un rebase qui traverse un conflit supprime un morceau sans le dire, et c'est la seule preuve qui vaille — ne pousse pas avant de l'avoir lue
+- Pousse la réécriture avec `--force-with-lease`, jamais `--force` : il refuse si la branche a bougé entre-temps
+- Le message décrit le code tel qu'il arrive, pas le chemin parcouru : jamais de « la première version faisait X, corrigé en `abc1234` ». L'hésitation appartient à la PR, pas à `main`
+- Ne réécris qu'une fois les revues abouties : une réécriture en cours de revue fait perdre au relecteur son point de comparaison
 - Résous les conflits de PR par rebase sur `main`, jamais en mergeant `main` dans la branche : le repo merge en rebase-merge, qui jette les commits de merge et leurs résolutions (« Unable to merge » sinon)
 - Quand le dev est fini, `git fetch origin main` et vérifie que la branche est rebasable sans conflit sur `main` ; si `main` a avancé, rebase et re-pousse avant de considérer la PR prête
 - Ouvre toujours une PR une fois le code terminé, sans attendre qu'on te le demande
