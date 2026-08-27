@@ -40,9 +40,9 @@ BASE_ITEM_TYPES = [
 ]
 
 BASE_ITEM_STATUSES = [
-    ("Pas préparé", "#94a3b8", ProgressCategory.NOT_STARTED),
-    ("Sorti du placard", "#f59e0b", ProgressCategory.IN_PROGRESS),
-    ("Dans les sacs", "#22c55e", ProgressCategory.DONE),
+    ("Pas préparé", "#7b8189", ProgressCategory.NOT_STARTED),
+    ("Sorti du placard", "#dcb14f", ProgressCategory.IN_PROGRESS),
+    ("Dans les sacs", "#5c8a66", ProgressCategory.DONE),
 ]
 
 
