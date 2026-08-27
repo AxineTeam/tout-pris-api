@@ -143,6 +143,8 @@ API Django du projet Tout Pris. Soit extrêmement concis.
 ## Workflow
 
 - Quand je te demande de traiter une issue ou une PR, souscris par défaut aux notifications de la PR concernée (`subscribe_pr_activity`) et suis-la jusqu'au merge
+- Les notifications sont un déclencheur commode, jamais une source de vérité : leur silence ne prouve rien. Sur une PR suivie, lis les commentaires (`get_comments`) en partant du plus récent — c'est là qu'arrive le retour, et des revues vides (`get_reviews`, fils de revue inline) ne veulent pas dire qu'il n'y a rien de neuf
+- Après tout merge ou fermeture de PR, réabonne-toi aux PR encore ouvertes : le désabonnement automatique peut emporter leurs abonnements sans rien signaler
 - Avant de démarrer le traitement d'une issue, si tu as des objections sur ce qui est demandé, commente-les sur l'issue et attends une réponse avant de commencer
 - Lis toujours le code existant avant de proposer des modifications
 - Utilise les outils dédiés (Read, Edit, Grep, Glob) plutôt que bash quand possible
