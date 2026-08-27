@@ -97,6 +97,15 @@ API Django du projet Tout Pris. Soit extrêmement concis.
 - Ces principes s'appliquent à tout code produit : applicatif, scripts, configuration, infrastructure
 - En markdown, pas de retour à la ligne dur — une ligne par paragraphe
 
+## Issues
+
+- Une issue se lit à deux : le product owner d'abord, le lead technique ensuite. Elle est donc écrite en deux temps, dans cet ordre, et chacun doit pouvoir répondre à sa question sans lire l'autre moitié
+- **La moitié fonctionnelle répond au product owner : l'équipe a-t-elle compris le besoin ?** Elle commence par ce que quelqu'un cherche à faire et par ce qui l'en empêche aujourd'hui, puis déroule le parcours — qui fait quoi, dans quel ordre, ce qu'il voit — avec des prénoms et des écrans réels. Le test E2E est ce parcours transcrit : écrit assez concrètement, il n'y a pas de troisième texte à produire, et les trois tiennent dans le même bloc de prose plutôt que dans trois sections
+- Elle se valide sans connaître le code. Si comprendre le besoin demande un nom de table, une route ou un composant, elle a manqué son lecteur
+- **La moitié technique répond au lead : est-ce que ça tient dans le cadre existant ?** Elle dit comment, jamais pourquoi, et se rattache à ce qui est déjà là — la convention suivie, le motif repris, l'endroit du code qui résout déjà le même problème. Une solution décrite hors-sol ne se valide pas, elle se croit sur parole
+- Ce qu'elle contient doit se rattacher à une ligne du bloc fonctionnel. Ce qui ne s'y rattache pas est du périmètre qui s'invite
+- Une issue sans effet visible pour un utilisateur — un renommage, une règle d'outillage, une montée de version — le dit en une phrase et passe directement à la technique. Ne lui invente pas un besoin qu'elle n'a pas
+
 ## Git
 
 - Ne committe jamais sans demande explicite
