@@ -1,4 +1,6 @@
 from django.db import IntegrityError, transaction
+from django.shortcuts import get_object_or_404
+from django.utils.functional import cached_property
 from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
 from rest_framework import generics
 from rest_framework.response import Response
@@ -11,6 +13,12 @@ from catalog.serializers import (
     ItemTypeCreateSerializer,
     ItemTypeSerializer,
     ItemTypeUpdateSerializer,
+    KitCreateSerializer,
+    KitItemCreateSerializer,
+    KitItemSerializer,
+    KitItemUpdateSerializer,
+    KitSerializer,
+    KitUpdateSerializer,
 )
 from catalog.statuses import delete_status, make_default
 from households.views import FORBIDDEN, HouseholdScopedView
@@ -136,3 +144,75 @@ class ItemStatusDetailView(HouseholdScopedView, generics.RetrieveDestroyAPIView)
 
     def perform_destroy(self, status):
         delete_status(status)
+
+
+@extend_schema_view(
+    post=extend_schema(request=KitCreateSerializer, responses={201: KitSerializer, 403: FORBIDDEN})
+)
+class KitListCreateView(HouseholdScopedView, generics.ListCreateAPIView):
+    def get_serializer_class(self):
+        return KitCreateSerializer if self.request.method == "POST" else KitSerializer
+
+    def get_queryset(self):
+        return self.household.kits.prefetch_related("items__item_type", "items__person")
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        kit = serializer.save(household=self.household)
+        return Response(KitSerializer(kit).data, status=201)
+
+
+@extend_schema_view(delete=extend_schema(responses={204: None, 403: FORBIDDEN}))
+class KitDetailView(HouseholdScopedView, generics.RetrieveDestroyAPIView):
+    def get_serializer_class(self):
+        return KitUpdateSerializer if self.request.method == "PATCH" else KitSerializer
+
+    def get_queryset(self):
+        return self.household.kits.prefetch_related("items__item_type", "items__person")
+
+    @extend_schema(request=KitUpdateSerializer, responses={200: KitSerializer, 403: FORBIDDEN})
+    def patch(self, request, *args, **kwargs):
+        serializer = self.get_serializer(self.get_object(), data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        return Response(KitSerializer(serializer.save()).data)
+
+
+class KitScopedView(HouseholdScopedView):
+    @cached_property
+    def kit(self):
+        return get_object_or_404(self.household.kits, pk=self.kwargs["kit_id"])
+
+    def get_queryset(self):
+        return self.kit.items.select_related("item_type", "person")
+
+
+@extend_schema_view(
+    post=extend_schema(
+        request=KitItemCreateSerializer, responses={201: KitItemSerializer, 403: FORBIDDEN}
+    )
+)
+class KitItemListCreateView(KitScopedView, generics.ListCreateAPIView):
+    def get_serializer_class(self):
+        return KitItemCreateSerializer if self.request.method == "POST" else KitItemSerializer
+
+    def create(self, request, *args, **kwargs):
+        kit = self.kit
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        line = serializer.save(kit=kit)
+        return Response(KitItemSerializer(line).data, status=201)
+
+
+@extend_schema_view(delete=extend_schema(responses={204: None, 403: FORBIDDEN}))
+class KitItemDetailView(KitScopedView, generics.RetrieveDestroyAPIView):
+    def get_serializer_class(self):
+        return KitItemUpdateSerializer if self.request.method == "PATCH" else KitItemSerializer
+
+    @extend_schema(
+        request=KitItemUpdateSerializer, responses={200: KitItemSerializer, 403: FORBIDDEN}
+    )
+    def patch(self, request, *args, **kwargs):
+        serializer = self.get_serializer(self.get_object(), data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        return Response(KitItemSerializer(serializer.save()).data)

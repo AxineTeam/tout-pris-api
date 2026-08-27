@@ -69,6 +69,9 @@ class HouseholdScopedView(generics.GenericAPIView):
     def household(self):
         return get_object_or_404(self.household_queryset(), pk=self.kwargs["household_id"])
 
+    def get_serializer_context(self):
+        return {**super().get_serializer_context(), "household": self.household}
+
 
 class SharedHouseholdScopedView(HouseholdScopedView):
     def household_queryset(self):
