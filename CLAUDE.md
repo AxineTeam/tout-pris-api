@@ -98,6 +98,16 @@ API Django du projet Tout Pris. Soit extrêmement concis.
 - Ces principes s'appliquent à tout code produit : applicatif, scripts, configuration, infrastructure
 - En markdown, pas de retour à la ligne dur — une ligne par paragraphe
 
+## Écriture
+
+Ces règles valent pour les issues, les descriptions de PR, les revues et les commentaires.
+
+- Une phrase qui ne change rien pour le lecteur ne s'écrit pas : pas de résumé de ce qui précède, pas de constat que tout va bien, pas de transition
+- Pas de section « Vérifié » : la CI dit ce qui passe et le relecteur la lit. Recopier ses sorties ne prouve rien de plus et enterre ce que la PR a à dire
+- Ne décris pas ce que couvrent les tests, le fichier de tests est là pour ça
+- Une revue liste des constats actionnables. Ce qui est correct ne se commente pas, le silence suffit à le dire
+- Un constat tient en une affirmation et sa conséquence. Le raisonnement qui y mène ne s'écrit que s'il est contestable
+
 ## Issues
 
 - Une issue se lit à deux : le product owner d'abord, le lead technique ensuite. Elle est donc écrite en deux temps, dans cet ordre, et chacun doit pouvoir répondre à sa question sans lire l'autre moitié
