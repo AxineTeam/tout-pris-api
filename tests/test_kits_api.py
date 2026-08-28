@@ -76,6 +76,17 @@ def test_the_kits_of_a_household_are_listed_in_display_order(client, household):
     assert [entry["position"] for entry in listed] == [0, 1]
 
 
+def test_the_kit_list_does_not_carry_the_lines_the_kit_read_alone_does(
+    client, household, kit, bavoir
+):
+    KitItem.objects.create(kit=kit, item_type=bavoir)
+
+    listed = client.get(kits_url(household)).json()
+
+    assert listed == [{"id": kit.pk, "name": "Sac a langer", "description": "", "position": 0}]
+    assert len(client.get(kit_url(household, kit)).json()["items"]) == 1
+
+
 def test_creating_a_kit_appends_it_to_the_household_list(client, household):
     Kit.objects.create(household=household, name="Sac a langer")
 
@@ -87,7 +98,6 @@ def test_creating_a_kit_appends_it_to_the_household_list(client, household):
 
     assert response.status_code == 201
     assert response.json()["position"] == 1
-    assert response.json()["items"] == []
     assert household.kits.filter(name="Affaires de rando", description="Pour la montagne").exists()
 
 

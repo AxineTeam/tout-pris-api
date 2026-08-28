@@ -1,3 +1,4 @@
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from ordered_model.models import OrderedModelBase
 
@@ -73,6 +74,7 @@ class TripItem(OrderedModelBase):
     )
     quantity = models.PositiveSmallIntegerField(
         default=1,
+        validators=[MinValueValidator(1), MaxValueValidator(32767)],
         help_text="How many of the thing to pack, such as five t-shirts.",
     )
     status = models.ForeignKey(
@@ -102,6 +104,10 @@ class TripItem(OrderedModelBase):
                 fields=["trip", "item_type"],
                 condition=models.Q(person__isnull=True),
                 name="unique_common_trip_line",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(quantity__gte=1),
+                name="trip_item_quantity_is_at_least_one",
             ),
         ]
 

@@ -176,6 +176,12 @@ class KitItem(OrderedModelBase):
 
     class Meta:
         ordering = ["position"]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(quantity__gte=1),
+                name="kit_item_quantity_is_at_least_one",
+            )
+        ]
 
     def __str__(self):
         return f"{self.quantity} {self.item_type}"

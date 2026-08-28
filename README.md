@@ -110,6 +110,10 @@ DJANGO_SECRET_KEY=... docker compose -f docker-compose.prod.yml up -d
 - `/api/households/{household_id}/item-statuses/` — the preparation statuses of a household, created, reworded, repainted and deleted
 - `/api/households/{household_id}/kits/` — the reusable blocks of a household, always returned with their lines
 - `/api/households/{household_id}/kits/{kit_id}/items/` — the lines of a block, each packing an object of the household for one of its people
+- `/api/households/{household_id}/trips/` — the trips of a household, from the next departure backwards, each read with its participants and its lines
+- `/api/households/{household_id}/trips/{trip_id}/participants/` — who goes on a trip, which is what filters the lines a kit pours in
+- `/api/households/{household_id}/trips/{trip_id}/items/` — the preparation lines of a trip, each tagged with the kits holding its object
+- `POST /api/households/{household_id}/trips/{trip_id}/kits/` — pour a kit into a trip and get back the lines it created
 - `POST /api/invitations/accept/` — join a household with the token received by email
 - `/api/auth/browser/v1/` — headless authentication: signup, login, session, email verification, password reset, external providers
 - `/accounts/` — OAuth callbacks of the external providers (no page is rendered)

@@ -76,6 +76,8 @@ Supprimer une personne emporte donc ses lignes de kit. Les rendre génériques e
 
 **Pas de contrainte d'unicité sur `KitItem`.** La personne étant facultative, une unicité SQL serait faussée — `NULL` n'entre pas en conflit avec lui-même — et il existe des doublons légitimes. Le garde-fou est applicatif, au moment où l'on promeut un objet dans un kit.
 
+**Une ligne de kit packe au moins un exemplaire.** Une ligne à zéro n'existe pas, on la supprime, et c'est une `CheckConstraint` sur `quantity` qui le tient : les validateurs de la colonne ne s'exécutent qu'à travers `full_clean()`, donc sur l'API et sur l'admin, jamais sur un `objects.create`.
+
 **Pas de table de liaison entre le voyage et le kit** non plus, et le renversement du tag ne la ramène pas : le regroupement à l'affichage n'a besoin de rien, le tag se lisant des `KitItem` de l'objet. Ce qu'elle apporterait est la mémoire d'un kit coché — savoir qu'il a été appliqué même quand il n'en reste aucune ligne — et ça ne vaut pas une table : le recochage est idempotent et sans mémoire, ce que [`trips.md`](trips.md) assume ligne à ligne.
 
 ## L'ordre
