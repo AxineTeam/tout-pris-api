@@ -158,7 +158,9 @@ Un kit est le bloc réutilisable décrit dans [`docs/model/catalog.md`](../model
 
 Le chemin étant l'appartenance, **une ligne ne change pas de kit** : le corps ne porte pas de `kit`, et déplacer une ligne d'un bloc à l'autre se fait en la supprimant et en la recréant. Accepter un `kit` en écriture ferait du `PATCH` un déménagement silencieux qui renumérote deux blocs d'un coup, pour un geste que personne n'a demandé. Supprimer un kit emporte ses lignes, c'est la cascade du modèle : le bloc est ce qui leur donne un sens.
 
-**Un kit est toujours renvoyé avec ses lignes, l'objet et la personne développés**, dans la collection comme à l'unité. Un client qui recevrait des identifiants nus devrait recharger le catalogue et les personnes pour afficher « 5 t-shirts pour Louis », dans chaque écran qui montre un kit, et deux clients le feraient différemment. Une liste sans les lignes aurait le défaut inverse : l'écran de sélection des kits montre ce qu'ils contiennent, et une liste allégée se paierait d'un appel par kit. L'objet et la personne développés portent exactement la représentation que servent `item-types/` et `persons/` — une forme par ressource, pas une par contexte.
+**La collection des kits ne porte pas les lignes, le kit à l'unité les porte.** Un foyer accumule ses kits et chacun porte des dizaines de lignes : les embarquer dans la collection ferait payer le contenu de tous les blocs à chaque écran qui n'affiche que des noms. L'écran de sélection montre de quoi choisir — un nom, une description — et charge le kit retenu quand il s'ouvre : un appel de plus sur un geste, contre une réponse plus lourde à chaque affichage. C'est la même règle que la collection des voyages.
+
+**Le kit à l'unité renvoie ses lignes, l'objet et la personne développés.** Un client qui recevrait des identifiants nus devrait recharger le catalogue et les personnes pour afficher « 5 t-shirts pour Louis », dans chaque écran qui montre un kit, et deux clients le feraient différemment. L'objet et la personne développés portent exactement la représentation que servent `item-types/` et `persons/` — une forme par ressource, pas une par contexte.
 
 **Chaque clé étrangère reçue est validée contre le foyer du chemin.** `KitItem` mène au foyer par trois chemins — son kit, son `item_type`, sa `person` — et aucune contrainte de base ne les oblige à converger : c'est un invariant que le schéma ne porte pas, et l'API en est le seul garant. Un `item_type` ou une `person` d'un autre foyer répond donc `404`, comme s'il n'existait pas, sans jamais dire qu'il existe ailleurs.
 
@@ -171,6 +173,34 @@ La personne est facultative — une ligne sans personne est pour tout le foyer �
 **`quantity` va de 1 à 32767.** Une ligne à zéro n'existe pas : un client qui décrémente jusqu'à zéro envoie un `DELETE`, et demander confirmation avant est son affaire. Les bornes sont posées sur la colonne et non sur le serializer, elles valent donc aussi pour l'admin et pour tout code qui écrira une ligne ; la haute est celle du `smallint`, que PostgreSQL rendrait en `500` sans elle.
 
 `position` est en lecture seule, sur un kit comme sur une ligne : elle est attribuée à la fin de son groupe à la création, et la déplacer relève d'une route de réordonnancement qui n'existe pas encore.
+
+## Voyages
+
+Un voyage est la liste que le foyer prépare, décrite dans [`docs/model/trips.md`](../model/trips.md). Ses participants et ses lignes sont exposés **sous lui**, comme les lignes d'un kit sous leur kit : `GET` et `POST /api/households/{household_id}/trips/`, `GET`, `PATCH` et `DELETE /api/households/{household_id}/trips/{id}/`, puis `GET` et `POST` sur `trips/{trip_id}/participants/` et `DELETE` sur `trips/{trip_id}/participants/{id}/`, et les quatre routes habituelles sur `trips/{trip_id}/items/`. Préparer un voyage est le quotidien du foyer et non son administration : seule `IsSomeoneInTheHousehold` s'applique, un `member` en fait autant qu'un `owner`.
+
+Un participant ne se modifie pas — participer est un fait binaire — d'où l'absence de `PATCH` sur lui. Ajouter deux fois la même personne répond `409` : le client a la liste des participants sous les yeux, et un second `POST` est une erreur, pas un geste à absorber en silence.
+
+**La collection des voyages ne porte ni les participants ni les lignes, le voyage à l'unité les porte**, comme la collection des kits ne porte pas les leurs. Un foyer accumule ses voyages sans jamais en supprimer, et chacun porte des dizaines de lignes : les embarquer dans la collection ferait de l'écran d'accueil la plus grosse réponse du produit, pour des lignes que personne n'y lit.
+
+Le voyage à l'unité, lui, renvoie ses lignes ordonnées, l'objet, la personne et le statut développés. Un client qui recevrait des identifiants nus rechargerait le catalogue, les statuts et les personnes pour afficher « 5 t-shirts pour Léo », dans chaque écran qui montre un voyage.
+
+**Une ligne porte le tag que le front affiche à côté d'elle : les kits du foyer qui contiennent son objet.** Il est calculé en lecture, jamais stocké — le raisonnement est dans [`docs/model/trips.md`](../model/trips.md) — et il est donc en lecture seule : ajouter un objet à un kit se fait sur le kit, par `POST /api/households/{household_id}/kits/{kit_id}/items/`, et le tag apparaît aussitôt sur toutes les lignes qui packent cet objet.
+
+Le tag porte le kit sous la forme que sert sa collection : son `id`, son nom, sa description et sa position, sans ses lignes. C'est la représentation habituelle de la ressource, une forme par ressource et pas une par contexte, et elle tient sur une étiquette parce que ce qu'un kit a de volumineux — ses lignes — n'y est pas.
+
+La lecture d'une ligne coûte donc le même nombre de requêtes quel qu'en soit le nombre : les vues préchargent `item_type__kit_items__kit`. `TripItem` est la table la plus lue de l'application, et un tag calculé ligne par ligne y produirait le N+1 le plus coûteux du produit.
+
+**`POST /api/households/{household_id}/trips/{trip_id}/kits/` instancie un kit dans le voyage et renvoie les lignes créées**, `201` quand il en a créé, `200` quand il n'en a créé aucune. Le tableau vide est le seul signal dont le front dispose pour dire « ce kit n'a rien ajouté » au moment du clic : aucune table ne garde trace d'un kit choisi, et recharger le voyage ne le distinguerait pas d'un kit qui n'aurait ajouté que des lignes déjà présentes. Les règles de la copie — ligne ignorée si elle vise un non-participant, ligne considérée présente au même objet et à la même personne, quantité et note jamais réécrites — sont dans [`docs/model/trips.md`](../model/trips.md), et elles vivent dans `trips/preparation.py` plutôt que dans la vue, comme `catalog/statuses.py` porte les règles de statut : la vue reçoit, valide, délègue.
+
+**Le statut est facultatif à la création d'une ligne** et vaut celui que le foyer a marqué par défaut. C'est celui que reçoit déjà une ligne instanciée depuis un kit, et l'imposer au client obligerait chaque écran d'ajout libre à relire les statuts pour retrouver une règle que le serveur applique de toute façon. Un foyer qui n'a aucun statut ne peut rien préparer : la ligne n'a pas de statut à recevoir, et les deux routes répondent `409` plutôt que d'en créer une sans.
+
+**Un objet n'entre dans un voyage qu'une seule fois pour une même personne**, et la seconde ligne répond `409`, à la création comme au `PATCH` qui l'y ramènerait. C'est la règle décrite dans [`docs/model/trips.md`](../model/trips.md), portée par deux contraintes d'unicité : le `409` est ce qui les rend lisibles au client, une violation laissée passer répondant `500`. L'instanciation d'un kit, elle, ne la rencontre jamais — elle ignore ce qui est déjà là.
+
+**Chaque clé étrangère reçue est validée contre le foyer du chemin.** Quatre chemins mènent d'une ligne au foyer — son voyage, son objet, sa personne, son statut — et aucune contrainte de base ne les oblige à converger ; un participant appartient de même au foyer de son voyage. Un identifiant venu d'ailleurs répond `404`, comme s'il n'existait pas, par le même `HouseholdScopedRelation` que les lignes de kit.
+
+**`quantity` va de 1 à 32767**, sur une ligne de voyage comme sur une ligne de kit et pour les mêmes raisons.
+
+Retirer un participant ne touche pas les lignes préparées pour lui : elles restent, et c'est à l'interface de les montrer. `position` est en lecture seule, attribuée à la fin du voyage à la création et reprise de l'ordre du kit à l'instanciation.
 
 ## Chemins
 

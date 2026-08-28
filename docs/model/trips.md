@@ -51,11 +51,13 @@ C'est cette clé qui porte la règle **un objet n'entre dans un voyage qu'une se
 
 La quantité et la note n'en font pas partie, et ne sont **pas réécrites** : l'utilisateur a pu passer de cinq à trois t-shirts pour ce voyage-là, et un recochage qui rétablirait la valeur du kit annulerait sa décision sans le prévenir.
 
+**Une ligne de voyage packe au moins un exemplaire**, comme une ligne de kit ([`catalog.md`](catalog.md)) : une `CheckConstraint` sur `quantity` le tient de chaque côté, si bien que l'instanciation, qui recopie la quantité par `objects.create`, ne peut pas propager une ligne à zéro.
+
 Conséquence à connaître : une ligne que l'utilisateur a supprimée du voyage **revient** s'il recoche le kit. Aucune pierre tombale n'est stockée pour s'en souvenir, et c'est le bon compromis — le recochage est un geste explicite, alors qu'une mémoire des suppressions serait invisible et impossible à corriger.
 
 Cette clé est portée par la base, et il faut **deux contraintes** pour la dire en entier. Une unicité sur `(trip, item_type, person)` seule laisserait passer le doublon qu'on veut le plus éviter : deux `NULL` ne s'opposent pas en SQL, si bien que deux lignes du même objet sans personne — deux fois la trousse à pharmacie — la traverseraient sans rien violer. Une seconde contrainte, partielle, ferme ce trou : unique sur `(trip, item_type)` sous la condition `person IS NULL`, ce que le SQL rend en index unique avec un `WHERE`. Le dépôt emploie déjà une partielle de la même famille pour le statut par défaut d'un foyer, décrite dans [`catalog.md`](catalog.md).
 
-Les contraintes ne remplacent pas le garde-fou applicatif, elles le **doublent**. Le recochage reste ce qui rend l'opération idempotente : il doit ignorer les lignes déjà présentes, sinon il échouerait en `IntegrityError` au lieu de ne rien faire, et lui seul sait laisser tranquilles la quantité et la note. Ce que la base apporte est la garantie que la règle tient même quand un chemin l'oublie — et le code qui instancie un kit n'est pas encore écrit.
+Les contraintes ne remplacent pas le garde-fou applicatif, elles le **doublent**. Le recochage reste ce qui rend l'opération idempotente : il doit ignorer les lignes déjà présentes, sinon il échouerait en `IntegrityError` au lieu de ne rien faire, et lui seul sait laisser tranquilles la quantité et la note. Ce que la base apporte est la garantie que la règle tient même quand un chemin l'oublie.
 
 ## Le suivi
 
@@ -91,7 +93,7 @@ Les comportements de `django-ordered-model` — attribution à la création, fer
 
 ## La date
 
-`date` est obligatoire, et c'est la seule que porte un voyage. Une date de fin a existé dans une version précédente, avec une contrainte refusant un voyage qui se termine avant de commencer : rien ne la lisait — ni la liste, triée sur le départ, ni l'instanciation des kits, ni l'avancement — et une donnée que personne ne lit ne se maintient pas. Ce qui reste est le jour du départ, que le client préremplit avec celui du jour.
+`date` est obligatoire, et c'est la seule que porte un voyage : le jour du départ, que le client préremplit avec celui du jour.
 
 C'est une date et non un horodatage : personne ne prépare un sac à l'heure près, et une date évite d'avoir à choisir un fuseau pour une notion qui n'en a pas.
 
@@ -132,5 +134,3 @@ Deux conséquences à connaître, et elles sont le prix de ce choix :
 `check_integrity` liste ces deux états interdits, comme il liste déjà ceux du foyer et ceux du catalogue : c'est le seul moyen de s'apercevoir qu'ils se sont produits sans les chercher un par un.
 
 **Une ligne visant un non-participant n'y figure pas**, et ce n'est pas un oubli : c'est un état normal après le retrait d'un participant, décrit plus haut. Une commande qui crierait dessus finirait éteinte.
-
-**Un objet n'entre qu'une fois dans un voyage** figurait ici et n'y est plus : deux contraintes d'unicité le portent désormais, l'une sur `(trip, item_type, person)`, l'autre sur `(trip, item_type)` quand `person` est vide. Le raisonnement est plus haut, dans « Recocher un kit est idempotent ».

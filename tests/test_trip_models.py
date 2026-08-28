@@ -52,6 +52,11 @@ def test_a_trip_line_reads_as_a_quantity_of_an_item_type(trip, item_type, status
     assert str(make_line(trip, item_type, status, quantity=2)) == "2 Bavoir"
 
 
+def test_a_trip_line_cannot_pack_zero_of_something(trip, item_type, status):
+    with pytest.raises(IntegrityError):
+        make_line(trip, item_type, status, quantity=0)
+
+
 def test_a_person_takes_part_in_a_trip_only_once(trip, household):
     person = Person.objects.create(household=household, name="Enfant 1")
     TripParticipant.objects.create(trip=trip, person=person)

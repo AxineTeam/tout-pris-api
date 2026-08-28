@@ -67,6 +67,14 @@ def test_a_kit_line_reads_as_a_quantity_of_an_item_type(household):
     assert str(line) == "2 Bavoir"
 
 
+def test_a_kit_line_cannot_pack_zero_of_something(household):
+    kit = Kit.objects.create(household=household, name="Sac a langer")
+    item_type = ItemType.objects.create(household=household, name="Bavoir")
+
+    with pytest.raises(IntegrityError):
+        KitItem.objects.create(kit=kit, item_type=item_type, quantity=0)
+
+
 def test_two_item_types_differing_only_by_case_cannot_coexist(household):
     ItemType.objects.create(household=household, name="Chapeau")
 

@@ -77,6 +77,12 @@ class KitItemUpdateSerializer(serializers.ModelSerializer):
 
 
 class KitSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Kit
+        fields = ["id", "name", "description", "position"]
+
+
+class KitDetailSerializer(serializers.ModelSerializer):
     items = KitItemSerializer(many=True, read_only=True)
 
     class Meta:

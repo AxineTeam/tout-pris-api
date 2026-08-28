@@ -14,6 +14,7 @@ from catalog.serializers import (
     ItemTypeSerializer,
     ItemTypeUpdateSerializer,
     KitCreateSerializer,
+    KitDetailSerializer,
     KitItemCreateSerializer,
     KitItemSerializer,
     KitItemUpdateSerializer,
@@ -154,7 +155,7 @@ class KitListCreateView(HouseholdScopedView, generics.ListCreateAPIView):
         return KitCreateSerializer if self.request.method == "POST" else KitSerializer
 
     def get_queryset(self):
-        return self.household.kits.prefetch_related("items__item_type", "items__person")
+        return self.household.kits.all()
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -166,16 +167,18 @@ class KitListCreateView(HouseholdScopedView, generics.ListCreateAPIView):
 @extend_schema_view(delete=extend_schema(responses={204: None, 403: FORBIDDEN}))
 class KitDetailView(HouseholdScopedView, generics.RetrieveDestroyAPIView):
     def get_serializer_class(self):
-        return KitUpdateSerializer if self.request.method == "PATCH" else KitSerializer
+        return KitUpdateSerializer if self.request.method == "PATCH" else KitDetailSerializer
 
     def get_queryset(self):
         return self.household.kits.prefetch_related("items__item_type", "items__person")
 
-    @extend_schema(request=KitUpdateSerializer, responses={200: KitSerializer, 403: FORBIDDEN})
+    @extend_schema(
+        request=KitUpdateSerializer, responses={200: KitDetailSerializer, 403: FORBIDDEN}
+    )
     def patch(self, request, *args, **kwargs):
         serializer = self.get_serializer(self.get_object(), data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
-        return Response(KitSerializer(serializer.save()).data)
+        return Response(KitDetailSerializer(serializer.save()).data)
 
 
 class KitScopedView(HouseholdScopedView):

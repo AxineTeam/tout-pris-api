@@ -731,7 +731,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Kit'
+                $ref: '#/components/schemas/KitDetail'
           description: ''
     patch:
       operationId: households_kits_partial_update
@@ -766,7 +766,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Kit'
+                $ref: '#/components/schemas/KitDetail'
           description: ''
         '403':
           description: The caller is a member of this household, but their role does
@@ -1049,6 +1049,471 @@ paths:
         '409':
           description: That person already has an account, or the caller already is
             someone in this household.
+  /api/households/{household_id}/trips/:
+    get:
+      operationId: households_trips_list
+      parameters:
+      - in: path
+        name: household_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - households
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Trip'
+          description: ''
+    post:
+      operationId: households_trips_create
+      parameters:
+      - in: path
+        name: household_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - households
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TripCreate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TripCreate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TripCreate'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Trip'
+          description: ''
+        '403':
+          description: The caller is a member of this household, but their role does
+            not allow that.
+  /api/households/{household_id}/trips/{id}/:
+    get:
+      operationId: households_trips_retrieve
+      parameters:
+      - in: path
+        name: household_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - households
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TripDetail'
+          description: ''
+    patch:
+      operationId: households_trips_partial_update
+      parameters:
+      - in: path
+        name: household_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - households
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedTripUpdate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedTripUpdate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedTripUpdate'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TripDetail'
+          description: ''
+        '403':
+          description: The caller is a member of this household, but their role does
+            not allow that.
+    delete:
+      operationId: households_trips_destroy
+      parameters:
+      - in: path
+        name: household_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - households
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+        '403':
+          description: The caller is a member of this household, but their role does
+            not allow that.
+  /api/households/{household_id}/trips/{trip_id}/items/:
+    get:
+      operationId: households_trips_items_list
+      parameters:
+      - in: path
+        name: household_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: trip_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - households
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TripItem'
+          description: ''
+    post:
+      operationId: households_trips_items_create
+      parameters:
+      - in: path
+        name: household_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: trip_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - households
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TripItemCreate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TripItemCreate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TripItemCreate'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TripItem'
+          description: ''
+        '403':
+          description: The caller is a member of this household, but their role does
+            not allow that.
+        '409':
+          description: That object is already in this trip for that person. A trip
+            line needs a status, and this household has none to give it.
+  /api/households/{household_id}/trips/{trip_id}/items/{id}/:
+    get:
+      operationId: households_trips_items_retrieve
+      parameters:
+      - in: path
+        name: household_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: trip_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - households
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TripItem'
+          description: ''
+    patch:
+      operationId: households_trips_items_partial_update
+      parameters:
+      - in: path
+        name: household_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: trip_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - households
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedTripItemUpdate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedTripItemUpdate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedTripItemUpdate'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TripItem'
+          description: ''
+        '403':
+          description: The caller is a member of this household, but their role does
+            not allow that.
+        '409':
+          description: That object is already in this trip for that person.
+    delete:
+      operationId: households_trips_items_destroy
+      parameters:
+      - in: path
+        name: household_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: trip_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - households
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+        '403':
+          description: The caller is a member of this household, but their role does
+            not allow that.
+  /api/households/{household_id}/trips/{trip_id}/kits/:
+    post:
+      operationId: households_trips_kits_create
+      parameters:
+      - in: path
+        name: household_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: trip_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - households
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KitInstantiation'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/KitInstantiation'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/KitInstantiation'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TripItem'
+          description: The kit added nothing, every line of it being already in the
+            trip or aimed at someone who does not go. The array is then empty.
+        '201':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TripItem'
+          description: ''
+        '403':
+          description: The caller is a member of this household, but their role does
+            not allow that.
+        '409':
+          description: A trip line needs a status, and this household has none to
+            give it.
+  /api/households/{household_id}/trips/{trip_id}/participants/:
+    get:
+      operationId: households_trips_participants_list
+      parameters:
+      - in: path
+        name: household_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: trip_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - households
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TripParticipant'
+          description: ''
+    post:
+      operationId: households_trips_participants_create
+      parameters:
+      - in: path
+        name: household_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: trip_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - households
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TripParticipantCreate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TripParticipantCreate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TripParticipantCreate'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TripParticipant'
+          description: ''
+        '403':
+          description: The caller is a member of this household, but their role does
+            not allow that.
+        '409':
+          description: That person already goes on this trip.
+  /api/households/{household_id}/trips/{trip_id}/participants/{id}/:
+    delete:
+      operationId: households_trips_participants_destroy
+      parameters:
+      - in: path
+        name: household_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: trip_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - households
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+        '403':
+          description: The caller is a member of this household, but their role does
+            not allow that.
   /api/invitations/accept/:
     post:
       operationId: invitations_accept_create
@@ -1273,14 +1738,8 @@ components:
           type: integer
           readOnly: true
           description: Rank of the section the kit displays as in a trip.
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/KitItem'
-          readOnly: true
       required:
       - id
-      - items
       - name
       - position
     KitCreate:
@@ -1295,6 +1754,40 @@ components:
           description: Optional reminder of what the block is meant to cover.
       required:
       - name
+    KitDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          description: What the block is called, such as diaper bag or hiking gear.
+          maxLength: 100
+        description:
+          type: string
+          description: Optional reminder of what the block is meant to cover.
+        position:
+          type: integer
+          readOnly: true
+          description: Rank of the section the kit displays as in a trip.
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/KitItem'
+          readOnly: true
+      required:
+      - id
+      - items
+      - name
+      - position
+    KitInstantiation:
+      type: object
+      properties:
+        kit:
+          type: integer
+      required:
+      - kit
     KitItem:
       type: object
       properties:
@@ -1465,6 +1958,36 @@ components:
           type: string
           description: Display name shown in every picker asking who an item is for.
           maxLength: 100
+    PatchedTripItemUpdate:
+      type: object
+      properties:
+        item_type:
+          type: integer
+        person:
+          type: integer
+          nullable: true
+        quantity:
+          type: integer
+          maximum: 32767
+          minimum: 1
+          description: How many of the thing to pack, such as five t-shirts.
+        status:
+          type: integer
+        note:
+          type: string
+          description: Free reminder shown on the line, such as the warm one.
+          maxLength: 200
+    PatchedTripUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          description: What the trip is called, such as a week in Brittany.
+          maxLength: 100
+        date:
+          type: string
+          format: date
+          description: Day the trip leaves on, which the trip list is sorted on.
     Person:
       type: object
       properties:
@@ -1512,6 +2035,154 @@ components:
       description: |-
         * `owner` - Owner
         * `member` - Member
+    Trip:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          description: What the trip is called, such as a week in Brittany.
+          maxLength: 100
+        date:
+          type: string
+          format: date
+          description: Day the trip leaves on, which the trip list is sorted on.
+      required:
+      - date
+      - id
+      - name
+    TripCreate:
+      type: object
+      properties:
+        name:
+          type: string
+          description: What the trip is called, such as a week in Brittany.
+          maxLength: 100
+        date:
+          type: string
+          format: date
+          description: Day the trip leaves on, which the trip list is sorted on.
+      required:
+      - date
+      - name
+    TripDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          description: What the trip is called, such as a week in Brittany.
+          maxLength: 100
+        date:
+          type: string
+          format: date
+          description: Day the trip leaves on, which the trip list is sorted on.
+        participants:
+          type: array
+          items:
+            $ref: '#/components/schemas/TripParticipant'
+          readOnly: true
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/TripItem'
+          readOnly: true
+      required:
+      - date
+      - id
+      - items
+      - name
+      - participants
+    TripItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        item_type:
+          allOf:
+          - $ref: '#/components/schemas/ItemType'
+          readOnly: true
+        person:
+          allOf:
+          - $ref: '#/components/schemas/Person'
+          readOnly: true
+          nullable: true
+        quantity:
+          type: integer
+          maximum: 32767
+          minimum: 1
+          description: How many of the thing to pack, such as five t-shirts.
+        status:
+          allOf:
+          - $ref: '#/components/schemas/ItemStatus'
+          readOnly: true
+        note:
+          type: string
+          description: Free reminder shown on the line, such as the warm one.
+          maxLength: 200
+        position:
+          type: integer
+          readOnly: true
+          description: Rank in the trip, taken from the kit at instantiation and editable
+            afterwards.
+        kits:
+          type: array
+          items:
+            $ref: '#/components/schemas/Kit'
+          readOnly: true
+      required:
+      - id
+      - item_type
+      - kits
+      - person
+      - position
+      - status
+    TripItemCreate:
+      type: object
+      properties:
+        item_type:
+          type: integer
+        person:
+          type: integer
+          nullable: true
+        quantity:
+          type: integer
+          maximum: 32767
+          minimum: 1
+          description: How many of the thing to pack, such as five t-shirts.
+        status:
+          type: integer
+        note:
+          type: string
+          description: Free reminder shown on the line, such as the warm one.
+          maxLength: 200
+      required:
+      - item_type
+    TripParticipant:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        person:
+          allOf:
+          - $ref: '#/components/schemas/Person'
+          readOnly: true
+      required:
+      - id
+      - person
+    TripParticipantCreate:
+      type: object
+      properties:
+        person:
+          type: integer
+      required:
+      - person
   securitySchemes:
     cookieAuth:
       type: apiKey
