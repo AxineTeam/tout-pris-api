@@ -6,8 +6,11 @@ WORKDIR /app
 
 # graphviz ships the `dot` binary that `manage.py graph_models` shells out to
 # through pydot to render docs/model/schema.png. Dev only, never in Dockerfile.prod.
+# gettext ships the `xgettext` and `msgfmt` binaries that `manage.py makemessages` and
+# `compilemessages` shell out to. Dev only: the compiled .mo files are committed, so
+# no other image needs the toolchain.
 RUN apt-get update \
-    && apt-get install --no-install-recommends --yes graphviz \
+    && apt-get install --no-install-recommends --yes graphviz gettext \
     && rm -rf /var/lib/apt/lists/*
 
 # UV_COMPILE_BYTECODE: precompile .pyc at install time for faster startup.

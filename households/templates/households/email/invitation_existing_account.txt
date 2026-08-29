@@ -1,9 +1,9 @@
-Hello,
+{% load i18n %}{% blocktranslate %}Hello,
 
 {{ inviter }} invites you to join the household {{ household }} on Tout Pris, so you can prepare your trips together.
 
 Sign in and follow this link to join:
 
-{{ url }}
+{{ url }}{% endblocktranslate %}
 
-The link works once and expires in {{ expires_in_days }} days, on {{ expires_at|date }}. If you were not expecting this invitation, ignore this message: nothing happens until you follow the link.
+{% blocktranslate with expires_on=expires_at|date %}The link works once and expires in {{ expires_in_days }} days, on {{ expires_on }}. If you were not expecting this invitation, ignore this message: nothing happens until you follow the link.{% endblocktranslate %}

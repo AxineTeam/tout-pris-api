@@ -2,6 +2,9 @@ import pytest
 from django.test import Client
 
 from accounts.models import User
+from catalog.models import ItemStatus
+from households.memberships import create_household
+from households.models import Person
 from tests.test_authentication import CREDENTIALS, LOGIN_URL, SESSION_URL, SIGNUP_URL, sign_up
 
 pytestmark = pytest.mark.django_db
@@ -109,3 +112,35 @@ def test_the_chosen_language_outlives_the_session_it_was_chosen_in(client):
     response = client.get(HOUSEHOLDS_URL, headers={"accept-language": "en-US"})
 
     assert response.headers["Content-Language"] == "fr"
+
+
+def test_a_refusal_the_api_writes_itself_is_answered_in_the_language_of_the_account(alice):
+    alice.language = "fr"
+    alice.save()
+    household = create_household("Famille Martin", alice)
+    someone_else = Person.objects.create(household=household, name="Sacha")
+
+    response = signed_in_client(alice).post(
+        f"/api/households/{household.pk}/persons/{someone_else.pk}/claim/",
+        headers={"accept-language": "en-US"},
+    )
+
+    assert response.status_code == 409
+    assert response.json() == {"detail": "Vous êtes déjà quelqu'un dans ce foyer."}
+
+
+def test_a_refusal_carrying_a_number_keeps_it_once_translated(alice):
+    alice.language = "fr"
+    alice.save()
+    household = create_household("Famille Martin", alice)
+    status = ItemStatus.objects.create(household=household, name="Pas prepare")
+
+    response = signed_in_client(alice).patch(
+        f"/api/households/{household.pk}/item-statuses/{status.pk}/",
+        {"position": 4},
+        content_type="application/json",
+        headers={"accept-language": "en-US"},
+    )
+
+    assert response.status_code == 400
+    assert response.json() == {"position": ["Indiquez une position de 0 à 0."]}

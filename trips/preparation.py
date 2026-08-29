@@ -1,10 +1,11 @@
 from django.db import transaction
+from django.utils.translation import gettext_lazy as _
 
 from catalog.statuses import default_status
 from tout_pris.exceptions import Conflict
 from trips.models import TripItem
 
-NO_STATUS = "A trip line needs a status, and this household has none to give it."
+NO_STATUS = _("A trip line needs a status, and this household has none to give it.")
 
 
 def starting_status(household_id):

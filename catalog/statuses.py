@@ -1,4 +1,5 @@
 from django.db import transaction
+from django.utils.translation import gettext_lazy as _
 
 from catalog.models import ItemStatus
 from tout_pris.exceptions import Conflict
@@ -21,7 +22,7 @@ def make_default(status):
 def delete_status(status):
     if status.is_default:
         raise Conflict(
-            "The default status cannot be deleted, make another status the default one first."
+            _("The default status cannot be deleted, make another status the default one first.")
         )
     siblings = (
         ItemStatus.objects.filter(household_id=status.household_id)

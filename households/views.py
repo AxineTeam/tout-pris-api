@@ -3,6 +3,7 @@ from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.functional import cached_property
+from django.utils.translation import gettext_lazy as _
 from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
@@ -143,7 +144,7 @@ class PersonDetailView(HouseholdScopedView, generics.RetrieveDestroyAPIView):
 
     def perform_destroy(self, person):
         if person.user_id and self.household.members.filter(user=person.user_id).exists():
-            raise Conflict("A person whose account is still a member cannot be deleted.")
+            raise Conflict(_("A person whose account is still a member cannot be deleted."))
         person.delete()
 
 
@@ -168,12 +169,12 @@ class PersonClaimView(HouseholdScopedView):
     def post(self, request, *args, **kwargs):
         person = get_object_or_404(self.household.persons, pk=self.kwargs["pk"])
         if self.household.persons.filter(user=request.user).exists():
-            raise Conflict("The caller already is someone in this household.")
+            raise Conflict(_("The caller already is someone in this household."))
         claimed = self.household.persons.filter(pk=person.pk, user__isnull=True).update(
             user=request.user
         )
         if not claimed:
-            raise Conflict("That person already has an account.")
+            raise Conflict(_("That person already has an account."))
         return Response(status=204)
 
 
@@ -225,19 +226,21 @@ class MemberDetailView(SharedHouseholdScopedView, generics.DestroyAPIView):
         serializer.is_valid(raise_exception=True)
         role = serializer.validated_data.get("role")
         if role == HouseholdRole.MEMBER and self.is_last_owner(member):
-            raise Conflict("The last owner cannot step down, hand the role over first.")
+            raise Conflict(_("The last owner cannot step down, hand the role over first."))
         if (
             role == HouseholdRole.OWNER
             and not self.household.persons.filter(user=member.user_id).exists()
         ):
-            raise Conflict("A member who is nobody in this household yet cannot be made an owner.")
+            raise Conflict(
+                _("A member who is nobody in this household yet cannot be made an owner.")
+            )
         return Response(MemberSerializer(serializer.save()).data)
 
     def perform_destroy(self, member):
         if self.household.members.count() == 1:
-            raise Conflict("The last member cannot leave, delete the household instead.")
+            raise Conflict(_("The last member cannot leave, delete the household instead."))
         if self.is_last_owner(member):
-            raise Conflict("The last owner cannot leave, hand the role over first.")
+            raise Conflict(_("The last owner cannot leave, hand the role over first."))
         remove_member(member)
 
     def is_last_owner(self, member):

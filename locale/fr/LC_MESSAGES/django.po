@@ -1,0 +1,151 @@
+# French translations of the strings this API writes itself.
+# The catalogs of Django, DRF and allauth cover the rest.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: tout-pris-api\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-08-29 12:50+0000\n"
+"PO-Revision-Date: 2026-08-29 08:19+0000\n"
+"Last-Translator: Tout Pris\n"
+"Language-Team: French\n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: catalog/serializers.py:17
+#, python-brace-format
+msgid "Give a position from 0 to {last}."
+msgstr "Indiquez une position de 0 à {last}."
+
+#: catalog/serializers.py:61
+msgid "Make another status the default one instead, a household needs one."
+msgstr "Désignez plutôt un autre statut par défaut, un foyer en a besoin d'un."
+
+#: catalog/statuses.py:25
+msgid ""
+"The default status cannot be deleted, make another status the default one "
+"first."
+msgstr ""
+"Le statut par défaut ne peut pas être supprimé, désignez d'abord un autre "
+"statut par défaut."
+
+#: households/permissions.py:12
+msgid "Choose which person you are in this household first."
+msgstr "Choisissez d'abord qui vous êtes dans ce foyer."
+
+#: households/permissions.py:22
+msgid "Only an owner of this household can do that."
+msgstr "Seul un propriétaire de ce foyer peut faire cela."
+
+#: households/permissions.py:29
+msgid "Only an owner of this household can act on another member."
+msgstr "Seul un propriétaire de ce foyer peut agir sur un autre membre."
+
+#: households/templates/households/email/invitation_existing_account.txt:1
+#, python-format
+msgid ""
+"Hello,\n"
+"\n"
+"%(inviter)s invites you to join the household %(household)s on Tout Pris, so "
+"you can prepare your trips together.\n"
+"\n"
+"Sign in and follow this link to join:\n"
+"\n"
+"%(url)s"
+msgstr ""
+"Bonjour,\n"
+"\n"
+"%(inviter)s vous invite à rejoindre le foyer %(household)s sur Tout Pris, "
+"pour préparer vos voyages ensemble.\n"
+"\n"
+"Connectez-vous et suivez ce lien pour le rejoindre :\n"
+"\n"
+"%(url)s"
+
+#: households/templates/households/email/invitation_existing_account.txt:9
+#: households/templates/households/email/invitation_new_account.txt:9
+#, python-format
+msgid ""
+"The link works once and expires in %(expires_in_days)s days, on "
+"%(expires_on)s. If you were not expecting this invitation, ignore this "
+"message: nothing happens until you follow the link."
+msgstr ""
+"Le lien fonctionne une seule fois et expire dans %(expires_in_days)s jours, "
+"le %(expires_on)s. Si vous n'attendiez pas cette invitation, ignorez ce "
+"message : rien ne se passe tant que vous ne suivez pas le lien."
+
+#: households/templates/households/email/invitation_new_account.txt:1
+#, python-format
+msgid ""
+"Hello,\n"
+"\n"
+"%(inviter)s invites you to join the household %(household)s on Tout Pris, so "
+"you can prepare your trips together.\n"
+"\n"
+"Create your account and follow this link to join:\n"
+"\n"
+"%(url)s"
+msgstr ""
+"Bonjour,\n"
+"\n"
+"%(inviter)s vous invite à rejoindre le foyer %(household)s sur Tout Pris, "
+"pour préparer vos voyages ensemble.\n"
+"\n"
+"Créez votre compte et suivez ce lien pour le rejoindre :\n"
+"\n"
+"%(url)s"
+
+#: households/templates/households/email/invitation_subject.txt:1
+#, python-format
+msgid "%(inviter)s invites you to join %(household)s on Tout Pris"
+msgstr "%(inviter)s vous invite à rejoindre %(household)s sur Tout Pris"
+
+#: households/views.py:147
+msgid "A person whose account is still a member cannot be deleted."
+msgstr ""
+"Une personne dont le compte est encore membre ne peut pas être supprimée."
+
+#: households/views.py:172
+msgid "The caller already is someone in this household."
+msgstr "Vous êtes déjà quelqu'un dans ce foyer."
+
+#: households/views.py:177
+msgid "That person already has an account."
+msgstr "Cette personne a déjà un compte."
+
+#: households/views.py:229
+msgid "The last owner cannot step down, hand the role over first."
+msgstr ""
+"Le dernier propriétaire ne peut pas se retirer, transmettez d'abord le rôle."
+
+#: households/views.py:235
+msgid "A member who is nobody in this household yet cannot be made an owner."
+msgstr ""
+"Un membre qui n'est encore personne dans ce foyer ne peut pas devenir "
+"propriétaire."
+
+#: households/views.py:241
+msgid "The last member cannot leave, delete the household instead."
+msgstr "Le dernier membre ne peut pas partir, supprimez plutôt le foyer."
+
+#: households/views.py:243
+msgid "The last owner cannot leave, hand the role over first."
+msgstr ""
+"Le dernier propriétaire ne peut pas partir, transmettez d'abord le rôle."
+
+#: trips/preparation.py:8
+msgid "A trip line needs a status, and this household has none to give it."
+msgstr ""
+"Une ligne de voyage a besoin d'un statut, et ce foyer n'en a aucun à lui "
+"donner."
+
+#: trips/views.py:25
+msgid "That object is already in this trip for that person."
+msgstr "Cet objet est déjà dans ce voyage pour cette personne."
+
+#: trips/views.py:27
+msgid "That person already goes on this trip."
+msgstr "Cette personne participe déjà à ce voyage."

@@ -1,3 +1,4 @@
+from django.utils.translation import gettext_lazy as _
 from ordered_model.serializers import OrderedModelSerializer
 from rest_framework import serializers
 
@@ -12,7 +13,9 @@ class ReorderingSerializer(OrderedModelSerializer):
     def validate_position(self, position):
         last = self.instance.get_ordering_queryset().count() - 1
         if not 0 <= position <= last:
-            raise serializers.ValidationError(f"Give a position from 0 to {last}.")
+            raise serializers.ValidationError(
+                _("Give a position from 0 to {last}.").format(last=last)
+            )
         return position
 
 
@@ -55,7 +58,7 @@ class ItemStatusUpdateSerializer(ReorderingSerializer):
     def validate_is_default(self, is_default):
         if not is_default:
             raise serializers.ValidationError(
-                "Make another status the default one instead, a household needs one."
+                _("Make another status the default one instead, a household needs one.")
             )
         return is_default
 

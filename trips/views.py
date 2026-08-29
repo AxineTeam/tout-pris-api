@@ -1,6 +1,7 @@
 from django.db import IntegrityError, transaction
 from django.shortcuts import get_object_or_404
 from django.utils.functional import cached_property
+from django.utils.translation import gettext_lazy as _
 from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
 from rest_framework import generics
 from rest_framework.response import Response
@@ -21,9 +22,9 @@ from trips.serializers import (
     TripUpdateSerializer,
 )
 
-ALREADY_PACKED = "That object is already in this trip for that person."
+ALREADY_PACKED = _("That object is already in this trip for that person.")
 
-ALREADY_GOING = "That person already goes on this trip."
+ALREADY_GOING = _("That person already goes on this trip.")
 
 NO_STATUS_RESPONSE = OpenApiResponse(description=NO_STATUS)
 
