@@ -1564,6 +1564,27 @@ paths:
         '403':
           description: The caller is a member of this household, but their role does
             not allow that.
+  /api/invitations/{token}/:
+    get:
+      operationId: invitations_retrieve
+      parameters:
+      - in: path
+        name: token
+        schema:
+          type: string
+        required: true
+      tags:
+      - invitations
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvitationPreview'
+          description: ''
   /api/invitations/accept/:
     post:
       operationId: invitations_accept_create
@@ -1705,6 +1726,24 @@ components:
           maxLength: 254
       required:
       - email
+    InvitationPreview:
+      type: object
+      properties:
+        household:
+          type: string
+          readOnly: true
+        inviter:
+          type: string
+          nullable: true
+          readOnly: true
+        expires_at:
+          type: string
+          format: date-time
+          description: When the token stops being accepted, a week after it was created.
+      required:
+      - expires_at
+      - household
+      - inviter
     ItemStatus:
       type: object
       properties:

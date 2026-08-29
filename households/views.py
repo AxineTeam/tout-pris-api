@@ -6,7 +6,7 @@ from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
 from rest_framework import generics
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
@@ -25,6 +25,7 @@ from households.serializers import (
     HouseholdUpdateSerializer,
     InvitationAcceptSerializer,
     InvitationCreateSerializer,
+    InvitationPreviewSerializer,
     InvitationSerializer,
     MemberSerializer,
     MemberUpdateSerializer,
@@ -280,6 +281,17 @@ class InvitationDestroyView(SharedHouseholdScopedView, generics.DestroyAPIView):
 
     def get_queryset(self):
         return Invitation.objects.filter(household=self.household, accepted_at=None)
+
+
+class InvitationPreviewView(APIView):
+    permission_classes = [AllowAny]
+
+    @extend_schema(responses={200: InvitationPreviewSerializer})
+    def get(self, request, token):
+        invitation = pending_invitation(token)
+        if invitation is None:
+            raise Http404
+        return Response(InvitationPreviewSerializer(invitation).data)
 
 
 class InvitationAcceptView(APIView):

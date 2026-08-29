@@ -4,7 +4,9 @@
 
 C'est le seul moment où un foyer **partagé** se peuple. Chaque compte a le sien depuis #52, mais un foyer à soi ne tient aucune des promesses du produit : préparer à plusieurs commence par inviter quelqu'un.
 
-Un membre saisit une adresse, l'invité reçoit un lien, il le suit et rejoint le foyer. S'il a déjà un compte il rejoint directement, sinon il s'inscrit et rejoint dans la foulée : l'invitation n'est jamais un cul-de-sac pour quelqu'un qui n'a pas encore de compte.
+Un membre saisit une adresse, l'invité reçoit un lien, il le suit et lit qui l'invite et dans quel foyer avant de rejoindre. S'il a déjà un compte il rejoint directement, sinon il s'inscrit et rejoint dans la foulée : l'invitation n'est jamais un cul-de-sac pour quelqu'un qui n'a pas encore de compte.
+
+**La page nomme le foyer, l'invitant et la date d'expiration avant toute connexion.** Sans eux, l'invité crée un compte sur la foi d'une URL et découvre après coup où il a atterri, au seul moment où il n'a aucun moyen de vérifier.
 
 ## La table
 
@@ -19,6 +21,8 @@ C'est aussi pour cela que le jeton n'est pas produit par un `default` sur le mod
 SHA-256 sans sel ni étirement suffit, contrairement à un mot de passe : 256 bits tirés au hasard ne s'attaquent ni par dictionnaire ni par force brute, et argon2 est fait pour les secrets à faible entropie. La recherche à l'acceptation reste une égalité exacte sur une colonne indexée.
 
 L'expiration est d'une semaine. Une invitation qui traîne dans une boîte pendant des mois est une porte ouverte que personne ne surveille.
+
+La lecture qui nomme le foyer porte le jeton dans son chemin d'URL, il entre donc dans les journaux du serveur — l'acceptation, elle, le garde dans son corps. La page qui appelle cette lecture est celle du lien reçu, dont l'URL le porte déjà ; son usage unique et sa semaine de validité bornent le reste.
 
 ## Accepter n'enlève rien
 
@@ -40,7 +44,7 @@ Ce que ça coûtait dépassait le confort qu'on croyait offrir. Une colonne à v
 
 **Accepter fait donc une seule chose : ajouter le membre.** Aucune `Person` n'est créée ni rattachée. L'invité entre dans le foyer sans y être encore quelqu'un, voit les personnes qui l'attendent, et revendique la sienne par `POST /api/households/{household_id}/persons/{id}/claim/`. Personne ne l'attendait ? Il crée la sienne puis la revendique, en deux appels, tous deux ouverts à un membre qui n'est encore personne.
 
-Il découvre alors la composition du foyer, ce que la désignation évitait. C'est un foyer qu'il vient de rejoindre sur invitation, pas un inconnu : il en verra les personnes à son premier écran de toute façon.
+Il découvre alors la composition du foyer, ce que la désignation évitait. C'est un foyer dont il a lu le nom et l'invitant avant d'accepter, pas un inconnu : il en verra les personnes à son premier écran de toute façon.
 
 Créer d'office une personne à l'arrivée reste hors de question, et c'est un problème distinct de la désignation. Le cas se voit sur un ex-membre qui revient : son retrait avait vidé le compte de sa personne sans la supprimer, et une création automatique lui en fabriquerait une seconde à côté, l'ancienne restant orpheline. L'unicité `(household, user)` ne l'attraperait pas, celle qu'il a quittée portant `user = NULL`.
 

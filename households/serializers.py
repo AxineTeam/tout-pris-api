@@ -2,6 +2,7 @@ from django.http import Http404
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
+from households.memberships import display_name_of
 from households.models import Household, HouseholdMember, Invitation, Person
 
 
@@ -81,6 +82,19 @@ class InvitationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Invitation
         fields = ["id", "email", "created_at", "expires_at"]
+
+
+class InvitationPreviewSerializer(serializers.ModelSerializer):
+    household = serializers.CharField(source="household.name", read_only=True)
+    inviter = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Invitation
+        fields = ["household", "inviter", "expires_at"]
+
+    @extend_schema_field(serializers.CharField(allow_null=True))
+    def get_inviter(self, invitation):
+        return display_name_of(invitation.invited_by) if invitation.invited_by else None
 
 
 class InvitationCreateSerializer(serializers.ModelSerializer):
