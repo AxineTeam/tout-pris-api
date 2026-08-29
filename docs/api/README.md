@@ -214,6 +214,8 @@ La lecture d'une ligne coûte donc le même nombre de requêtes quel qu'en soit 
 
 **Aucune écriture n'est refusée sur un voyage archivé** : ni sur lui, ni sur ses lignes, ni sur ses participants. L'archivage est un marqueur, pas un verrou. Un client qui traite ses archives en lecture seule le fait dans son interface et ne doit rien attendre de l'API sur ce point.
 
+**`POST /api/households/{household_id}/trips/{trip_id}/duplicate/` crée un voyage à partir d'un autre** et répond `201` avec le voyage complet, participants et lignes développés comme le voyage à l'unité. `name` et `date` sont **obligatoires** : l'API ne suffixe aucun nom et ne devine aucune date, la boîte de dialogue du front préremplit les deux. Les règles de la copie sont dans [`docs/model/trips.md`](../model/trips.md), et elles vivent dans `trips/preparation.py` à côté de l'instanciation d'un kit — la vue reçoit, valide, délègue. Un foyer sans aucun statut répond `409` et ne crée rien, pour la même raison qu'il ne peut pas instancier de kit.
+
 Retirer un participant ne touche pas les lignes préparées pour lui : elles restent, et c'est à l'interface de les montrer. `position` est en lecture seule, attribuée à la fin du voyage à la création et reprise de l'ordre du kit à l'instanciation.
 
 ## Chemins

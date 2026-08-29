@@ -14,11 +14,12 @@ from rest_framework.response import Response
 
 from households.views import FORBIDDEN, HouseholdScopedView
 from tout_pris.exceptions import Conflict
-from trips.preparation import NO_STATUS, instantiate_kit, starting_status
+from trips.preparation import NO_STATUS, duplicate_trip, instantiate_kit, starting_status
 from trips.serializers import (
     KitInstantiationSerializer,
     TripCreateSerializer,
     TripDetailSerializer,
+    TripDuplicationSerializer,
     TripItemCreateSerializer,
     TripItemSerializer,
     TripItemUpdateSerializer,
@@ -45,6 +46,15 @@ ARCHIVED = OpenApiParameter(
 def archived_wanted(request):
     return serializers.BooleanField(default=False).run_validation(
         request.query_params.get("archived", empty)
+    )
+
+
+def trip_detail_queryset(household):
+    return household.trips.prefetch_related(
+        "participants__person",
+        "items__item_type__kit_items__kit",
+        "items__person",
+        "items__status",
     )
 
 
@@ -90,12 +100,7 @@ class TripDetailView(HouseholdScopedView, generics.RetrieveDestroyAPIView):
         return TripUpdateSerializer if self.request.method == "PATCH" else TripDetailSerializer
 
     def get_queryset(self):
-        return self.household.trips.prefetch_related(
-            "participants__person",
-            "items__item_type__kit_items__kit",
-            "items__person",
-            "items__status",
-        )
+        return trip_detail_queryset(self.household)
 
     @extend_schema(
         request=TripUpdateSerializer, responses={200: TripDetailSerializer, 403: FORBIDDEN}
@@ -114,6 +119,25 @@ class TripScopedView(HouseholdScopedView):
     def get_queryset(self):
         return self.trip.items.select_related("item_type", "person", "status").prefetch_related(
             "item_type__kit_items__kit"
+        )
+
+
+@extend_schema_view(
+    post=extend_schema(
+        request=TripDuplicationSerializer,
+        responses={201: TripDetailSerializer, 403: FORBIDDEN, 409: NO_STATUS_RESPONSE},
+    )
+)
+class TripDuplicationView(TripScopedView, generics.CreateAPIView):
+    serializer_class = TripDuplicationSerializer
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        copy = duplicate_trip(self.trip, **serializer.validated_data)
+        return Response(
+            TripDetailSerializer(trip_detail_queryset(self.household).get(pk=copy.pk)).data,
+            status=201,
         )
 
 

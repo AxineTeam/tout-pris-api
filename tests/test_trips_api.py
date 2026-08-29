@@ -44,6 +44,10 @@ def kits_url(household, trip):
     return f"{trip_url(household, trip)}kits/"
 
 
+def duplicate_url(household, trip):
+    return f"{trip_url(household, trip)}duplicate/"
+
+
 def signed_in(user):
     client = Client()
     client.force_login(user)
@@ -373,6 +377,14 @@ def test_a_member_who_is_nobody_yet_reads_the_trips_but_does_not_prepare_them(
         client.post(
             items_url(household, trip),
             {"item_type": tshirt.pk},
+            content_type="application/json",
+        ).status_code
+        == 403
+    )
+    assert (
+        client.post(
+            duplicate_url(household, trip),
+            {"name": "Le mien", "date": "2027-07-14"},
             content_type="application/json",
         ).status_code
         == 403
@@ -914,3 +926,109 @@ def test_a_kit_is_not_poured_into_a_trip_of_another_household(
 
     assert response.status_code == 404
     assert not theirs.items.exists()
+
+
+def test_duplicating_a_trip_repeats_its_people_and_its_lines_at_the_starting_status(
+    client, household, trip, leo, tshirt, to_pack, packed
+):
+    TripParticipant.objects.create(trip=trip, person=leo)
+    creme = ItemType.objects.create(household=household, name="Creme solaire")
+    TripItem.objects.create(
+        trip=trip, item_type=tshirt, person=leo, quantity=5, status=packed, note="Les fins"
+    )
+    TripItem.objects.create(trip=trip, item_type=creme, status=packed)
+
+    response = client.post(
+        duplicate_url(household, trip),
+        {"name": "Bretagne 2027", "date": "2027-07-14"},
+        content_type="application/json",
+    )
+
+    assert response.status_code == 201
+    body = response.json()
+    assert (body["name"], body["date"], body["archived_at"]) == (
+        "Bretagne 2027",
+        "2027-07-14",
+        None,
+    )
+    assert [entry["person"]["name"] for entry in body["participants"]] == ["Leo"]
+    assert [entry["item_type"]["name"] for entry in body["items"]] == ["T-shirt", "Creme solaire"]
+    assert body["items"][0]["quantity"] == 5
+    assert body["items"][0]["note"] == "Les fins"
+    assert body["items"][0]["person"]["name"] == "Leo"
+    assert [entry["position"] for entry in body["items"]] == [0, 1]
+    assert {entry["status"]["id"] for entry in body["items"]} == {to_pack.pk}
+
+
+def test_duplicating_a_trip_leaves_the_one_it_copies_alone(
+    client, household, trip, leo, tshirt, to_pack, packed
+):
+    TripParticipant.objects.create(trip=trip, person=leo)
+    line = TripItem.objects.create(trip=trip, item_type=tshirt, quantity=5, status=packed)
+
+    client.post(
+        duplicate_url(household, trip),
+        {"name": "Bretagne 2027", "date": "2027-07-14"},
+        content_type="application/json",
+    )
+
+    line.refresh_from_db()
+    assert (line.status_id, line.quantity) == (packed.pk, 5)
+    assert trip.items.count() == 1
+    assert trip.participants.count() == 1
+
+
+def test_the_copy_of_an_archived_trip_starts_in_the_current_list(
+    client, household, trip, tshirt, to_pack
+):
+    TripItem.objects.create(trip=trip, item_type=tshirt, status=to_pack)
+    trip.archived_at = timezone.now()
+    trip.save()
+
+    response = client.post(
+        duplicate_url(household, trip),
+        {"name": "Bretagne 2027", "date": "2027-07-14"},
+        content_type="application/json",
+    )
+
+    assert response.status_code == 201
+    assert response.json()["archived_at"] is None
+    assert [entry["name"] for entry in client.get(trips_url(household)).json()] == ["Bretagne 2027"]
+
+
+def test_a_duplicate_without_a_name_or_without_a_date_is_refused(client, household, trip, to_pack):
+    nameless = client.post(
+        duplicate_url(household, trip), {"date": "2027-07-14"}, content_type="application/json"
+    )
+    dateless = client.post(
+        duplicate_url(household, trip), {"name": "Bretagne 2027"}, content_type="application/json"
+    )
+
+    assert [nameless.status_code, dateless.status_code] == [400, 400]
+    assert household.trips.count() == 1
+
+
+def test_a_trip_cannot_be_duplicated_by_a_household_that_has_no_status_yet(
+    client, household, trip, tshirt
+):
+    response = client.post(
+        duplicate_url(household, trip),
+        {"name": "Bretagne 2027", "date": "2027-07-14"},
+        content_type="application/json",
+    )
+
+    assert response.status_code == 409
+    assert household.trips.count() == 1
+
+
+def test_a_trip_of_another_household_is_not_duplicated(client, stranger_household, to_pack):
+    theirs = Trip.objects.create(household=stranger_household, name="Le leur", date="2026-07-14")
+
+    response = client.post(
+        duplicate_url(stranger_household, theirs),
+        {"name": "Le mien", "date": "2027-07-14"},
+        content_type="application/json",
+    )
+
+    assert response.status_code == 404
+    assert stranger_household.trips.count() == 1

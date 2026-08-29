@@ -1198,6 +1198,49 @@ paths:
         '403':
           description: The caller is a member of this household, but their role does
             not allow that.
+  /api/households/{household_id}/trips/{trip_id}/duplicate/:
+    post:
+      operationId: households_trips_duplicate_create
+      parameters:
+      - in: path
+        name: household_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: trip_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - households
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TripDuplication'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TripDuplication'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TripDuplication'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TripDetail'
+          description: ''
+        '403':
+          description: The caller is a member of this household, but their role does
+            not allow that.
+        '409':
+          description: A trip line needs a status, and this household has none to
+            give it.
   /api/households/{household_id}/trips/{trip_id}/items/:
     get:
       operationId: households_trips_items_list
@@ -2203,6 +2246,20 @@ components:
       - items
       - name
       - participants
+    TripDuplication:
+      type: object
+      properties:
+        name:
+          type: string
+          description: What the trip is called, such as a week in Brittany.
+          maxLength: 100
+        date:
+          type: string
+          format: date
+          description: Day the trip leaves on, which the trip list is sorted on.
+      required:
+      - date
+      - name
     TripItem:
       type: object
       properties:

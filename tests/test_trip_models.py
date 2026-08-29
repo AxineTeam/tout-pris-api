@@ -124,6 +124,17 @@ def test_trip_lines_are_numbered_within_their_trip(
     assert [first.position, second.position, elsewhere.position] == [0, 1, 0]
 
 
+def test_a_trip_line_created_at_a_rank_keeps_it_instead_of_going_last(
+    trip, item_type, other_item_type, status
+):
+    make_line(trip, item_type, status)
+
+    placed = make_line(trip, other_item_type, status, position=7)
+    placed.refresh_from_db()
+
+    assert placed.position == 7
+
+
 def test_deleting_a_trip_line_closes_the_gap_it_leaves(
     trip, item_type, other_item_type, status, household
 ):
