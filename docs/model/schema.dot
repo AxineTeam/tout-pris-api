@@ -87,6 +87,14 @@ digraph model_graph {
   
   
     <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Roboto">language</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Roboto">CharField</FONT>
+    </TD></TR>
+  
+  
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
     <FONT COLOR="#7B7B7B" FACE="Roboto"><I>last_login</I></FONT>
     </TD><TD ALIGN="LEFT">
     <FONT COLOR="#7B7B7B" FACE="Roboto"><I>DateTimeField</I></FONT>

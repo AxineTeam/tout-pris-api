@@ -11,10 +11,10 @@ def test_the_project_user_model_is_the_custom_one():
     assert get_user_model() is User
 
 
-def test_the_custom_user_adds_no_field_of_its_own():
+def test_the_custom_user_adds_only_the_language_it_answers_in():
     inherited = {field.name for field in AbstractUser._meta.fields}
 
-    assert {field.name for field in User._meta.fields} == inherited | {"id"}
+    assert {field.name for field in User._meta.fields} == inherited | {"id", "language"}
 
 
 @pytest.mark.django_db

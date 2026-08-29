@@ -234,6 +234,18 @@ Les collections sont renvoyées comme des tableaux JSON nus, sans enveloppe ni p
 
 Une collection vide renvoie `[]` et non `404` : la collection existe, elle est vide.
 
+## Langue
+
+La langue d'une réponse est celle que le compte a choisie, et `Accept-Language` ne fait foi que là où personne n'est connecté — écrans de connexion, d'inscription, de demande de réinitialisation et d'acceptation d'invitation. C'est l'exigence qui commande : un choix qui vivrait dans le navigateur — cookie `django_language`, `localStorage` — serait perdu au premier changement de navigateur ou de machine, alors que le choix doit suivre la personne. Il est donc porté par le compte, et l'en-tête ne sert qu'à l'amorcer à l'inscription.
+
+Ce n'est pas en tension avec les standards : `Accept-Language` annonce une préférence par défaut du client, qu'un choix explicite a vocation à supplanter.
+
+Les langues servies sont celles de `LANGUAGES`, dans les codes que Django écrit — `en-us`, `fr` —, et une langue demandée hors de cette liste retombe sur `en-us`. Les catalogues de Django, de DRF et d'allauth fournissent l'essentiel des messages ; ceux que l'API écrit elle-même, à commencer par les refus du domaine, ont le leur dans `locale/`.
+
+`tout_pris.middleware.LocaleMiddleware` porte la règle. Il dérive de celui de Django, à qui il laisse la négociation par en-tête, et il est déclaré **après `AuthenticationMiddleware`** et non à la place que documente Django : il lit `request.user`, qui n'existe pas avant. La position documentée sert à donner une langue active à `CommonMiddleware`, ce dont seul `i18n_patterns` a besoin — l'API ne préfixe aucune URL par la langue.
+
+**Toute réponse annonce `Vary: Accept-Language, Cookie`.** Les deux entrées décident réellement de la langue : le cookie de session quand il y en a un, l'en-tête sinon. N'annoncer que la branche qui s'est appliquée laisserait un cache resservir à un utilisateur connecté la réponse stockée pour un visiteur anonyme au même `Accept-Language`. `Content-Language` dit la langue effectivement servie.
+
 ## Authentification
 
 Assurée par django-allauth en mode headless (`HEADLESS_ONLY`), monté sur `/api/auth/`, sans qu'aucun template ne soit rendu : les vues d'allauth qui rendaient des pages ne sont même pas déclarées dans l'URLconf, seuls subsistent les endpoints JSON et les callbacks des fournisseurs sur `/accounts/`.
