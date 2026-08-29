@@ -39,7 +39,8 @@ def send_invitation(invitation, token):
         "household": invitation.household.name,
         "inviter": display_name_of(invitation.invited_by),
         "url": settings.INVITATION_FRONTEND_URL.format(key=token),
-        "expires_at": invitation.expires_at.date().isoformat(),
+        "expires_at": invitation.expires_at,
+        "expires_in_days": Invitation.LIFETIME.days,
     }
     EmailMessage(
         subject=render_to_string("households/email/invitation_subject.txt", context).strip(),

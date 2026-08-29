@@ -6,4 +6,4 @@ Sign in and follow this link to join:
 
 {{ url }}
 
-The link works once and expires on {{ expires_at }}. If you were not expecting this invitation, ignore this message: nothing happens until you follow the link.
+The link works once and expires in {{ expires_in_days }} days, on {{ expires_at|date }}. If you were not expecting this invitation, ignore this message: nothing happens until you follow the link.
