@@ -108,6 +108,8 @@ WHITENOISE_AUTOREFRESH = DEBUG
 
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:5173").rstrip("/")
 
+ACCOUNT_ADAPTER = "accounts.adapter.AccountAdapter"
+
 ACCOUNT_LOGIN_METHODS = {"email"}
 
 ACCOUNT_SIGNUP_FIELDS = ["email*", "password1*"]

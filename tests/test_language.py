@@ -1,11 +1,20 @@
 import pytest
+from django.core import mail
 from django.test import Client
 
 from accounts.models import User
 from catalog.models import ItemStatus
+from households.invitations import invite
 from households.memberships import create_household
 from households.models import Person
-from tests.test_authentication import CREDENTIALS, LOGIN_URL, SESSION_URL, SIGNUP_URL, sign_up
+from tests.test_authentication import (
+    CREDENTIALS,
+    LOGIN_URL,
+    REQUEST_PASSWORD_URL,
+    SESSION_URL,
+    SIGNUP_URL,
+    sign_up,
+)
 
 pytestmark = pytest.mark.django_db
 
@@ -144,3 +153,58 @@ def test_a_refusal_carrying_a_number_keeps_it_once_translated(alice):
 
     assert response.status_code == 400
     assert response.json() == {"position": ["Indiquez une position de 0 à 0."]}
+
+
+def test_an_invitation_is_written_in_the_language_of_the_address_it_knows(
+    alice, django_capture_on_commit_callbacks
+):
+    alice.language = "fr"
+    alice.save()
+    inviter = User.objects.create_user(username="camille", email="camille@example.com")
+    household = create_household("Famille Martin", inviter)
+
+    with django_capture_on_commit_callbacks(execute=True):
+        invite(household, alice.email, inviter)
+
+    assert "Bonjour," in mail.outbox[-1].body
+
+
+def test_an_invitation_to_an_address_without_an_account_follows_the_person_inviting(
+    alice, django_capture_on_commit_callbacks
+):
+    alice.language = "fr"
+    alice.save()
+    household = create_household("Famille Martin", alice)
+
+    with django_capture_on_commit_callbacks(execute=True):
+        invite(household, "nobody@example.com", alice)
+
+    assert "Bonjour," in mail.outbox[-1].body
+
+
+def test_a_password_reset_is_written_in_the_language_of_the_account_asking_for_none(client):
+    sign_up(client)
+    account = User.objects.get(email=CREDENTIALS["email"])
+    account.language = "fr"
+    account.save()
+    mail.outbox.clear()
+
+    client.post(
+        REQUEST_PASSWORD_URL,
+        {"email": account.email},
+        content_type="application/json",
+        headers={"accept-language": "en-US"},
+    )
+
+    assert "Bonjour" in mail.outbox[-1].body
+
+
+def test_an_email_to_an_address_without_an_account_follows_the_browser_asking(client):
+    client.post(
+        REQUEST_PASSWORD_URL,
+        {"email": "nobody@example.com"},
+        content_type="application/json",
+        headers={"accept-language": "fr"},
+    )
+
+    assert "Bonjour" in mail.outbox[-1].body

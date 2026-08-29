@@ -5,7 +5,7 @@ from django.conf import settings
 from django.core.mail import EmailMessage
 from django.db import transaction
 from django.template.loader import render_to_string
-from django.utils import timezone
+from django.utils import timezone, translation
 
 from accounts.models import User
 from households.memberships import display_name_of
@@ -33,8 +33,9 @@ def invite(household, email, invited_by):
 
 
 def send_invitation(invitation, token):
-    known_account = User.objects.filter(email=invitation.email).exists()
-    template = "invitation_existing_account" if known_account else "invitation_new_account"
+    recipient = User.objects.filter(email=invitation.email).first()
+    template = "invitation_existing_account" if recipient else "invitation_new_account"
+    language = recipient.language if recipient else invitation.invited_by.language
     context = {
         "household": invitation.household.name,
         "inviter": display_name_of(invitation.invited_by),
@@ -42,11 +43,12 @@ def send_invitation(invitation, token):
         "expires_at": invitation.expires_at,
         "expires_in_days": Invitation.LIFETIME.days,
     }
-    EmailMessage(
-        subject=render_to_string("households/email/invitation_subject.txt", context).strip(),
-        body=render_to_string(f"households/email/{template}.txt", context),
-        to=[invitation.email],
-    ).send()
+    with translation.override(language):
+        EmailMessage(
+            subject=render_to_string("households/email/invitation_subject.txt", context).strip(),
+            body=render_to_string(f"households/email/{template}.txt", context),
+            to=[invitation.email],
+        ).send()
 
 
 def pending_invitation(token):
