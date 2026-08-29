@@ -206,6 +206,14 @@ La lecture d'une ligne coûte donc le même nombre de requêtes quel qu'en soit 
 
 **`quantity` va de 1 à 32767**, sur une ligne de voyage comme sur une ligne de kit et pour les mêmes raisons.
 
+**La collection des voyages sert les voyages courants, et `?archived=true` sert les archives**, du dernier archivé au premier. Sans ce défaut, l'écran d'accueil chargerait tout l'historique du foyer à chaque ouverture. Les deux listes sont disjointes et il n'existe pas de « tout » : elles s'affichent dans deux zones distinctes, et un client qui veut les deux fait deux appels.
+
+**Les archives sont la seule collection de cette API qui grandit sans limite.** Les autres sont bornées par la taille d'un foyer, alors qu'un foyer qui part une fois par mois accumule cent archives en huit ans, servies dans un seul tableau puisque rien n'est paginé ici. C'est donc cette route qui appellera la pagination la première, et aucune autre.
+
+**Archiver est un `PATCH` du voyage, `{"archived": true}`**, et `{"archived": false}` désarchive. Le champ est en écriture seule et ne correspond à aucune colonne : la réponse porte `archived_at`, l'horodatage que le serveur pose, en lecture seule. Le client ne date jamais un geste qu'il vient de faire, et une date reçue de lui rendrait l'ordre des archives arbitraire.
+
+**Aucune écriture n'est refusée sur un voyage archivé** : ni sur lui, ni sur ses lignes, ni sur ses participants. L'archivage est un marqueur, pas un verrou. Un client qui traite ses archives en lecture seule le fait dans son interface et ne doit rien attendre de l'API sur ce point.
+
 Retirer un participant ne touche pas les lignes préparées pour lui : elles restent, et c'est à l'interface de les montrer. `position` est en lecture seule, attribuée à la fin du voyage à la création et reprise de l'ordre du kit à l'instanciation.
 
 ## Chemins

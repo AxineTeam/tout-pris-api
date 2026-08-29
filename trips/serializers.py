@@ -1,3 +1,4 @@
+from django.utils import timezone
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
@@ -61,7 +62,8 @@ class TripItemUpdateSerializer(serializers.ModelSerializer):
 class TripSerializer(serializers.ModelSerializer):
     class Meta:
         model = Trip
-        fields = ["id", "name", "date"]
+        fields = ["id", "name", "date", "archived_at"]
+        read_only_fields = ["archived_at"]
 
 
 class TripDetailSerializer(serializers.ModelSerializer):
@@ -70,7 +72,8 @@ class TripDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Trip
-        fields = ["id", "name", "date", "participants", "items"]
+        fields = ["id", "name", "date", "archived_at", "participants", "items"]
+        read_only_fields = ["archived_at"]
 
 
 class TripCreateSerializer(serializers.ModelSerializer):
@@ -80,9 +83,16 @@ class TripCreateSerializer(serializers.ModelSerializer):
 
 
 class TripUpdateSerializer(serializers.ModelSerializer):
+    archived = serializers.BooleanField(write_only=True, required=False)
+
     class Meta:
         model = Trip
-        fields = ["name", "date"]
+        fields = ["name", "date", "archived"]
+
+    def update(self, trip, validated_data):
+        if "archived" in validated_data:
+            trip.archived_at = timezone.now() if validated_data.pop("archived") else None
+        return super().update(trip, validated_data)
 
 
 class KitInstantiationSerializer(serializers.Serializer):

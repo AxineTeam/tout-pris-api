@@ -1053,6 +1053,13 @@ paths:
     get:
       operationId: households_trips_list
       parameters:
+      - in: query
+        name: archived
+        schema:
+          type: boolean
+          default: false
+        description: List the archived trips, most recently archived first, instead
+          of the others.
       - in: path
         name: household_id
         schema:
@@ -2068,6 +2075,9 @@ components:
           type: string
           format: date
           description: Day the trip leaves on, which the trip list is sorted on.
+        archived:
+          type: boolean
+          writeOnly: true
     Person:
       type: object
       properties:
@@ -2129,7 +2139,15 @@ components:
           type: string
           format: date
           description: Day the trip leaves on, which the trip list is sorted on.
+        archived_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          description: When the trip left the current list, empty as long as it is
+            still there.
       required:
+      - archived_at
       - date
       - id
       - name
@@ -2161,6 +2179,13 @@ components:
           type: string
           format: date
           description: Day the trip leaves on, which the trip list is sorted on.
+        archived_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          description: When the trip left the current list, empty as long as it is
+            still there.
         participants:
           type: array
           items:
@@ -2172,6 +2197,7 @@ components:
             $ref: '#/components/schemas/TripItem'
           readOnly: true
       required:
+      - archived_at
       - date
       - id
       - items
