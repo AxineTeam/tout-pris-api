@@ -250,6 +250,8 @@ En lecture, la réponse de session d'allauth — `GET /api/auth/browser/v1/auth/
 
 En écriture, `PATCH /api/me/` prend `{"language": "fr"}` et répond `200` avec le compte — `{"id": 1, "email": "…", "language": "fr"}`. Une valeur hors de `LANGUAGES` répond `400`, et un appelant sans session `401`. La vue `set_language` de Django ne convient pas ici : elle répond par une redirection et pose un cookie, c'est-à-dire le mécanisme attaché à l'appareil que l'exigence écarte.
 
+**Un email part dans la langue de l'adresse à qui il est écrit, pas dans celle de la requête qui le déclenche.** Une invitation quitte un `transaction.on_commit`, sans requête en cours ni `Accept-Language` à lire, et une réinitialisation de mot de passe est demandée depuis le navigateur de n'importe qui : la seule chose qu'un email puisse consulter est la préférence enregistrée. `accounts.adapter.AccountAdapter` retrouve donc le compte depuis l'adresse destinataire et rend sous `translation.override`, et l'invitation fait de même — vers une adresse sans compte, elle suit la langue de la personne qui invite.
+
 **Toute réponse annonce `Vary: Accept-Language, Cookie`.** Les deux entrées décident réellement de la langue : le cookie de session quand il y en a un, l'en-tête sinon. N'annoncer que la branche qui s'est appliquée laisserait un cache resservir à un utilisateur connecté la réponse stockée pour un visiteur anonyme au même `Accept-Language`. `Content-Language` dit la langue effectivement servie.
 
 ## Authentification
