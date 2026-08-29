@@ -244,6 +244,12 @@ Les langues servies sont celles de `LANGUAGES`, dans les codes que Django écrit
 
 `tout_pris.middleware.LocaleMiddleware` porte la règle. Il dérive de celui de Django, à qui il laisse la négociation par en-tête, et il est déclaré **après `AuthenticationMiddleware`** et non à la place que documente Django : il lit `request.user`, qui n'existe pas avant. La position documentée sert à donner une langue active à `CommonMiddleware`, ce dont seul `i18n_patterns` a besoin — l'API ne préfixe aucune URL par la langue.
 
+**Le front lit la langue dans la charge utile de session et l'écrit sur `/api/me/`.** C'est le contrat entre les deux dépôts, et il tient en deux points.
+
+En lecture, la réponse de session d'allauth — `GET /api/auth/browser/v1/auth/session`, et toute réponse qui porte l'utilisateur — gagne un champ `language` à côté de `id`, `email` et `display`, posé par `accounts.adapter.HeadlessAdapter` sur `serialize_user`. Le front s'accorde donc sur la langue du compte au chargement, sans appel supplémentaire. Ce champ n'apparaît pas dans la spécification qu'allauth sert sur `/api/auth/openapi.yaml` : elle est dérivée du `dataclass` d'allauth, que `serialize_user` complète après coup.
+
+En écriture, `PATCH /api/me/` prend `{"language": "fr"}` et répond `200` avec le compte — `{"id": 1, "email": "…", "language": "fr"}`. Une valeur hors de `LANGUAGES` répond `400`, et un appelant sans session `401`. La vue `set_language` de Django ne convient pas ici : elle répond par une redirection et pose un cookie, c'est-à-dire le mécanisme attaché à l'appareil que l'exigence écarte.
+
 **Toute réponse annonce `Vary: Accept-Language, Cookie`.** Les deux entrées décident réellement de la langue : le cookie de session quand il y en a un, l'en-tête sinon. N'annoncer que la branche qui s'est appliquée laisserait un cache resservir à un utilisateur connecté la réponse stockée pour un visiteur anonyme au même `Accept-Language`. `Content-Language` dit la langue effectivement servie.
 
 ## Authentification

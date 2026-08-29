@@ -1540,6 +1540,31 @@ paths:
               schema:
                 $ref: '#/components/schemas/Household'
           description: ''
+  /api/me/:
+    patch:
+      operationId: me_partial_update
+      tags:
+      - me
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedMeUpdate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedMeUpdate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedMeUpdate'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Me'
+          description: ''
 components:
   schemas:
     Health:
@@ -1841,6 +1866,38 @@ components:
           maxLength: 200
       required:
       - item_type
+    LanguageEnum:
+      enum:
+      - en-us
+      - fr
+      type: string
+      description: |-
+        * `en-us` - English
+        * `fr` - French
+    Me:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        email:
+          type: string
+          format: email
+          title: Email address
+          description: Address the account signs in with, unique across the whole
+            application.
+          maxLength: 254
+        language:
+          allOf:
+          - $ref: '#/components/schemas/LanguageEnum'
+          description: |-
+            Language the account is answered and written to in, whatever its browser asks for.
+
+            * `en-us` - English
+            * `fr` - French
+      required:
+      - email
+      - id
     Member:
       type: object
       properties:
@@ -1952,6 +2009,17 @@ components:
           description: Optional reminder of what the block is meant to cover.
         position:
           type: integer
+    PatchedMeUpdate:
+      type: object
+      properties:
+        language:
+          allOf:
+          - $ref: '#/components/schemas/LanguageEnum'
+          description: |-
+            Language the account is answered and written to in, whatever its browser asks for.
+
+            * `en-us` - English
+            * `fr` - French
     PatchedMemberUpdate:
       type: object
       properties:
