@@ -148,8 +148,6 @@ La comparaison emploie les mêmes expressions SQL que la contrainte d'unicité, 
 
 **La couleur d'un statut est facultative à la création** et vaut `#7b8189`, un gris neutre, quand le client n'en donne pas. Imposer un hexadécimal pour créer « à acheter sur place » alourdirait la saisie fluide que la création tolérante cherche justement à obtenir, et une couleur est ce qu'on ajuste ensuite, jamais ce qui manque pour reconnaître un statut. Le modèle, lui, garde le champ obligatoire : le défaut est une commodité d'API, l'admin et le catalogue de base continuent de choisir explicitement.
 
-`position` est en lecture seule : elle est attribuée à la fin de la liste à la création, et la déplacer relève d'une route de réordonnancement qui n'existe pas encore.
-
 ## Kits
 
 Un kit est le bloc réutilisable décrit dans [`docs/model/catalog.md`](../model/catalog.md), et ses lignes sont exposées **sous lui** : `GET` et `POST /api/households/{household_id}/kits/`, `GET`, `PATCH` et `DELETE /api/households/{household_id}/kits/{id}/`, puis les mêmes quatre routes sur `kits/{kit_id}/items/`. Comme le reste du référentiel, c'est le quotidien du foyer : seule `IsSomeoneInTheHousehold` s'applique, un `member` en fait autant qu'un `owner`.
@@ -172,7 +170,15 @@ La personne est facultative — une ligne sans personne est pour tout le foyer �
 
 **`quantity` va de 1 à 32767.** Une ligne à zéro n'existe pas : un client qui décrémente jusqu'à zéro envoie un `DELETE`, et demander confirmation avant est son affaire. Les bornes sont posées sur la colonne et non sur le serializer, elles valent donc aussi pour l'admin et pour tout code qui écrira une ligne ; la haute est celle du `smallint`, que PostgreSQL rendrait en `500` sans elle.
 
-`position` est en lecture seule, sur un kit comme sur une ligne : elle est attribuée à la fin de son groupe à la création, et la déplacer relève d'une route de réordonnancement qui n'existe pas encore.
+## L'ordre
+
+Un statut, un kit et une ligne de kit portent une `position` dans leur groupe — le foyer pour les deux premiers, le kit pour la troisième. Elle est attribuée à la fin du groupe à la création, et **l'envoyer dans le `PATCH` de la ressource la déplace à ce rang**, les autres se décalant pour lui faire la place. C'est le glisser-déposer du front, transcrit tel quel : il relâche une entrée à un rang, il envoie ce rang.
+
+**Il n'y a pas de route de réordonnancement séparée.** Déplacer une entrée est une modification comme une autre, et une route dédiée ferait un second chemin d'écriture sur la même ressource, avec son cloisonnement et sa résolution de foyer à réécrire.
+
+**La position va de 0 au dernier rang du groupe**, et hors de ces bornes c'est un `400` : le corps est invalide, et aucun état du foyer ne rendrait la demande acceptable. Les bornes se comptent dans le groupe de l'entrée déplacée et nulle part ailleurs : un kit de trois lignes refuse la position 3, même si le kit d'à côté en a dix.
+
+**Deux membres qui déplacent une entrée du même groupe en même temps obtiennent un ordre qu'aucun des deux n'a demandé** : chacun désigne un rang dans la liste qu'il avait sous les yeux, et rien ne dit au second que la première a bougé. Le déplacement par index achète à ce prix un corps de requête qui ne porte que le rang, là où un `PUT` de la liste entière obligerait le client à renvoyer tous les identifiants pour bouger une ligne.
 
 ## Voyages
 

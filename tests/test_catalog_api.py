@@ -498,3 +498,64 @@ def test_a_status_is_deleted_in_a_household_that_started_with_none(client, house
 
     assert response.status_code == 204
     assert not ItemStatus.objects.filter(pk=spare["id"]).exists()
+
+
+def test_a_status_moves_to_the_rank_it_is_given(client, household):
+    make_status(household, "Pas prepare")
+    make_status(household, "Sorti du placard")
+    last = make_status(household, "Dans les sacs", ProgressCategory.DONE)
+
+    response = client.patch(
+        item_status_url(household, last), {"position": 0}, content_type="application/json"
+    )
+
+    assert response.status_code == 200
+    assert response.json()["position"] == 0
+    listed = client.get(item_statuses_url(household)).json()
+    assert [status["name"] for status in listed] == [
+        "Dans les sacs",
+        "Pas prepare",
+        "Sorti du placard",
+    ]
+    assert [status["position"] for status in listed] == [0, 1, 2]
+
+
+def test_a_status_does_not_move_past_the_end_of_the_list(client, household):
+    make_status(household, "Pas prepare")
+    last = make_status(household, "Dans les sacs", ProgressCategory.DONE)
+
+    response = client.patch(
+        item_status_url(household, last), {"position": 2}, content_type="application/json"
+    )
+
+    assert response.status_code == 400
+    last.refresh_from_db()
+    assert last.position == 1
+
+
+def test_a_status_does_not_move_before_the_head_of_the_list(client, household):
+    make_status(household, "Pas prepare")
+    last = make_status(household, "Dans les sacs", ProgressCategory.DONE)
+
+    response = client.patch(
+        item_status_url(household, last), {"position": -1}, content_type="application/json"
+    )
+
+    assert response.status_code == 400
+    last.refresh_from_db()
+    assert last.position == 1
+
+
+def test_a_status_moves_within_its_own_household_list(client, household, stranger_household):
+    make_status(stranger_household, "Pas prepare")
+    make_status(stranger_household, "Sorti du placard")
+    make_status(stranger_household, "Dans les sacs", ProgressCategory.DONE)
+    mine = make_status(household, "Pas prepare")
+
+    response = client.patch(
+        item_status_url(household, mine), {"position": 2}, content_type="application/json"
+    )
+
+    assert response.status_code == 400
+    mine.refresh_from_db()
+    assert mine.position == 0

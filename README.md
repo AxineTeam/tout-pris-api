@@ -107,9 +107,9 @@ DJANGO_SECRET_KEY=... docker compose -f docker-compose.prod.yml up -d
 - `/api/households/{household_id}/members/` — who has access to a shared household, their role, handing it over, and removing one of them
 - `/api/households/{household_id}/invitations/` — invite an address into a shared household, list the pending invitations, cancel one
 - `/api/households/{household_id}/item-types/` — the catalog of a household, where creating a name it already holds returns the existing entry and renaming into a name it already holds merges the two
-- `/api/households/{household_id}/item-statuses/` — the preparation statuses of a household, created, reworded, repainted and deleted
-- `/api/households/{household_id}/kits/` — the reusable blocks of a household, always returned with their lines
-- `/api/households/{household_id}/kits/{kit_id}/items/` — the lines of a block, each packing an object of the household for one of its people
+- `/api/households/{household_id}/item-statuses/` — the preparation statuses of a household, created, reworded, repainted, reordered and deleted
+- `/api/households/{household_id}/kits/` — the reusable blocks of a household, reordered within it, each read with its lines
+- `/api/households/{household_id}/kits/{kit_id}/items/` — the lines of a block, each packing an object of the household for one of its people, reordered within the block
 - `/api/households/{household_id}/trips/` — the trips of a household, from the next departure backwards, each read with its participants and its lines
 - `/api/households/{household_id}/trips/{trip_id}/participants/` — who goes on a trip, which is what filters the lines a kit pours in
 - `/api/households/{household_id}/trips/{trip_id}/items/` — the preparation lines of a trip, each tagged with the kits holding its object
