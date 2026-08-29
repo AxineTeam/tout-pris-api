@@ -23,6 +23,7 @@ API Django du projet Tout Pris. Soit extrêmement concis.
 - django-ordered-model pour les colonnes `position`, l'équivalent d'`acts_as_list` ; son app est dans `INSTALLED_APPS` pour l'admin et pour le récepteur `post_delete` qui referme les trous d'ordre
 - model_bakery pour construire des objets depuis le modèle Django sans déclarer de factory, utilisé par la commande `seed`
 - graphviz est une dépendance système : `graph_models` appelle le binaire `dot` via pydot, il est installé dans l'image de dev, donc dans le devcontainer
+- gettext est une dépendance système : `makemessages` et `compilemessages` appellent `xgettext` et `msgfmt`, installés dans l'image de dev comme graphviz. Les `.mo` compilés sont committés à côté des `.po` : Django les lit à l'exécution, donc ils doivent exister là où le code tourne **et** là où tournent les tests, alors que le conteneur de dev monte les sources par-dessus l'image et qu'un checkout de CI n'a aucune étape de build
 - Dépendances gérées par uv (`uv sync`, groupe `dev` dans `pyproject.toml`, lock dans `uv.lock`)
 - pytest-django pour les tests, ruff pour lint et format
 - Docker + docker compose, devcontainer basé sur le service `api`
@@ -40,7 +41,8 @@ API Django du projet Tout Pris. Soit extrêmement concis.
 - `tout_pris/exceptions.py` : `Conflict`, le refus du domaine que DRF rend en `409` ; au niveau du projet parce que toutes les apps le lèvent, et parce qu'une `ValidationError` de Django n'est pas convertie par DRF et finirait en `500`
 - `tout_pris/authentication.py` : `SessionAuthentication` de DRF annonçant un en-tête `WWW-Authenticate`, sans quoi une session non authentifiée reçoit `403` au lieu de `401`
 - `.env.example` : toutes les variables d'environnement avec une valeur de développement
-- `accounts/` : app du `User` custom, référencé par `AUTH_USER_MODEL` dès la migration initiale
+- `accounts/` : app du `User` custom, référencé par `AUTH_USER_MODEL` dès la migration initiale, la langue dans laquelle il est servi, la route `/api/me/` qui la change et les adaptateurs allauth
+- `locale/` : catalogue français des chaînes que le projet écrit lui-même, les refus du domaine et les emails d'invitation
 - `households/` : app du domaine foyer — `Household`, `HouseholdMember`, `Person`, `Invitation` — son admin, son API, le foyer personnel créé à l'inscription, et la commande `seed`
 - `catalog/` : app du référentiel d'objets — `ItemType`, `ItemStatus`, `Kit`, `KitItem` — son admin, la fusion au renommage, les règles de statut et le catalogue de base copié dans un nouveau foyer
 - `trips/` : app du domaine voyage — `Trip`, `TripParticipant`, `TripItem` — son admin, et les lignes de préparation que le foyer fait avancer
@@ -62,6 +64,7 @@ API Django du projet Tout Pris. Soit extrêmement concis.
 - `uv run python manage.py graph_models accounts households catalog trips --no-inheritance --exclude-models "Abstract*,OrderedModelBase" | grep -v '// Created:' > docs/model/schema.dot` puis `uv run python manage.py graph_models accounts households catalog trips --no-inheritance --exclude-models "Abstract*,OrderedModelBase" --output docs/model/schema.png` : régénèrent le `.dot` vérifié en CI et l'image affichée dans le README
 - `uv run pytest` : tests, échec sous 100 % de couverture
 - `uv run ruff check .` / `ruff check --fix .` / `ruff format .` / `ruff format --check .`
+- `uv run python manage.py makemessages -l fr --ignore=.venv` puis `uv run python manage.py compilemessages --ignore=.venv` : mettent à jour et recompilent le catalogue français, tous deux à committer
 - `uv run python manage.py spectacular --file openapi.yaml` : régénère `openapi.yaml` (obligatoire après tout changement de routes ou de schémas, la CI vérifie qu'il est à jour)
 - `npx markdownlint-cli2 "**/*.md"` : lint markdown, comme la CI
 - `docker compose -f docker-compose.prod.yml up -d` : image de production

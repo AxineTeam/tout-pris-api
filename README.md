@@ -84,6 +84,15 @@ npx markdownlint-cli2 "**/*.md"   # lint the markdown, as CI does
 
 Generated migrations are written with Django's own formatting: run `uv run ruff format .` after `makemigrations`.
 
+### Translations
+
+```bash
+uv run python manage.py makemessages -l fr --ignore=.venv   # collect the translatable strings into locale/fr/
+uv run python manage.py compilemessages --ignore=.venv      # compile the .po catalogs into the .mo files Django reads
+```
+
+Both shell out to gettext (`xgettext`, `msgfmt`), a system dependency installed in the dev image. `--ignore=.venv` keeps them out of the catalogs shipped by the dependencies.
+
 ### OpenAPI export
 
 ```bash
@@ -127,6 +136,12 @@ DJANGO_SECRET_KEY=... docker compose -f docker-compose.prod.yml up -d
 drf-spectacular generates the schema from the code. It is committed as [`openapi.yaml`](openapi.yaml) and regenerated with the `spectacular` command above. CI fails if the committed file drifts from the code, so regenerate it whenever routes or schemas change.
 
 The authentication endpoints are not DRF views, so drf-spectacular cannot see them and `openapi.yaml` does not describe them. django-allauth publishes its own specification instead, served at `/api/auth/openapi.yaml` and `/api/auth/openapi.json`, derived from its code and pruned to the configuration actually loaded. There are two specifications on purpose: see [`docs/api/`](docs/api/README.md).
+
+## Language and translations
+
+The API answers in the language of the account, and in the one `Accept-Language` asks for where nobody is signed in. Django, DRF and allauth ship their own French catalogs; `locale/fr/LC_MESSAGES/` holds the strings this project writes itself — the domain refusals and the invitation emails.
+
+**The compiled `.mo` files are committed next to their `.po`.** Django reads the `.mo`, so it has to exist wherever the code runs *and wherever the tests run*: the dev container mounts the sources over the image, so anything compiled at build time is hidden there, and a CI checkout has no build step at all. Compiling instead of committing would therefore mean gettext in CI and a compile step in the entrypoint the production image — deliberately without gettext — could not run. Regenerate both after touching a translatable string, in the same commit.
 
 ## Migrations
 
@@ -203,8 +218,9 @@ The production settings live in `docker-compose.prod.yml`: the database is store
 ## Project layout
 
 - `manage.py` — Django entry point
-- `tout_pris/` — project package: `settings.py`, `urls.py` (admin, and the API mounted on `/api/`), `views.py`, `mail.py`, `authentication.py`, `exceptions.py`, `wsgi.py`, `asgi.py`
-- `accounts/` — the custom `User` model, referenced by `AUTH_USER_MODEL` since the initial migration
+- `tout_pris/` — project package: `settings.py`, `urls.py` (admin, and the API mounted on `/api/`), `views.py`, `mail.py`, `authentication.py`, `middleware.py`, `exceptions.py`, `wsgi.py`, `asgi.py`
+- `accounts/` — the custom `User` model, referenced by `AUTH_USER_MODEL` since the initial migration, the language it is answered in, and the allauth adapters
+- `locale/` — the French catalog of the strings this project writes itself
 - `households/` — the household domain: `Household`, `HouseholdMember`, `Person` and `Invitation`, their admin and API, the personal household created at signup, and the `seed` and `check_integrity` commands
 - `catalog/` — the item catalog of a household: `ItemType`, `ItemStatus`, `Kit` and `KitItem`, their admin, and the base catalog copied into a new household
 - `trips/` — the trip domain: `Trip`, `TripParticipant` and `TripItem`, the preparation lines a household moves forward, and their admin
