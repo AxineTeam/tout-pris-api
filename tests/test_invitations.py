@@ -6,7 +6,7 @@ import pytest
 from django.conf import settings
 from django.core import mail
 from django.test import Client
-from django.utils import timezone
+from django.utils import formats, timezone
 
 from accounts.models import User
 from households.memberships import create_household
@@ -87,6 +87,15 @@ def test_the_invitation_expires_a_week_after_it_was_sent(send_invitation):
     invitation = Invitation.objects.get()
     lifetime = invitation.expires_at - invitation.created_at
     assert round(lifetime.total_seconds()) == datetime.timedelta(days=7).total_seconds()
+
+
+def test_the_invitation_says_how_long_its_link_lasts_and_the_day_it_dies(send_invitation):
+    send_invitation()
+
+    invitation = Invitation.objects.get()
+    assert (
+        f"expires in 7 days, on {formats.date_format(invitation.expires_at)}" in mail.outbox[0].body
+    )
 
 
 def test_an_address_without_an_account_is_told_to_create_one(send_invitation):
