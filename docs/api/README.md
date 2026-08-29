@@ -116,15 +116,23 @@ Comme pour les invitations, un foyer personnel répond `404` sur ces deux routes
 
 ## Invitations
 
-Un membre invite une adresse dans un foyer partagé, l'invité suit le lien reçu et rejoint. Les routes sont `POST` et `GET /api/households/{household_id}/invitations/`, `DELETE /api/households/{household_id}/invitations/{id}/`, et `POST /api/invitations/accept/`.
+Un membre invite une adresse dans un foyer partagé, l'invité suit le lien reçu et rejoint. Les routes sont `POST` et `GET /api/households/{household_id}/invitations/`, `DELETE /api/households/{household_id}/invitations/{id}/`, `GET /api/invitations/{token}/` et `POST /api/invitations/accept/`.
 
 Le corps de la création ne porte que l'adresse : qui l'invité sera dans le foyer se décide après, et par lui. Le raisonnement est dans [`docs/model/invitation.md`](../model/invitation.md).
 
 Inviter répond `204` sans corps, **y compris quand rien n'est créé**. Une adresse déjà titulaire d'un compte, une adresse inconnue et une adresse déjà membre du foyer donnent la même réponse au bit près : distinguer les cas ferait de la route un oracle d'énumération d'adresses.
 
-Un foyer personnel répond `404` sur ces trois routes, y compris à son propriétaire : la collection n'existe pas, il n'a pas d'autre membre possible que lui.
+Un foyer personnel répond `404` sur les trois routes portées par le foyer, y compris à son propriétaire : la collection n'existe pas, il n'a pas d'autre membre possible que lui.
 
 L'acceptation fait exception au chemin porté par le foyer, l'appelant n'étant justement pas encore membre. C'est le jeton qui porte l'autorisation, et il voyage dans le corps plutôt que dans l'URL — un secret dans un chemin se retrouve dans les journaux du serveur, l'historique du navigateur et l'en-tête `Referer`. allauth fait le même choix pour ses clés de vérification d'email et de réinitialisation.
+
+`GET /api/invitations/{token}/` nomme le foyer, la personne qui invite et la date d'expiration, sans authentification : l'invité voit où il atterrit avant de se connecter ou de créer un compte. Elle ne rend pas l'adresse invitée, que le porteur du lien n'est pas tenu d'être, et c'est pourquoi elle a son propre serializer plutôt que celui de la liste que consulte un membre du foyer. `inviter` est `null` quand le compte qui a invité a disparu depuis.
+
+**La lecture ne dépense pas le jeton** : seul `POST /api/invitations/accept/` écrit `accepted_at`. Un jeton inconnu, expiré ou déjà accepté répond `404` sans les distinguer, comme l'acceptation, et le front n'a qu'un message d'échec à écrire.
+
+Le jeton voyage ici dans le chemin, contrairement à l'acceptation : la page qui appelle cette route est celle du lien reçu, dont l'URL le porte déjà. Il finit donc dans les journaux du serveur, ce que bornent son usage unique et sa semaine de validité.
+
+La route est déclarée **après** `invitations/accept/` dans `households/urls.py` : `<str:token>` capterait `accept` s'il venait avant.
 
 Le raisonnement complet et les décisions du flux sont dans [`docs/model/invitation.md`](../model/invitation.md).
 

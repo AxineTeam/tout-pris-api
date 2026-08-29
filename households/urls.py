@@ -6,6 +6,7 @@ from households.views import (
     InvitationAcceptView,
     InvitationDestroyView,
     InvitationListCreateView,
+    InvitationPreviewView,
     MemberDetailView,
     MemberListView,
     PersonClaimView,
@@ -44,4 +45,5 @@ urlpatterns = [
         name="invitation",
     ),
     path("invitations/accept/", InvitationAcceptView.as_view(), name="accept-invitation"),
+    path("invitations/<str:token>/", InvitationPreviewView.as_view(), name="preview-invitation"),
 ]

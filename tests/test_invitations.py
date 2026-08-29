@@ -19,6 +19,10 @@ ACCEPT_URL = "/api/invitations/accept/"
 GUEST_EMAIL = "guest@example.com"
 
 
+def preview_url(token):
+    return f"/api/invitations/{token}/"
+
+
 def token_from_last_email():
     prefix = settings.INVITATION_FRONTEND_URL.format(key="")
     return re.findall(rf"{prefix}(\S+)", mail.outbox[-1].body)[-1]
@@ -376,3 +380,81 @@ def test_a_returning_member_is_offered_the_person_they_left_behind(
     waiting.refresh_from_db()
     assert waiting.user == guest
     assert household.persons.count() == 2
+
+
+def test_a_pending_invitation_names_its_household_and_its_inviter_to_anyone_holding_the_token(
+    send_invitation, signed_in
+):
+    _, household = signed_in
+    send_invitation()
+    invitation = Invitation.objects.get()
+
+    response = Client().get(preview_url(token_from_last_email()))
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "household": household.name,
+        "inviter": "Camille",
+        "expires_at": invitation.expires_at.isoformat().replace("+00:00", "Z"),
+    }
+
+
+def test_the_preview_never_names_the_invited_address(send_invitation):
+    send_invitation()
+
+    response = Client().get(preview_url(token_from_last_email()))
+
+    assert GUEST_EMAIL not in response.content.decode()
+
+
+def test_the_preview_stands_for_an_invitation_whose_inviter_left(send_invitation, member):
+    user, _ = member
+    send_invitation()
+    token = token_from_last_email()
+    user.delete()
+
+    response = Client().get(preview_url(token))
+
+    assert response.status_code == 200
+    assert response.json()["inviter"] is None
+
+
+def test_reading_an_invitation_does_not_spend_its_token(send_invitation, guest):
+    send_invitation()
+    token = token_from_last_email()
+
+    Client().get(preview_url(token))
+
+    assert Invitation.objects.get().accepted_at is None
+    accepted = signed_in_client(guest).post(
+        ACCEPT_URL, {"token": token}, content_type="application/json"
+    )
+    assert accepted.status_code == 200
+
+
+def test_an_accepted_invitation_is_no_longer_readable(send_invitation, guest):
+    send_invitation()
+    token = token_from_last_email()
+    signed_in_client(guest).post(ACCEPT_URL, {"token": token}, content_type="application/json")
+
+    assert Client().get(preview_url(token)).status_code == 404
+
+
+def test_reading_an_unknown_or_expired_invitation_is_refused(send_invitation):
+    send_invitation()
+    token = token_from_last_email()
+    invitation = Invitation.objects.get()
+    invitation.expires_at = timezone.now() - datetime.timedelta(seconds=1)
+    invitation.save()
+
+    assert Client().get(preview_url("a-token-nobody-issued")).status_code == 404
+    assert Client().get(preview_url(token)).status_code == 404
+
+
+def test_the_preview_route_leaves_the_acceptance_route_alone(guest):
+    client = signed_in_client(guest)
+
+    accepted = client.post(ACCEPT_URL, {"token": "any"}, content_type="application/json")
+
+    assert client.get(preview_url("accept")).status_code == 405
+    assert accepted.status_code == 404
