@@ -145,18 +145,6 @@ def test_deleting_a_kit_takes_its_lines_with_it(client, household, kit, bavoir):
     assert not KitItem.objects.filter(pk=line.pk).exists()
 
 
-def test_the_position_of_a_kit_is_not_written_by_a_client(client, household, kit):
-    later = Kit.objects.create(household=household, name="Affaires de rando")
-
-    response = client.patch(
-        kit_url(household, later), {"position": 0}, content_type="application/json"
-    )
-
-    assert response.status_code == 200
-    later.refresh_from_db()
-    assert later.position == 1
-
-
 def test_the_kits_of_another_household_are_out_of_reach(client, stranger_household):
     theirs = Kit.objects.create(household=stranger_household, name="Le leur")
 
@@ -506,3 +494,89 @@ def test_a_line_of_another_kit_is_unreachable_through_our_own(client, household,
     line = KitItem.objects.create(kit=other, item_type=bavoir)
 
     assert client.get(kit_item_url(household, kit, line)).status_code == 404
+
+
+def test_a_kit_moves_to_the_rank_it_is_given(client, household):
+    Kit.objects.create(household=household, name="Sac a langer")
+    Kit.objects.create(household=household, name="Affaires de rando")
+    last = Kit.objects.create(household=household, name="Plage")
+
+    response = client.patch(
+        kit_url(household, last), {"position": 0}, content_type="application/json"
+    )
+
+    assert response.status_code == 200
+    assert response.json()["position"] == 0
+    listed = client.get(kits_url(household)).json()
+    assert [entry["name"] for entry in listed] == ["Plage", "Sac a langer", "Affaires de rando"]
+    assert [entry["position"] for entry in listed] == [0, 1, 2]
+
+
+def test_a_kit_does_not_move_past_the_end_of_the_household_list(client, household, kit):
+    last = Kit.objects.create(household=household, name="Plage")
+
+    response = client.patch(
+        kit_url(household, last), {"position": 2}, content_type="application/json"
+    )
+
+    assert response.status_code == 400
+    last.refresh_from_db()
+    assert last.position == 1
+
+
+def test_a_line_moves_to_the_rank_it_is_given(client, household, kit, bavoir):
+    KitItem.objects.create(kit=kit, item_type=bavoir, note="Trousse a pharmacie")
+    KitItem.objects.create(kit=kit, item_type=bavoir, note="Gourde")
+    shoes = KitItem.objects.create(kit=kit, item_type=bavoir, note="Chaussures")
+
+    response = client.patch(
+        kit_item_url(household, kit, shoes), {"position": 0}, content_type="application/json"
+    )
+
+    assert response.status_code == 200
+    assert response.json()["position"] == 0
+    lines = client.get(kit_url(household, kit)).json()["items"]
+    assert [line["note"] for line in lines] == ["Chaussures", "Trousse a pharmacie", "Gourde"]
+    assert [line["position"] for line in lines] == [0, 1, 2]
+
+
+def test_a_line_does_not_move_past_the_end_of_its_kit(client, household, kit, bavoir):
+    KitItem.objects.create(kit=kit, item_type=bavoir)
+    last = KitItem.objects.create(kit=kit, item_type=bavoir)
+
+    response = client.patch(
+        kit_item_url(household, kit, last), {"position": 2}, content_type="application/json"
+    )
+
+    assert response.status_code == 400
+    last.refresh_from_db()
+    assert last.position == 1
+
+
+def test_a_line_does_not_move_before_the_head_of_its_kit(client, household, kit, bavoir):
+    KitItem.objects.create(kit=kit, item_type=bavoir)
+    last = KitItem.objects.create(kit=kit, item_type=bavoir)
+
+    response = client.patch(
+        kit_item_url(household, kit, last), {"position": -1}, content_type="application/json"
+    )
+
+    assert response.status_code == 400
+    last.refresh_from_db()
+    assert last.position == 1
+
+
+def test_a_line_moves_within_its_own_kit(client, household, kit, bavoir):
+    elsewhere = Kit.objects.create(household=household, name="Affaires de rando")
+    KitItem.objects.create(kit=elsewhere, item_type=bavoir)
+    KitItem.objects.create(kit=elsewhere, item_type=bavoir)
+    KitItem.objects.create(kit=elsewhere, item_type=bavoir)
+    mine = KitItem.objects.create(kit=kit, item_type=bavoir)
+
+    response = client.patch(
+        kit_item_url(household, kit, mine), {"position": 2}, content_type="application/json"
+    )
+
+    assert response.status_code == 400
+    mine.refresh_from_db()
+    assert mine.position == 0

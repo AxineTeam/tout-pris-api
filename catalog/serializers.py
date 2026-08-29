@@ -1,8 +1,19 @@
+from ordered_model.serializers import OrderedModelSerializer
 from rest_framework import serializers
 
 from catalog.base_catalog import DEFAULT_STATUS_COLOR
 from catalog.models import ItemStatus, ItemType, Kit, KitItem
 from households.serializers import HouseholdScopedRelation, PersonSerializer
+
+
+class ReorderingSerializer(OrderedModelSerializer):
+    """A position moves the entry to that rank, the rest of its group shifting to make room."""
+
+    def validate_position(self, position):
+        last = self.instance.get_ordering_queryset().count() - 1
+        if not 0 <= position <= last:
+            raise serializers.ValidationError(f"Give a position from 0 to {last}.")
+        return position
 
 
 class ItemTypeSerializer(serializers.ModelSerializer):
@@ -36,10 +47,10 @@ class ItemStatusCreateSerializer(serializers.ModelSerializer):
         extra_kwargs = {"color": {"default": DEFAULT_STATUS_COLOR}}
 
 
-class ItemStatusUpdateSerializer(serializers.ModelSerializer):
+class ItemStatusUpdateSerializer(ReorderingSerializer):
     class Meta:
         model = ItemStatus
-        fields = ["name", "color", "progress", "is_default"]
+        fields = ["name", "color", "progress", "position", "is_default"]
 
     def validate_is_default(self, is_default):
         if not is_default:
@@ -67,13 +78,13 @@ class KitItemCreateSerializer(serializers.ModelSerializer):
         fields = ["item_type", "person", "quantity", "note"]
 
 
-class KitItemUpdateSerializer(serializers.ModelSerializer):
+class KitItemUpdateSerializer(ReorderingSerializer):
     item_type = HouseholdScopedRelation("item_types", required=False)
     person = HouseholdScopedRelation("persons", required=False, allow_null=True)
 
     class Meta:
         model = KitItem
-        fields = ["item_type", "person", "quantity", "note"]
+        fields = ["item_type", "person", "quantity", "note", "position"]
 
 
 class KitSerializer(serializers.ModelSerializer):
@@ -96,7 +107,7 @@ class KitCreateSerializer(serializers.ModelSerializer):
         fields = ["name", "description"]
 
 
-class KitUpdateSerializer(serializers.ModelSerializer):
+class KitUpdateSerializer(ReorderingSerializer):
     class Meta:
         model = Kit
-        fields = ["name", "description"]
+        fields = ["name", "description", "position"]

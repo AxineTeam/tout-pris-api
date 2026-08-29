@@ -1879,6 +1879,8 @@ components:
           maxLength: 100
     PatchedItemStatusUpdate:
       type: object
+      description: A position moves the entry to that rank, the rest of its group
+        shifting to make room.
       properties:
         name:
           type: string
@@ -1899,6 +1901,8 @@ components:
             * `not_started` - Not started
             * `in_progress` - In progress
             * `done` - Done
+        position:
+          type: integer
         is_default:
           type: boolean
           description: Whether a new line gets this status, true for one status of
@@ -1915,6 +1919,8 @@ components:
           description: Optional details telling apart two entries that share a name.
     PatchedKitItemUpdate:
       type: object
+      description: A position moves the entry to that rank, the rest of its group
+        shifting to make room.
       properties:
         item_type:
           type: integer
@@ -1930,8 +1936,12 @@ components:
           type: string
           description: Free reminder carried to the trip, such as the warm one.
           maxLength: 200
+        position:
+          type: integer
     PatchedKitUpdate:
       type: object
+      description: A position moves the entry to that rank, the rest of its group
+        shifting to make room.
       properties:
         name:
           type: string
@@ -1940,6 +1950,8 @@ components:
         description:
           type: string
           description: Optional reminder of what the block is meant to cover.
+        position:
+          type: integer
     PatchedMemberUpdate:
       type: object
       properties:

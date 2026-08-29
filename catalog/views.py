@@ -175,6 +175,7 @@ class KitDetailView(HouseholdScopedView, generics.RetrieveDestroyAPIView):
     @extend_schema(
         request=KitUpdateSerializer, responses={200: KitDetailSerializer, 403: FORBIDDEN}
     )
+    @transaction.atomic
     def patch(self, request, *args, **kwargs):
         serializer = self.get_serializer(self.get_object(), data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
@@ -215,6 +216,7 @@ class KitItemDetailView(KitScopedView, generics.RetrieveDestroyAPIView):
     @extend_schema(
         request=KitItemUpdateSerializer, responses={200: KitItemSerializer, 403: FORBIDDEN}
     )
+    @transaction.atomic
     def patch(self, request, *args, **kwargs):
         serializer = self.get_serializer(self.get_object(), data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
