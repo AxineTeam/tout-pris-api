@@ -95,5 +95,11 @@ class TripUpdateSerializer(serializers.ModelSerializer):
         return super().update(trip, validated_data)
 
 
+class TripDuplicationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Trip
+        fields = ["name", "date"]
+
+
 class KitInstantiationSerializer(serializers.Serializer):
     kit = HouseholdScopedRelation("kits", pk_field=serializers.IntegerField())

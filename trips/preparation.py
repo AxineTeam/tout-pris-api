@@ -3,7 +3,7 @@ from django.utils.translation import gettext_lazy as _
 
 from catalog.statuses import default_status
 from tout_pris.exceptions import Conflict
-from trips.models import TripItem
+from trips.models import Trip, TripItem, TripParticipant
 
 NO_STATUS = _("A trip line needs a status, and this household has none to give it.")
 
@@ -42,3 +42,24 @@ def instantiate_kit(trip, kit):
             )
         )
     return created
+
+
+@transaction.atomic
+def duplicate_trip(trip, name, date):
+    status = starting_status(trip.household_id)
+    copy = Trip.objects.create(household_id=trip.household_id, name=name, date=date)
+    TripParticipant.objects.bulk_create(
+        TripParticipant(trip=copy, person_id=person_id)
+        for person_id in trip.participants.values_list("person_id", flat=True)
+    )
+    for line in trip.items.all():
+        TripItem.objects.create(
+            trip=copy,
+            item_type_id=line.item_type_id,
+            person_id=line.person_id,
+            quantity=line.quantity,
+            note=line.note,
+            position=line.position,
+            status=status,
+        )
+    return copy

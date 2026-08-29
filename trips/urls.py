@@ -2,6 +2,7 @@ from django.urls import path
 
 from trips.views import (
     TripDetailView,
+    TripDuplicationView,
     TripItemDetailView,
     TripItemListCreateView,
     TripKitView,
@@ -20,6 +21,11 @@ urlpatterns = [
         "households/<int:household_id>/trips/<int:pk>/",
         TripDetailView.as_view(),
         name="trip",
+    ),
+    path(
+        "households/<int:household_id>/trips/<int:trip_id>/duplicate/",
+        TripDuplicationView.as_view(),
+        name="trip-duplicate",
     ),
     path(
         "households/<int:household_id>/trips/<int:trip_id>/participants/",

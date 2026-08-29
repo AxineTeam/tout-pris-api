@@ -75,13 +75,19 @@ C'est aussi ici que vit le garde-fou annoncé par [`catalog.md`](catalog.md) à 
 
 La promotion se voit ailleurs que sur la ligne cliquée : **toute** ligne packant cet objet, dans n'importe quel voyage, y compris un voyage passé, affiche désormais le tag. C'est la contrepartie du tag dérivé, et elle est assumée — au même titre que le passé qui change quand on supprime un objet du référentiel. Ce qui reste figé est ce qui a été copié : la quantité, la personne, la note, le statut. Le tag n'a jamais été de la copie.
 
-## Pas de clone de voyage
+## La duplication d'un voyage
 
-L'initialisation passe uniquement par la composition de kits et les ajouts libres. Il n'y a pas de « repartir du voyage précédent ».
+Un voyage se duplique : la copie reprend les participants et les lignes de la source, sous un nouveau nom et à une nouvelle date, tous ses statuts remis au statut par défaut du foyer.
 
-Un clone recopierait aussi bien les blocs réutilisables que les lignes qui ne valaient que pour ce voyage-là — le cadeau d'anniversaire, le maillot de bain d'un séjour à la mer — et l'utilisateur devrait nettoyer avant de préparer, au lieu de composer. Les kits font le même travail en ne gardant que ce qui se répète.
+Un voyage **neuf** se compose de kits et ne se duplique pas : une copie hériterait du cadeau d'anniversaire et du maillot d'un séjour à la mer, et l'utilisateur nettoierait au lieu de préparer. La duplication sert le voyage **récurrent** — le week-end chez les grands-parents, tous les mois — dont l'utilisateur désigne la sortie précédente parce qu'il sait qu'elle est la bonne.
 
-La conséquence est structurante : la promotion d'un objet vers un kit est le **seul** mécanisme d'enrichissement des kits depuis un voyage. Elle doit être triviale dans l'interface, faute de quoi les kits ne s'enrichissent jamais et le produit perd ce qui le distingue d'une note dans le téléphone.
+La copie est complète et sans filtre : chaque participant, chaque ligne avec son objet, sa personne, sa quantité, sa note et sa position. Rien n'est écarté, et il n'y a rien à écarter — « Les suppressions » interdit qu'un voyage porte une ligne ou une participation visant quelqu'un qui n'est plus du foyer.
+
+Les statuts sont la seule chose qui ne se copie pas : la copie est un voyage à préparer, et reprendre l'avancement de la source l'afficherait déjà faite. Chaque ligne reçoit le statut par défaut du foyer, comme à l'instanciation d'un kit, et un foyer sans aucun statut ne peut donc pas plus dupliquer qu'instancier.
+
+La copie n'est jamais archivée, même prise sur une archive : c'est le voyage que l'on part préparer.
+
+La promotion d'un objet vers un kit reste le **seul** mécanisme d'enrichissement des kits depuis un voyage. Dupliquer ne crée aucun bloc réutilisable, et vingt duplications d'un même voyage laissent les kits exactement là où ils étaient.
 
 ## L'ordre
 
