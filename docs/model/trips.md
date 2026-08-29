@@ -99,6 +99,16 @@ C'est une date et non un horodatage : personne ne prépare un sac à l'heure pr�
 
 Les voyages sont listés du départ le plus récent au plus ancien, ce que porte l'`ordering` du modèle : c'est le voyage en préparation que l'on ouvre, pas celui de l'an dernier. Deux voyages du même jour sont départagés par le `pk` décroissant, le dernier créé d'abord. Le départage n'est pas décoratif : avec une seule date, l'égalité devient probable, et un ordre indéterminé ferait sauter les lignes d'une lecture à l'autre.
 
+## L'archivage
+
+Un voyage passé quitte la liste sans être supprimé : `archived_at` porte le moment où il l'a quittée, et reste vide tant qu'il y figure.
+
+Un horodatage plutôt qu'un booléen, parce qu'il date le geste et donne aux archives leur propre ordre — du dernier archivé au premier — là où la liste courante est ordonnée par date de départ. Désarchiver ramène `archived_at` à vide, et le voyage reprend sa place dans la liste courante.
+
+Rien ne s'archive tout seul. Un voyage dont la date est passée reste dans la liste courante : la préparation continue souvent après le départ, et le retour a ses propres lignes.
+
+L'archivage ne verrouille rien. Un voyage archivé se modifie exactement comme un autre, et c'est une décision d'API décrite dans [`docs/api/`](../api/README.md), pas une propriété du modèle.
+
 ## Les suppressions
 
 Trois clés étrangères partent d'une ligne de voyage, et elles ne se comportent pas de la même façon. Ce n'est pas une incohérence : une ligne de voyage porte un état que des gens ont fait avancer, alors qu'une ligne de kit est un modèle que l'on réédite quand on veut.

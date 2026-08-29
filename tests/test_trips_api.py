@@ -1,5 +1,8 @@
+import datetime
+
 import pytest
 from django.test import Client
+from django.utils import timezone
 
 from accounts.models import User
 from catalog.models import ItemStatus, ItemType, Kit, KitItem
@@ -132,7 +135,9 @@ def test_the_trip_list_carries_neither_the_participants_nor_the_lines(
 
     listed = client.get(trips_url(household)).json()
 
-    assert listed == [{"id": trip.pk, "name": "Bretagne", "date": "2026-07-14"}]
+    assert listed == [
+        {"id": trip.pk, "name": "Bretagne", "date": "2026-07-14", "archived_at": None}
+    ]
 
 
 def test_creating_a_trip_names_it_and_dates_its_departure(client, household):
@@ -209,6 +214,86 @@ def test_a_trip_is_renamed_and_moved_to_another_date(client, household, trip):
     assert response.json()["items"] == []
     trip.refresh_from_db()
     assert (trip.name, str(trip.date)) == ("Bretagne en aout", "2026-08-01")
+
+
+def test_archiving_a_trip_takes_it_out_of_the_current_list(client, household, trip):
+    response = client.patch(
+        trip_url(household, trip), {"archived": True}, content_type="application/json"
+    )
+
+    assert response.status_code == 200
+    assert response.json()["archived_at"] is not None
+    trip.refresh_from_db()
+    assert trip.archived_at is not None
+    assert client.get(trips_url(household)).json() == []
+
+
+def test_the_archived_trips_are_listed_on_demand_from_the_last_archived(client, household):
+    Trip.objects.create(
+        household=household,
+        name="Bretagne",
+        date="2026-07-14",
+        archived_at=datetime.datetime(2026, 8, 1, tzinfo=datetime.UTC),
+    )
+    Trip.objects.create(
+        household=household,
+        name="Noel",
+        date="2025-12-24",
+        archived_at=datetime.datetime(2026, 8, 2, tzinfo=datetime.UTC),
+    )
+    Trip.objects.create(household=household, name="Corse", date="2026-09-01")
+
+    listed = client.get(trips_url(household), {"archived": "true"}).json()
+
+    assert [entry["name"] for entry in listed] == ["Noel", "Bretagne"]
+
+
+def test_unarchiving_a_trip_brings_it_back_to_the_current_list(client, household, trip):
+    trip.archived_at = timezone.now()
+    trip.save()
+
+    response = client.patch(
+        trip_url(household, trip), {"archived": False}, content_type="application/json"
+    )
+
+    assert response.status_code == 200
+    assert response.json()["archived_at"] is None
+    assert [entry["name"] for entry in client.get(trips_url(household)).json()] == ["Bretagne"]
+    assert client.get(trips_url(household), {"archived": "true"}).json() == []
+
+
+def test_the_day_a_trip_was_archived_is_not_for_the_client_to_choose(client, household, trip):
+    response = client.patch(
+        trip_url(household, trip),
+        {"archived_at": "2020-01-01T00:00:00Z"},
+        content_type="application/json",
+    )
+
+    assert response.status_code == 200
+    trip.refresh_from_db()
+    assert trip.archived_at is None
+
+
+def test_an_archived_trip_still_takes_every_write(client, household, trip, leo, tshirt, to_pack):
+    client.patch(trip_url(household, trip), {"archived": True}, content_type="application/json")
+
+    added = client.post(
+        items_url(household, trip), {"item_type": tshirt.pk}, content_type="application/json"
+    )
+    joined = client.post(
+        participants_url(household, trip), {"person": leo.pk}, content_type="application/json"
+    )
+    renamed = client.patch(
+        trip_url(household, trip), {"name": "Bretagne en aout"}, content_type="application/json"
+    )
+    moved = client.patch(
+        item_url(household, trip, trip.items.get()),
+        {"quantity": 2},
+        content_type="application/json",
+    )
+
+    assert [added.status_code, joined.status_code] == [201, 201]
+    assert [renamed.status_code, moved.status_code] == [200, 200]
 
 
 def test_deleting_a_trip_takes_its_participants_and_its_lines_with_it(

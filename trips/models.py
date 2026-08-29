@@ -20,6 +20,12 @@ class Trip(models.Model):
     date = models.DateField(
         help_text="Day the trip leaves on, which the trip list is sorted on.",
     )
+    archived_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text="When the trip left the current list, empty as long as it is still there.",
+    )
 
     class Meta:
         ordering = ["-date", "-pk"]
