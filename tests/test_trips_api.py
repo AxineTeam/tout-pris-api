@@ -904,6 +904,30 @@ def test_a_client_holding_any_version_at_all_is_told_the_lines_did_not_move(
     assert response.status_code == 304
 
 
+def test_a_fingerprint_weakened_on_the_way_back_still_answers_without_a_body(
+    client, household, trip, tshirt, to_pack
+):
+    TripItem.objects.create(trip=trip, item_type=tshirt, status=to_pack)
+    held = fingerprint_of(client, household, trip)
+
+    response = client.get(items_url(household, trip), headers={"if-none-match": f"W/{held}"})
+
+    assert response.status_code == 304
+    assert response.content == b""
+
+
+def test_a_weakened_fingerprint_of_lines_that_moved_answers_with_the_lines(
+    client, household, trip, tshirt, to_pack
+):
+    held = fingerprint_of(client, household, trip)
+    TripItem.objects.create(trip=trip, item_type=tshirt, status=to_pack)
+
+    response = client.get(items_url(household, trip), headers={"if-none-match": f"W/{held}"})
+
+    assert response.status_code == 200
+    assert len(response.json()) == 1
+
+
 def test_a_fingerprint_left_behind_by_a_new_line_answers_with_the_lines(
     client, household, trip, tshirt, to_pack
 ):

@@ -58,6 +58,10 @@ UNCHANGED = OpenApiResponse(
 )
 
 
+def without_weakness(etag):
+    return etag.removeprefix("W/")
+
+
 def archived_wanted(request):
     return serializers.BooleanField(default=False).run_validation(
         request.query_params.get("archived", empty)
@@ -218,7 +222,7 @@ class TripItemListCreateView(TripScopedView, generics.ListCreateAPIView):
         stamp = self.get_queryset().aggregate(last=Max("updated_at"), lines=Count("pk"))
         etag = quote_etag(f"{stamp['last'].timestamp() if stamp['last'] else 0}:{stamp['lines']}")
         held = parse_etags(request.headers.get("If-None-Match", ""))
-        unchanged = etag in held or "*" in held
+        unchanged = "*" in held or without_weakness(etag) in {without_weakness(one) for one in held}
         response = Response(status=304) if unchanged else super().list(request, *args, **kwargs)
         response.headers["ETag"] = etag
         response.headers["Cache-Control"] = "no-cache"
