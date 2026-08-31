@@ -71,7 +71,7 @@ def test_without_any_mail_configuration_the_emails_are_printed(monkeypatch):
     )
 
 
-def test_a_reader_is_not_locked_out_while_another_request_writes(monkeypatch):
+def test_the_database_is_configured_to_open_its_journal_in_wal(monkeypatch):
     settings = load_settings(monkeypatch)
 
     assert settings.DATABASES["default"]["OPTIONS"]["init_command"] == (
@@ -79,8 +79,14 @@ def test_a_reader_is_not_locked_out_while_another_request_writes(monkeypatch):
     )
 
 
-def test_a_writer_takes_its_lock_at_once_and_queues_instead_of_failing(monkeypatch):
+def test_the_database_is_configured_to_take_its_write_lock_at_once(monkeypatch):
     settings = load_settings(monkeypatch)
 
     assert settings.DATABASES["default"]["OPTIONS"]["transaction_mode"] == "IMMEDIATE"
-    assert settings.DATABASES["default"]["OPTIONS"]["timeout"] == 5
+
+
+def test_the_options_carried_by_the_database_url_are_kept(monkeypatch):
+    settings = load_settings(monkeypatch, DATABASE_URL="sqlite:////tmp/tout_pris.db?timeout=30")
+
+    assert settings.DATABASES["default"]["OPTIONS"]["timeout"] == 30
+    assert settings.DATABASES["default"]["OPTIONS"]["transaction_mode"] == "IMMEDIATE"

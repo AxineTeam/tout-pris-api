@@ -834,6 +834,17 @@ def test_checking_a_line_off_moves_the_fingerprint(
     assert fingerprint_of(client, household, trip) != held
 
 
+def test_changing_the_quantity_of_a_line_moves_the_fingerprint(
+    client, household, trip, tshirt, to_pack
+):
+    line = TripItem.objects.create(trip=trip, item_type=tshirt, status=to_pack)
+    held = fingerprint_of(client, household, trip)
+
+    client.patch(item_url(household, trip, line), {"quantity": 3}, content_type="application/json")
+
+    assert fingerprint_of(client, household, trip) != held
+
+
 def test_adding_a_line_moves_the_fingerprint(client, household, trip, tshirt, to_pack):
     held = fingerprint_of(client, household, trip)
 

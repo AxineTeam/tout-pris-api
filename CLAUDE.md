@@ -19,6 +19,7 @@ API Django du projet Tout Pris. Soit extrêmement concis.
 - Python 3.12 (épinglé dans `.python-version`), Django 6.1, Django REST Framework pour l'API, drf-spectacular pour l'OpenAPI générée, drf-pydantic pour dériver un serializer d'un modèle Pydantic, django-allauth en mode headless pour l'authentification
 - Deux façons de déclarer un schéma : `ModelSerializer` quand il y a une table derrière, Pydantic via `drf-pydantic` quand il n'y en a pas (sortie d'un modèle de langage, réponse calculée)
 - ORM et migrations Django (SQLite par défaut, `DATABASE_URL` lu par dj-database-url), migrations appliquées par l'entrypoint Docker, jamais par le code applicatif
+- `auto_now` n'est écrit que par `save()` : un `update()` de queryset ne le déclenche pas, et un `save(update_fields=[...])` non plus si la colonne n'est pas listée — Django n'appelle `pre_save()` que pour les colonnes listées. Toute écriture de masse sur `TripItem` doit donc écrire `updated_at` elle-même, sans quoi l'empreinte de la liste des lignes d'un voyage reste immobile sur une réponse qui a changé
 - django-extensions pour `shell_plus`, `runserver_plus`, `reset_db` et `graph_models`
 - django-ordered-model pour les colonnes `position`, l'équivalent d'`acts_as_list` ; son app est dans `INSTALLED_APPS` pour l'admin et pour le récepteur `post_delete` qui referme les trous d'ordre
 - model_bakery pour construire des objets depuis le modèle Django sans déclarer de factory, utilisé par la commande `seed`

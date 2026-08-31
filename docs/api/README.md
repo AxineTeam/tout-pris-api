@@ -230,15 +230,27 @@ Retirer un participant ne touche pas les lignes préparées pour lui : elles res
 
 **`GET /api/households/{household_id}/trips/{trip_id}/items/` porte un `ETag`, et le renvoyer en `If-None-Match` répond `304` sans corps.** C'est la route qu'un client sonde : plusieurs membres cochent la même liste en même temps, chacun veut voir les coches des autres arriver, et une liste de voyage est la plus grosse réponse du produit — la resservir entière à chaque sondage pour dire qu'elle n'a pas bougé est ce que l'empreinte évite.
 
-L'empreinte est calculée sur les lignes du voyage seules : le plus récent `updated_at` et leur nombre. Le compte est indispensable, une suppression ne faisant pas forcément bouger le maximum. Une coche, une quantité changée, une ligne ajoutée, une ligne supprimée et l'instanciation d'un kit la déplacent donc toutes.
+L'empreinte est calculée sur les lignes du voyage seules : le plus récent `updated_at` et leur nombre. Le compte est indispensable, une suppression ne faisant pas forcément bouger le maximum.
 
-**Ce qui n'est pas une ligne ne la déplace pas.** Renommer un objet du référentiel ou un statut change ce que la liste affiche sans toucher aucune ligne, et le client sondeur ne le verra qu'au prochain rechargement complet. C'est assumé : ces renommages sont rares et faits par un membre qui a l'écran sous les yeux, alors que les coches sont continues.
+**La règle est que l'empreinte bouge quand une colonne de `TripItem` bouge, et pas autrement.** Une coche, une quantité changée, une ligne ajoutée, une ligne supprimée et l'instanciation d'un kit la déplacent donc toutes, de même que la suppression d'un statut et la fusion de deux objets, qui réaffectent les lignes par une écriture de masse et écrivent `updated_at` elles-mêmes.
+
+**Ce qui vit dans une autre table reste dehors** : renommer un objet du référentiel sans fusion, renommer un statut, ranger un objet dans un kit ou l'en sortir, retirer un membre du foyer — qui met `Person.user` à `null`. Ces cas ne déplacent qu'un libellé, le client sondeur reçoit donc `304` sur une réponse qui a changé et ne le verra qu'au prochain rechargement complet. Ils sont enregistrés dans [#95](https://github.com/AxineTeam/tout-pris-api/issues/95), avec ce que coûterait chacune des façons de les rattraper.
+
+**Un trou reste à l'intérieur même de la règle.** Supprimer une personne met `TripItem.person_id` à `NULL` par le collecteur de Django, qui ne passe pas par `save()` et ne déclenche donc pas `auto_now` : la ligne change, l'empreinte non. C'est dans le périmètre de la règle et ce n'est pas encore corrigé.
+
+**La comparaison des empreintes est faible**, au sens de la spécification HTTP : le préfixe `W/` est retiré des deux côtés avant de comparer. Un intermédiaire qui modifie le corps — nginx quand il compresse — n'a plus le droit de promettre l'identité des octets et réécrit `"abc"` en `W/"abc"` ; comparer des chaînes brutes rendrait alors `200` avec le corps entier à chaque sondage, sans qu'aucune erreur ne le signale.
 
 La réponse porte aussi `Cache-Control: no-cache`. Sans en-tête de fraîcheur, un navigateur a le droit de servir sa copie sans rien demander, et le sondage ne verrait plus rien passer.
 
-Le calcul se fait dans la vue, après `get_queryset()`, et non par le décorateur `condition` de Django : celui-ci enveloppe `dispatch` et s'exécuterait avant l'authentification et les permissions de DRF, donc calculerait une empreinte pour le voyage d'un autre foyer — et sa seule présence dirait que ce voyage existe. Le cloisonnement passe avant l'empreinte : un voyage qui n'est pas celui de l'appelant répond `404`, jamais `304`.
+**Le client n'a rien à écrire.** Une réponse qui porte un `ETag` et `Cache-Control: no-cache` est revalidée par le cache HTTP du navigateur à chaque `fetch` : il envoie `If-None-Match` de lui-même, reçoit le `304` et rend le corps qu'il avait gardé avec un statut `200`. Le code appelant ne voit jamais le `304` et n'a aucune empreinte à mémoriser.
+
+Le calcul se fait dans la vue, après `get_queryset()`, et non par le décorateur `condition` de Django : sa fonction d'empreinte ne reçoit que les morceaux de l'URL, elle devrait donc retrouver le voyage et réappliquer le cloisonnement par foyer elle-même — c'est-à-dire refaire ce que `get_queryset()` fait déjà, en laissant deux endroits qui doivent rester d'accord sur qui a le droit de voir quoi. Le cloisonnement passe avant l'empreinte : un voyage qui n'est pas celui de l'appelant répond `404`, jamais `304`.
 
 **Le piège à connaître est le réordonnancement.** `position` n'est pas exposée par le `PATCH` d'une ligne, les lignes d'un voyage ne se réordonnent donc pas encore ; le jour où elles le feront, django-ordered-model décalera les rangs par un `update()` de queryset, qui ne déclenche pas `auto_now` et laisserait l'empreinte immobile sur un voyage pourtant réordonné.
+
+**Le sondage multiplie les lectures concurrentes**, d'où les options SQLite de `settings.py` : `journal_mode=WAL` pour qu'une écriture ne bloque plus les lecteurs, et `transaction_mode=IMMEDIATE` pour qu'une transaction qui lit puis écrit prenne son verrou à l'ouverture et fasse la queue au lieu de rendre `database is locked`.
+
+**WAL ne peut pas être vérifié en test** : la base de test est en mémoire (`file:memorydb_default?mode=memory&cache=shared`) et SQLite y refuse WAL silencieusement — le `PRAGMA` répond `memory` au lieu de `wal`. Les tests de `tests/test_settings.py` ne relisent donc que le dictionnaire de configuration, et leur nom le dit. Le protocole de vérification en production, et la trace de ce qu'on y aura constaté, sont dans [#96](https://github.com/AxineTeam/tout-pris-api/issues/96).
 
 ## Chemins
 
