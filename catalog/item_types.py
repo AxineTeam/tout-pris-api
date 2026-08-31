@@ -22,7 +22,7 @@ def merge_trip_lines(absorbed, survivor):
         else:
             taken.add((line.trip_id, line.person_id))
             line.item_type = survivor
-            line.save(update_fields=["item_type"])
+            line.save(update_fields=["item_type", "updated_at"])
 
 
 @transaction.atomic
