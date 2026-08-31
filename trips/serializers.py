@@ -1,4 +1,5 @@
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
@@ -76,10 +77,29 @@ class TripDetailSerializer(serializers.ModelSerializer):
         read_only_fields = ["archived_at"]
 
 
+def named_once(chosen):
+    if len(set(chosen)) != len(chosen):
+        raise serializers.ValidationError(_("Name each one once, this list repeats one."))
+    return chosen
+
+
 class TripCreateSerializer(serializers.ModelSerializer):
+    participants = HouseholdScopedRelation(
+        "persons", many=True, required=False, pk_field=serializers.IntegerField()
+    )
+    kits = HouseholdScopedRelation(
+        "kits", many=True, required=False, pk_field=serializers.IntegerField()
+    )
+
     class Meta:
         model = Trip
-        fields = ["name", "date"]
+        fields = ["name", "date", "participants", "kits"]
+
+    def validate_participants(self, participants):
+        return named_once(participants)
+
+    def validate_kits(self, kits):
+        return named_once(kits)
 
 
 class TripUpdateSerializer(serializers.ModelSerializer):

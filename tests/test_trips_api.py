@@ -173,6 +173,118 @@ def test_a_trip_without_a_departure_date_is_refused(client, household):
     assert not household.trips.exists()
 
 
+def test_creating_a_trip_embarks_its_people_and_its_kits_in_one_call(
+    client, household, leo, tshirt, to_pack, rando
+):
+    KitItem.objects.create(kit=rando, item_type=tshirt, person=leo, quantity=5)
+
+    response = client.post(
+        trips_url(household),
+        {
+            "name": "Corse",
+            "date": "2026-08-01",
+            "participants": [leo.pk],
+            "kits": [rando.pk],
+        },
+        content_type="application/json",
+    )
+
+    assert response.status_code == 201
+    body = response.json()
+    assert [entry["person"]["name"] for entry in body["participants"]] == ["Leo"]
+    assert [entry["item_type"]["name"] for entry in body["items"]] == ["T-shirt"]
+    assert body["items"][0]["person"]["name"] == "Leo"
+    assert body["items"][0]["quantity"] == 5
+
+
+def test_a_trip_created_without_people_or_kits_carries_neither(client, household):
+    response = client.post(
+        trips_url(household),
+        {"name": "Bretagne", "date": "2026-07-14"},
+        content_type="application/json",
+    )
+
+    assert response.status_code == 201
+    assert response.json()["participants"] == []
+    assert response.json()["items"] == []
+
+
+def test_the_same_person_or_the_same_kit_named_twice_creates_no_trip(client, household, leo, rando):
+    twice_the_person = client.post(
+        trips_url(household),
+        {"name": "Corse", "date": "2026-08-01", "participants": [leo.pk, leo.pk]},
+        content_type="application/json",
+    )
+    twice_the_kit = client.post(
+        trips_url(household),
+        {"name": "Corse", "date": "2026-08-01", "kits": [rando.pk, rando.pk]},
+        content_type="application/json",
+    )
+
+    assert [twice_the_person.status_code, twice_the_kit.status_code] == [400, 400]
+    assert list(twice_the_person.json()) == ["participants"]
+    assert list(twice_the_kit.json()) == ["kits"]
+    assert not household.trips.exists()
+
+
+def test_a_trip_lists_its_participants_in_the_order_they_joined(client, household, leo):
+    camille = household.persons.get(name="Camille")
+
+    created = client.post(
+        trips_url(household),
+        {"name": "Corse", "date": "2026-08-01", "participants": [leo.pk, camille.pk]},
+        content_type="application/json",
+    )
+
+    assert [entry["person"]["name"] for entry in created.json()["participants"]] == [
+        "Leo",
+        "Camille",
+    ]
+
+
+def test_a_trip_takes_nobody_from_another_household(client, household, stranger_household):
+    theirs = Person.objects.create(household=stranger_household, name="Sacha")
+
+    response = client.post(
+        trips_url(household),
+        {"name": "Corse", "date": "2026-08-01", "participants": [theirs.pk]},
+        content_type="application/json",
+    )
+
+    assert response.status_code == 404
+    assert not household.trips.exists()
+
+
+def test_a_trip_embarks_no_kit_from_another_household(
+    client, household, to_pack, stranger_household
+):
+    theirs = Kit.objects.create(household=stranger_household, name="Le leur")
+
+    response = client.post(
+        trips_url(household),
+        {"name": "Corse", "date": "2026-08-01", "kits": [theirs.pk]},
+        content_type="application/json",
+    )
+
+    assert response.status_code == 404
+    assert not household.trips.exists()
+
+
+def test_a_household_without_a_status_creates_no_trip_at_all_when_it_embarks_a_kit(
+    client, household, tshirt, rando
+):
+    KitItem.objects.create(kit=rando, item_type=tshirt)
+
+    response = client.post(
+        trips_url(household),
+        {"name": "Corse", "date": "2026-08-01", "kits": [rando.pk]},
+        content_type="application/json",
+    )
+
+    assert response.status_code == 409
+    assert not household.trips.exists()
+
+
 def test_a_trip_is_read_with_its_participants_and_its_lines_in_preparation_order(
     client, household, trip, leo, tshirt, to_pack, rando
 ):
