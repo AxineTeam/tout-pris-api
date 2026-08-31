@@ -69,7 +69,7 @@ class KitItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = KitItem
-        fields = ["id", "item_type", "person", "quantity", "note", "position"]
+        fields = ["id", "item_type", "person", "quantity", "position"]
 
 
 class KitItemCreateSerializer(serializers.ModelSerializer):
@@ -78,7 +78,7 @@ class KitItemCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = KitItem
-        fields = ["item_type", "person", "quantity", "note"]
+        fields = ["item_type", "person", "quantity"]
 
 
 class KitItemUpdateSerializer(ReorderingSerializer):
@@ -87,7 +87,7 @@ class KitItemUpdateSerializer(ReorderingSerializer):
 
     class Meta:
         model = KitItem
-        fields = ["item_type", "person", "quantity", "note", "position"]
+        fields = ["item_type", "person", "quantity", "position"]
 
 
 class KitSerializer(serializers.ModelSerializer):

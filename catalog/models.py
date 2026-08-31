@@ -163,11 +163,6 @@ class KitItem(OrderedModelBase):
         validators=[MinValueValidator(1), MaxValueValidator(32767)],
         help_text="How many of the thing the block asks for, such as five t-shirts.",
     )
-    note = models.CharField(
-        max_length=200,
-        blank=True,
-        help_text="Free reminder carried to the trip, such as the warm one.",
-    )
     position = models.PositiveIntegerField(
         editable=False,
         db_index=True,

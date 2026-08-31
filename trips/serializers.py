@@ -31,7 +31,7 @@ class TripItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TripItem
-        fields = ["id", "item_type", "person", "quantity", "status", "note", "position", "kits"]
+        fields = ["id", "item_type", "person", "quantity", "status", "position", "kits"]
 
     @extend_schema_field(KitSerializer(many=True))
     def get_kits(self, line):
@@ -46,7 +46,7 @@ class TripItemCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TripItem
-        fields = ["item_type", "person", "quantity", "status", "note"]
+        fields = ["item_type", "person", "quantity", "status"]
 
 
 class TripItemUpdateSerializer(serializers.ModelSerializer):
@@ -56,7 +56,7 @@ class TripItemUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TripItem
-        fields = ["item_type", "person", "quantity", "status", "note"]
+        fields = ["item_type", "person", "quantity", "status"]
 
 
 class TripSerializer(serializers.ModelSerializer):

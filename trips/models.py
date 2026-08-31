@@ -89,11 +89,6 @@ class TripItem(OrderedModelBase):
         related_name="trip_items",
         help_text="Where the preparation of the line stands, which any member moves forward.",
     )
-    note = models.CharField(
-        max_length=200,
-        blank=True,
-        help_text="Free reminder shown on the line, such as the warm one.",
-    )
     position = models.PositiveIntegerField(
         editable=False,
         db_index=True,

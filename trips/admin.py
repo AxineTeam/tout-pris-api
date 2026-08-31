@@ -17,7 +17,7 @@ class TripParticipantInline(admin.TabularInline):
 class TripItemInline(OrderedTabularInline):
     model = TripItem
     extra = 0
-    fields = ["item_type", "person", "quantity", "status", "note", "move_up_down_links"]
+    fields = ["item_type", "person", "quantity", "status", "move_up_down_links"]
     readonly_fields = ["move_up_down_links"]
     autocomplete_fields = ["item_type", "person", "status"]
     ordering = ["position"]
