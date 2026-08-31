@@ -48,6 +48,14 @@ def duplicate_url(household, trip):
     return f"{trip_url(household, trip)}duplicate/"
 
 
+def item_type_url(household, item_type):
+    return f"/api/households/{household.pk}/item-types/{item_type.pk}/"
+
+
+def item_status_url(household, status):
+    return f"/api/households/{household.pk}/item-statuses/{status.pk}/"
+
+
 def signed_in(user):
     client = Client()
     client.force_login(user)
@@ -857,6 +865,31 @@ def test_instantiating_a_kit_moves_the_fingerprint(client, household, trip, tshi
     held = fingerprint_of(client, household, trip)
 
     client.post(kits_url(household, trip), {"kit": rando.pk}, content_type="application/json")
+
+    assert fingerprint_of(client, household, trip) != held
+
+
+def test_deleting_a_status_worn_by_a_line_moves_the_fingerprint(
+    client, household, trip, tshirt, to_pack, packed
+):
+    TripItem.objects.create(trip=trip, item_type=tshirt, status=packed)
+    held = fingerprint_of(client, household, trip)
+
+    client.delete(item_status_url(household, packed))
+
+    assert fingerprint_of(client, household, trip) != held
+
+
+def test_renaming_an_item_type_onto_another_moves_the_fingerprint_of_the_absorbed_lines(
+    client, household, trip, tshirt, to_pack
+):
+    ItemType.objects.create(household=household, name="Maillot")
+    TripItem.objects.create(trip=trip, item_type=tshirt, status=to_pack)
+    held = fingerprint_of(client, household, trip)
+
+    client.patch(
+        item_type_url(household, tshirt), {"name": "Maillot"}, content_type="application/json"
+    )
 
     assert fingerprint_of(client, household, trip) != held
 

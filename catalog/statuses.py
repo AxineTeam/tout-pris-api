@@ -1,4 +1,5 @@
 from django.db import transaction
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from catalog.models import ItemStatus
@@ -32,5 +33,5 @@ def delete_status(status):
     replacement = siblings.filter(progress=status.progress).first() or default_status(
         status.household_id
     )
-    status.trip_items.update(status=replacement)
+    status.trip_items.update(status=replacement, updated_at=timezone.now())
     status.delete()
