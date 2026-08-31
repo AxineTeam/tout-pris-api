@@ -226,6 +226,20 @@ La lecture d'une ligne coûte donc le même nombre de requêtes quel qu'en soit 
 
 Retirer un participant ne touche pas les lignes préparées pour lui : elles restent, et c'est à l'interface de les montrer. `position` est en lecture seule, attribuée à la fin du voyage à la création et reprise de l'ordre du kit à l'instanciation.
 
+## Requêtes conditionnelles
+
+**`GET /api/households/{household_id}/trips/{trip_id}/items/` porte un `ETag`, et le renvoyer en `If-None-Match` répond `304` sans corps.** C'est la route qu'un client sonde : plusieurs membres cochent la même liste en même temps, chacun veut voir les coches des autres arriver, et une liste de voyage est la plus grosse réponse du produit — la resservir entière à chaque sondage pour dire qu'elle n'a pas bougé est ce que l'empreinte évite.
+
+L'empreinte est calculée sur les lignes du voyage seules : le plus récent `updated_at` et leur nombre. Le compte est indispensable, une suppression ne faisant pas forcément bouger le maximum. Une coche, une quantité changée, une ligne ajoutée, une ligne supprimée et l'instanciation d'un kit la déplacent donc toutes.
+
+**Ce qui n'est pas une ligne ne la déplace pas.** Renommer un objet du référentiel ou un statut change ce que la liste affiche sans toucher aucune ligne, et le client sondeur ne le verra qu'au prochain rechargement complet. C'est assumé : ces renommages sont rares et faits par un membre qui a l'écran sous les yeux, alors que les coches sont continues.
+
+La réponse porte aussi `Cache-Control: no-cache`. Sans en-tête de fraîcheur, un navigateur a le droit de servir sa copie sans rien demander, et le sondage ne verrait plus rien passer.
+
+Le calcul se fait dans la vue, après `get_queryset()`, et non par le décorateur `condition` de Django : celui-ci enveloppe `dispatch` et s'exécuterait avant l'authentification et les permissions de DRF, donc calculerait une empreinte pour le voyage d'un autre foyer — et sa seule présence dirait que ce voyage existe. Le cloisonnement passe avant l'empreinte : un voyage qui n'est pas celui de l'appelant répond `404`, jamais `304`.
+
+**Le piège à connaître est le réordonnancement.** `position` n'est pas exposée par le `PATCH` d'une ligne, les lignes d'un voyage ne se réordonnent donc pas encore ; le jour où elles le feront, django-ordered-model décalera les rangs par un `update()` de queryset, qui ne déclenche pas `auto_now` et laisserait l'empreinte immobile sur un voyage pourtant réordonné.
+
 ## Chemins
 
 Les chemins portent une barre oblique finale, convention de Django et des routeurs DRF : `/api/health/`, `/api/households/{household_id}/persons/`.

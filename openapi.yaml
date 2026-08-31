@@ -1245,6 +1245,12 @@ paths:
     get:
       operationId: households_trips_items_list
       parameters:
+      - in: header
+        name: If-None-Match
+        schema:
+          type: string
+        description: Fingerprint the client already holds, sent back to be told whether
+          the lines moved.
       - in: path
         name: household_id
         schema:
@@ -1268,6 +1274,9 @@ paths:
                 items:
                   $ref: '#/components/schemas/TripItem'
           description: ''
+        '304':
+          description: No line was added, removed or touched since that fingerprint,
+            and no body is sent.
     post:
       operationId: households_trips_items_create
       parameters:
