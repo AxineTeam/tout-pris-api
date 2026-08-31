@@ -33,7 +33,7 @@ L'instanciation est une **copie, jamais une référence** : sans elle, éditer u
 Pour chaque `KitItem` du kit, dans l'ordre de ses positions :
 
 - la ligne est **ignorée** si elle vise une personne qui ne participe pas au voyage ;
-- sinon un `TripItem` est créé, avec l'objet, la personne, la quantité et la note copiés depuis la ligne de kit ;
+- sinon un `TripItem` est créé, avec l'objet, la personne et la quantité copiés depuis la ligne de kit ;
 - `status` reçoit le statut par défaut du foyer, celui que porte le drapeau `is_default` — la règle est décrite dans [`catalog.md`](catalog.md) ;
 - `position` vient de l'ordre du kit : les lignes sont créées dans cet ordre et s'ajoutent à la fin du voyage, si bien que l'ordre relatif du kit est conservé sans avoir à le recalculer.
 
@@ -49,7 +49,7 @@ Une ligne du kit est considérée comme déjà présente quand le voyage porte u
 
 C'est cette clé qui porte la règle **un objet n'entre dans un voyage qu'une seule fois**. Cocher « sac à langer » puis « affaires de rando » quand les deux contiennent « crème solaire » produit une ligne, pas deux, et cette ligne porte les deux tags. Un ajout libre compte de la même façon : l'objet est déjà là, la ligne du kit ne s'ajoute pas par-dessus. Qui veut deux lignes distinctes crée deux objets ou passe la quantité à deux — on tranchera à l'usage.
 
-La quantité et la note n'en font pas partie, et ne sont **pas réécrites** : l'utilisateur a pu passer de cinq à trois t-shirts pour ce voyage-là, et un recochage qui rétablirait la valeur du kit annulerait sa décision sans le prévenir.
+La quantité n'en fait pas partie, et n'est **pas réécrite** : l'utilisateur a pu passer de cinq à trois t-shirts pour ce voyage-là, et un recochage qui rétablirait la valeur du kit annulerait sa décision sans le prévenir.
 
 **Une ligne de voyage packe au moins un exemplaire**, comme une ligne de kit ([`catalog.md`](catalog.md)) : une `CheckConstraint` sur `quantity` le tient de chaque côté, si bien que l'instanciation, qui recopie la quantité par `objects.create`, ne peut pas propager une ligne à zéro.
 
@@ -57,7 +57,7 @@ Conséquence à connaître : une ligne que l'utilisateur a supprimée du voyage 
 
 Cette clé est portée par la base, et il faut **deux contraintes** pour la dire en entier. Une unicité sur `(trip, item_type, person)` seule laisserait passer le doublon qu'on veut le plus éviter : deux `NULL` ne s'opposent pas en SQL, si bien que deux lignes du même objet sans personne — deux fois la trousse à pharmacie — la traverseraient sans rien violer. Une seconde contrainte, partielle, ferme ce trou : unique sur `(trip, item_type)` sous la condition `person IS NULL`, ce que le SQL rend en index unique avec un `WHERE`. Le dépôt emploie déjà une partielle de la même famille pour le statut par défaut d'un foyer, décrite dans [`catalog.md`](catalog.md).
 
-Les contraintes ne remplacent pas le garde-fou applicatif, elles le **doublent**. Le recochage reste ce qui rend l'opération idempotente : il doit ignorer les lignes déjà présentes, sinon il échouerait en `IntegrityError` au lieu de ne rien faire, et lui seul sait laisser tranquilles la quantité et la note. Ce que la base apporte est la garantie que la règle tient même quand un chemin l'oublie.
+Les contraintes ne remplacent pas le garde-fou applicatif, elles le **doublent**. Le recochage reste ce qui rend l'opération idempotente : il doit ignorer les lignes déjà présentes, sinon il échouerait en `IntegrityError` au lieu de ne rien faire, et lui seul sait laisser tranquille la quantité. Ce que la base apporte est la garantie que la règle tient même quand un chemin l'oublie.
 
 ## Le suivi
 
@@ -69,11 +69,11 @@ Le statut est obligatoire : une ligne sans statut ne serait ni affichable ni com
 
 Un objet ajouté librement et qui se révèle récurrent doit pouvoir rejoindre un kit en un geste.
 
-L'opération est une **seule écriture** : elle crée le `KitItem` — copie de l'objet, de la personne, de la quantité et de la note, ajouté à la fin du kit. La ligne du voyage n'est pas touchée et affiche pourtant le tag aussitôt, puisque le tag se lit dans le catalogue et n'a jamais été stocké sur elle.
+L'opération est une **seule écriture** : elle crée le `KitItem` — copie de l'objet, de la personne et de la quantité, ajouté à la fin du kit. La ligne du voyage n'est pas touchée et affiche pourtant le tag aussitôt, puisque le tag se lit dans le catalogue et n'a jamais été stocké sur elle.
 
 C'est aussi ici que vit le garde-fou annoncé par [`catalog.md`](catalog.md) à la place d'une contrainte d'unicité sur `KitItem` : promouvoir un objet que le kit contient déjà pour la même personne ne doit pas créer une seconde ligne de kit, l'opération est alors sans effet.
 
-La promotion se voit ailleurs que sur la ligne cliquée : **toute** ligne packant cet objet, dans n'importe quel voyage, y compris un voyage passé, affiche désormais le tag. C'est la contrepartie du tag dérivé, et elle est assumée — au même titre que le passé qui change quand on supprime un objet du référentiel. Ce qui reste figé est ce qui a été copié : la quantité, la personne, la note, le statut. Le tag n'a jamais été de la copie.
+La promotion se voit ailleurs que sur la ligne cliquée : **toute** ligne packant cet objet, dans n'importe quel voyage, y compris un voyage passé, affiche désormais le tag. C'est la contrepartie du tag dérivé, et elle est assumée — au même titre que le passé qui change quand on supprime un objet du référentiel. Ce qui reste figé est ce qui a été copié : la quantité, la personne, le statut. Le tag n'a jamais été de la copie, et la description de l'objet non plus : le texte libre du domaine est porté par le référentiel, si bien que la retoucher change ce qu'affichent toutes les lignes packant cet objet, dans les voyages passés comme dans ceux à venir. Une ligne ne porte plus de texte à elle, et il n'y a donc plus de rappel propre à une personne ou à un voyage.
 
 ## La duplication d'un voyage
 
@@ -81,7 +81,7 @@ Un voyage se duplique : la copie reprend les participants et les lignes de la so
 
 Un voyage **neuf** se compose de kits et ne se duplique pas : une copie hériterait du cadeau d'anniversaire et du maillot d'un séjour à la mer, et l'utilisateur nettoierait au lieu de préparer. La duplication sert le voyage **récurrent** — le week-end chez les grands-parents, tous les mois — dont l'utilisateur désigne la sortie précédente parce qu'il sait qu'elle est la bonne.
 
-La copie est complète et sans filtre : chaque participant, chaque ligne avec son objet, sa personne, sa quantité, sa note et sa position. Rien n'est écarté, et il n'y a rien à écarter — « Les suppressions » interdit qu'un voyage porte une ligne ou une participation visant quelqu'un qui n'est plus du foyer.
+La copie est complète et sans filtre : chaque participant, chaque ligne avec son objet, sa personne, sa quantité et sa position. Rien n'est écarté, et il n'y a rien à écarter — « Les suppressions » interdit qu'un voyage porte une ligne ou une participation visant quelqu'un qui n'est plus du foyer.
 
 Les statuts sont la seule chose qui ne se copie pas : la copie est un voyage à préparer, et reprendre l'avancement de la source l'afficherait déjà faite. Chaque ligne reçoit le statut par défaut du foyer, comme à l'instanciation d'un kit, et un foyer sans aucun statut ne peut donc pas plus dupliquer qu'instancier.
 
