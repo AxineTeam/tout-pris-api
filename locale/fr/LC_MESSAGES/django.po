@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: tout-pris-api\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-29 12:50+0000\n"
+"POT-Creation-Date: 2026-08-31 20:55+0000\n"
 "PO-Revision-Date: 2026-08-29 08:19+0000\n"
 "Last-Translator: Tout Pris\n"
 "Language-Team: French\n"
@@ -24,7 +24,7 @@ msgstr "Indiquez une position de 0 à {last}."
 msgid "Make another status the default one instead, a household needs one."
 msgstr "Désignez plutôt un autre statut par défaut, un foyer en a besoin d'un."
 
-#: catalog/statuses.py:25
+#: catalog/statuses.py:26
 msgid ""
 "The default status cannot be deleted, make another status the default one "
 "first."
@@ -103,35 +103,35 @@ msgstr ""
 msgid "%(inviter)s invites you to join %(household)s on Tout Pris"
 msgstr "%(inviter)s vous invite à rejoindre %(household)s sur Tout Pris"
 
-#: households/views.py:147
+#: households/views.py:148
 msgid "A person whose account is still a member cannot be deleted."
 msgstr ""
 "Une personne dont le compte est encore membre ne peut pas être supprimée."
 
-#: households/views.py:172
+#: households/views.py:173
 msgid "The caller already is someone in this household."
 msgstr "Vous êtes déjà quelqu'un dans ce foyer."
 
-#: households/views.py:177
+#: households/views.py:178
 msgid "That person already has an account."
 msgstr "Cette personne a déjà un compte."
 
-#: households/views.py:229
+#: households/views.py:230
 msgid "The last owner cannot step down, hand the role over first."
 msgstr ""
 "Le dernier propriétaire ne peut pas se retirer, transmettez d'abord le rôle."
 
-#: households/views.py:235
+#: households/views.py:236
 msgid "A member who is nobody in this household yet cannot be made an owner."
 msgstr ""
 "Un membre qui n'est encore personne dans ce foyer ne peut pas devenir "
 "propriétaire."
 
-#: households/views.py:241
+#: households/views.py:242
 msgid "The last member cannot leave, delete the household instead."
 msgstr "Le dernier membre ne peut pas partir, supprimez plutôt le foyer."
 
-#: households/views.py:243
+#: households/views.py:244
 msgid "The last owner cannot leave, hand the role over first."
 msgstr ""
 "Le dernier propriétaire ne peut pas partir, transmettez d'abord le rôle."
@@ -142,10 +142,14 @@ msgstr ""
 "Une ligne de voyage a besoin d'un statut, et ce foyer n'en a aucun à lui "
 "donner."
 
-#: trips/views.py:25
+#: trips/serializers.py:82
+msgid "Name each one once, this list repeats one."
+msgstr "Ne citez chacun qu'une fois, cette liste en répète un."
+
+#: trips/views.py:41
 msgid "That object is already in this trip for that person."
 msgstr "Cet objet est déjà dans ce voyage pour cette personne."
 
-#: trips/views.py:27
+#: trips/views.py:43
 msgid "That person already goes on this trip."
 msgstr "Cette personne participe déjà à ce voyage."

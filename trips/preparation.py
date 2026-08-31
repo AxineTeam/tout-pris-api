@@ -44,6 +44,17 @@ def instantiate_kit(trip, kit):
 
 
 @transaction.atomic
+def build_trip(household, name, date, participants=(), kits=()):
+    trip = Trip.objects.create(household=household, name=name, date=date)
+    TripParticipant.objects.bulk_create(
+        TripParticipant(trip=trip, person=person) for person in participants
+    )
+    for kit in kits:
+        instantiate_kit(trip, kit)
+    return trip
+
+
+@transaction.atomic
 def duplicate_trip(trip, name, date):
     status = starting_status(trip.household_id)
     copy = Trip.objects.create(household_id=trip.household_id, name=name, date=date)

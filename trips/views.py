@@ -1,5 +1,5 @@
 from django.db import IntegrityError, transaction
-from django.db.models import Count, Max
+from django.db.models import Count, Max, Prefetch
 from django.shortcuts import get_object_or_404
 from django.utils.functional import cached_property
 from django.utils.http import parse_etags, quote_etag
@@ -16,7 +16,14 @@ from rest_framework.response import Response
 
 from households.views import FORBIDDEN, HouseholdScopedView
 from tout_pris.exceptions import Conflict
-from trips.preparation import NO_STATUS, duplicate_trip, instantiate_kit, starting_status
+from trips.models import TripParticipant
+from trips.preparation import (
+    NO_STATUS,
+    build_trip,
+    duplicate_trip,
+    instantiate_kit,
+    starting_status,
+)
 from trips.serializers import (
     KitInstantiationSerializer,
     TripCreateSerializer,
@@ -70,7 +77,10 @@ def archived_wanted(request):
 
 def trip_detail_queryset(household):
     return household.trips.prefetch_related(
-        "participants__person",
+        Prefetch(
+            "participants",
+            queryset=TripParticipant.objects.select_related("person").order_by("id"),
+        ),
         "items__item_type__kit_items__kit",
         "items__person",
         "items__status",
@@ -94,7 +104,8 @@ INSTANTIATED = {
 @extend_schema_view(
     get=extend_schema(parameters=[ARCHIVED]),
     post=extend_schema(
-        request=TripCreateSerializer, responses={201: TripSerializer, 403: FORBIDDEN}
+        request=TripCreateSerializer,
+        responses={201: TripDetailSerializer, 403: FORBIDDEN, 409: NO_STATUS_RESPONSE},
     ),
 )
 class TripListCreateView(HouseholdScopedView, generics.ListCreateAPIView):
@@ -109,8 +120,11 @@ class TripListCreateView(HouseholdScopedView, generics.ListCreateAPIView):
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        trip = serializer.save(household=self.household)
-        return Response(TripSerializer(trip).data, status=201)
+        trip = build_trip(self.household, **serializer.validated_data)
+        return Response(
+            TripDetailSerializer(trip_detail_queryset(self.household).get(pk=trip.pk)).data,
+            status=201,
+        )
 
 
 @extend_schema_view(delete=extend_schema(responses={204: None, 403: FORBIDDEN}))

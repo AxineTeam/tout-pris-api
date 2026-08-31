@@ -1107,11 +1107,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Trip'
+                $ref: '#/components/schemas/TripDetail'
           description: ''
         '403':
           description: The caller is a member of this household, but their role does
             not allow that.
+        '409':
+          description: A trip line needs a status, and this household has none to
+            give it.
   /api/households/{household_id}/trips/{id}/:
     get:
       operationId: households_trips_retrieve
@@ -2237,6 +2240,14 @@ components:
           type: string
           format: date
           description: Day the trip leaves on, which the trip list is sorted on.
+        participants:
+          type: array
+          items:
+            type: integer
+        kits:
+          type: array
+          items:
+            type: integer
       required:
       - date
       - name
