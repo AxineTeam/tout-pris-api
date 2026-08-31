@@ -103,7 +103,7 @@ def test_creating_a_kit_appends_it_to_the_household_list(client, household):
 
 def test_a_kit_is_read_with_its_lines_in_preparation_order(client, household, kit, bavoir):
     louis = Person.objects.create(household=household, name="Louis")
-    KitItem.objects.create(kit=kit, item_type=bavoir, person=louis, quantity=2, note="Le grand")
+    KitItem.objects.create(kit=kit, item_type=bavoir, person=louis, quantity=2)
     KitItem.objects.create(kit=kit, item_type=bavoir)
 
     response = client.get(kit_url(household, kit))
@@ -116,7 +116,6 @@ def test_a_kit_is_read_with_its_lines_in_preparation_order(client, household, ki
         "item_type": {"id": bavoir.pk, "name": "Bavoir", "description": ""},
         "person": {"id": louis.pk, "name": "Louis", "user": None},
         "quantity": 2,
-        "note": "Le grand",
         "position": 0,
     }
     assert body["items"][1]["person"] is None
@@ -222,7 +221,7 @@ def test_adding_a_line_to_a_kit_appends_it(client, household, kit, bavoir):
 
     response = client.post(
         kit_items_url(household, kit),
-        {"item_type": bavoir.pk, "person": louis.pk, "quantity": 5, "note": "Les fins"},
+        {"item_type": bavoir.pk, "person": louis.pk, "quantity": 5},
         content_type="application/json",
     )
 
@@ -230,7 +229,7 @@ def test_adding_a_line_to_a_kit_appends_it(client, household, kit, bavoir):
     assert response.json()["item_type"] == {"id": bavoir.pk, "name": "Bavoir", "description": ""}
     assert response.json()["person"]["name"] == "Louis"
     assert response.json()["position"] == 1
-    assert kit.items.filter(quantity=5, note="Les fins", person=louis).exists()
+    assert kit.items.filter(quantity=5, person=louis).exists()
 
 
 def test_a_line_without_a_person_is_for_the_whole_household(client, household, kit, bavoir):
@@ -250,7 +249,7 @@ def test_the_same_item_type_is_packed_twice_in_the_same_kit(client, household, k
 
     first = client.post(
         kit_items_url(household, kit),
-        {"item_type": bavoir.pk, "note": "Le bob"},
+        {"item_type": bavoir.pk},
         content_type="application/json",
     )
     second = client.post(
@@ -274,33 +273,25 @@ def test_a_line_is_read_one_by_one(client, household, kit, bavoir):
         "item_type": {"id": bavoir.pk, "name": "Bavoir", "description": ""},
         "person": None,
         "quantity": 3,
-        "note": "",
         "position": 0,
     }
 
 
-def test_a_line_changes_its_quantity_its_note_its_object_and_its_person(
-    client, household, kit, bavoir
-):
+def test_a_line_changes_its_quantity_its_object_and_its_person(client, household, kit, bavoir):
     chapeau = ItemType.objects.create(household=household, name="Chapeau")
     louis = Person.objects.create(household=household, name="Louis")
     line = KitItem.objects.create(kit=kit, item_type=bavoir)
 
     response = client.patch(
         kit_item_url(household, kit, line),
-        {"item_type": chapeau.pk, "person": louis.pk, "quantity": 4, "note": "Celui de paille"},
+        {"item_type": chapeau.pk, "person": louis.pk, "quantity": 4},
         content_type="application/json",
     )
 
     assert response.status_code == 200
     assert response.json()["item_type"]["name"] == "Chapeau"
     line.refresh_from_db()
-    assert (line.item_type_id, line.person_id, line.quantity, line.note) == (
-        chapeau.pk,
-        louis.pk,
-        4,
-        "Celui de paille",
-    )
+    assert (line.item_type_id, line.person_id, line.quantity) == (chapeau.pk, louis.pk, 4)
 
 
 def test_a_line_aimed_at_someone_becomes_common_again(client, household, kit, bavoir):
@@ -317,23 +308,6 @@ def test_a_line_aimed_at_someone_becomes_common_again(client, household, kit, ba
     assert response.json()["person"] is None
     line.refresh_from_db()
     assert line.person_id is None
-
-
-def test_the_note_of_a_line_is_emptied_with_an_empty_string_and_never_with_null(
-    client, household, kit, bavoir
-):
-    line = KitItem.objects.create(kit=kit, item_type=bavoir, note="Le bob")
-
-    emptied = client.patch(
-        kit_item_url(household, kit, line), {"note": ""}, content_type="application/json"
-    )
-    nulled = client.patch(
-        kit_item_url(household, kit, line), {"note": None}, content_type="application/json"
-    )
-
-    assert (emptied.status_code, nulled.status_code) == (200, 400)
-    line.refresh_from_db()
-    assert line.note == ""
 
 
 def test_a_line_that_drops_its_item_type_is_refused(client, household, kit, bavoir):
@@ -525,9 +499,11 @@ def test_a_kit_does_not_move_past_the_end_of_the_household_list(client, househol
 
 
 def test_a_line_moves_to_the_rank_it_is_given(client, household, kit, bavoir):
-    KitItem.objects.create(kit=kit, item_type=bavoir, note="Trousse a pharmacie")
-    KitItem.objects.create(kit=kit, item_type=bavoir, note="Gourde")
-    shoes = KitItem.objects.create(kit=kit, item_type=bavoir, note="Chaussures")
+    gourde = ItemType.objects.create(household=household, name="Gourde")
+    chaussures = ItemType.objects.create(household=household, name="Chaussures")
+    KitItem.objects.create(kit=kit, item_type=bavoir)
+    KitItem.objects.create(kit=kit, item_type=gourde)
+    shoes = KitItem.objects.create(kit=kit, item_type=chaussures)
 
     response = client.patch(
         kit_item_url(household, kit, shoes), {"position": 0}, content_type="application/json"
@@ -536,7 +512,7 @@ def test_a_line_moves_to_the_rank_it_is_given(client, household, kit, bavoir):
     assert response.status_code == 200
     assert response.json()["position"] == 0
     lines = client.get(kit_url(household, kit)).json()["items"]
-    assert [line["note"] for line in lines] == ["Chaussures", "Trousse a pharmacie", "Gourde"]
+    assert [line["item_type"]["name"] for line in lines] == ["Chaussures", "Bavoir", "Gourde"]
     assert [line["position"] for line in lines] == [0, 1, 2]
 
 

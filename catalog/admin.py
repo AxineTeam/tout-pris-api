@@ -11,7 +11,7 @@ from catalog.models import ItemStatus, ItemType, Kit, KitItem
 class KitItemInline(OrderedTabularInline):
     model = KitItem
     extra = 0
-    fields = ["item_type", "person", "quantity", "note", "move_up_down_links"]
+    fields = ["item_type", "person", "quantity", "move_up_down_links"]
     readonly_fields = ["move_up_down_links"]
     autocomplete_fields = ["item_type", "person"]
     ordering = ["position"]

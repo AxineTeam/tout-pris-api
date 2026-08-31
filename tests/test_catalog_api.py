@@ -162,6 +162,23 @@ def test_describing_an_item_type_leaves_its_name_alone(client, household):
     assert response.json() == {"id": bavoir.pk, "name": "Bavoir", "description": "Le grand"}
 
 
+def test_the_description_of_an_object_is_emptied_with_an_empty_string_and_never_with_null(
+    client, household
+):
+    bavoir = ItemType.objects.create(household=household, name="Bavoir", description="Le grand")
+
+    emptied = client.patch(
+        item_type_url(household, bavoir), {"description": ""}, content_type="application/json"
+    )
+    nulled = client.patch(
+        item_type_url(household, bavoir), {"description": None}, content_type="application/json"
+    )
+
+    assert (emptied.status_code, nulled.status_code) == (200, 400)
+    bavoir.refresh_from_db()
+    assert bavoir.description == ""
+
+
 def test_renaming_an_item_type_to_a_taken_name_merges_it_into_the_survivor(client, household):
     survivor = ItemType.objects.create(household=household, name="Chapeau")
     absorbed = ItemType.objects.create(household=household, name="chapeaux")

@@ -1922,10 +1922,6 @@ components:
           maximum: 32767
           minimum: 1
           description: How many of the thing the block asks for, such as five t-shirts.
-        note:
-          type: string
-          description: Free reminder carried to the trip, such as the warm one.
-          maxLength: 200
         position:
           type: integer
           readOnly: true
@@ -1949,10 +1945,6 @@ components:
           maximum: 32767
           minimum: 1
           description: How many of the thing the block asks for, such as five t-shirts.
-        note:
-          type: string
-          description: Free reminder carried to the trip, such as the warm one.
-          maxLength: 200
       required:
       - item_type
     LanguageEnum:
@@ -2078,10 +2070,6 @@ components:
           maximum: 32767
           minimum: 1
           description: How many of the thing the block asks for, such as five t-shirts.
-        note:
-          type: string
-          description: Free reminder carried to the trip, such as the warm one.
-          maxLength: 200
         position:
           type: integer
     PatchedKitUpdate:
@@ -2142,10 +2130,6 @@ components:
           description: How many of the thing to pack, such as five t-shirts.
         status:
           type: integer
-        note:
-          type: string
-          description: Free reminder shown on the line, such as the warm one.
-          maxLength: 200
     PatchedTripUpdate:
       type: object
       properties:
@@ -2323,10 +2307,6 @@ components:
           allOf:
           - $ref: '#/components/schemas/ItemStatus'
           readOnly: true
-        note:
-          type: string
-          description: Free reminder shown on the line, such as the warm one.
-          maxLength: 200
         position:
           type: integer
           readOnly: true
@@ -2359,10 +2339,6 @@ components:
           description: How many of the thing to pack, such as five t-shirts.
         status:
           type: integer
-        note:
-          type: string
-          description: Free reminder shown on the line, such as the warm one.
-          maxLength: 200
       required:
       - item_type
     TripParticipant:

@@ -37,7 +37,6 @@ def instantiate_kit(trip, kit):
                 item_type_id=line.item_type_id,
                 person_id=line.person_id,
                 quantity=line.quantity,
-                note=line.note,
                 status=status,
             )
         )
@@ -58,7 +57,6 @@ def duplicate_trip(trip, name, date):
             item_type_id=line.item_type_id,
             person_id=line.person_id,
             quantity=line.quantity,
-            note=line.note,
             position=line.position,
             status=status,
         )

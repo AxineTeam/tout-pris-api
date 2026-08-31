@@ -171,7 +171,7 @@ def test_a_trip_is_read_with_its_participants_and_its_lines_in_preparation_order
     TripParticipant.objects.create(trip=trip, person=leo)
     KitItem.objects.create(kit=rando, item_type=tshirt)
     line = TripItem.objects.create(
-        trip=trip, item_type=tshirt, person=leo, quantity=5, status=to_pack, note="Les fins"
+        trip=trip, item_type=tshirt, person=leo, quantity=5, status=to_pack
     )
     TripItem.objects.create(
         trip=trip,
@@ -199,7 +199,6 @@ def test_a_trip_is_read_with_its_participants_and_its_lines_in_preparation_order
             "position": 0,
             "is_default": True,
         },
-        "note": "Les fins",
         "position": 0,
         "kits": [{"id": rando.pk, "name": "Affaires de rando", "description": "", "position": 0}],
     }
@@ -486,14 +485,13 @@ def test_a_line_is_added_on_a_chosen_status_for_a_chosen_person(
             "person": leo.pk,
             "quantity": 5,
             "status": packed.pk,
-            "note": "Les fins",
         },
         content_type="application/json",
     )
 
     assert response.status_code == 201
     assert response.json()["status"]["name"] == "Dans les sacs"
-    assert trip.items.filter(person=leo, quantity=5, note="Les fins", status=packed).exists()
+    assert trip.items.filter(person=leo, quantity=5, status=packed).exists()
 
 
 def test_a_line_cannot_be_added_to_a_household_that_has_no_status_yet(
@@ -564,7 +562,7 @@ def test_a_line_is_read_one_by_one(client, household, trip, tshirt, to_pack):
     assert response.json()["kits"] == []
 
 
-def test_a_line_moves_forward_and_changes_its_quantity_its_note_its_object_and_its_person(
+def test_a_line_moves_forward_and_changes_its_quantity_its_object_and_its_person(
     client, household, trip, leo, tshirt, to_pack, packed
 ):
     line = TripItem.objects.create(trip=trip, item_type=tshirt, quantity=5, status=to_pack)
@@ -577,7 +575,6 @@ def test_a_line_moves_forward_and_changes_its_quantity_its_note_its_object_and_i
             "person": leo.pk,
             "quantity": 3,
             "status": packed.pk,
-            "note": "SPF 50",
         },
         content_type="application/json",
     )
@@ -585,12 +582,7 @@ def test_a_line_moves_forward_and_changes_its_quantity_its_note_its_object_and_i
     assert response.status_code == 200
     assert response.json()["status"]["name"] == "Dans les sacs"
     line.refresh_from_db()
-    assert (line.item_type_id, line.person_id, line.quantity, line.note) == (
-        creme.pk,
-        leo.pk,
-        3,
-        "SPF 50",
-    )
+    assert (line.item_type_id, line.person_id, line.quantity) == (creme.pk, leo.pk, 3)
 
 
 def test_a_line_packs_at_least_one_of_something(client, household, trip, tshirt, to_pack):
@@ -798,7 +790,7 @@ def test_choosing_a_kit_copies_its_lines_into_the_trip_in_its_own_order(
 ):
     TripParticipant.objects.create(trip=trip, person=leo)
     creme = ItemType.objects.create(household=household, name="Creme solaire")
-    KitItem.objects.create(kit=rando, item_type=tshirt, person=leo, quantity=5, note="Les fins")
+    KitItem.objects.create(kit=rando, item_type=tshirt, person=leo, quantity=5)
     KitItem.objects.create(kit=rando, item_type=creme)
 
     response = client.post(
@@ -809,7 +801,6 @@ def test_choosing_a_kit_copies_its_lines_into_the_trip_in_its_own_order(
     body = response.json()
     assert [entry["item_type"]["name"] for entry in body] == ["T-shirt", "Creme solaire"]
     assert body[0]["quantity"] == 5
-    assert body[0]["note"] == "Les fins"
     assert body[0]["person"]["name"] == "Leo"
     assert body[0]["status"]["id"] == to_pack.pk
     assert body[0]["kits"] == [
@@ -933,9 +924,7 @@ def test_duplicating_a_trip_repeats_its_people_and_its_lines_at_the_starting_sta
 ):
     TripParticipant.objects.create(trip=trip, person=leo)
     creme = ItemType.objects.create(household=household, name="Creme solaire")
-    TripItem.objects.create(
-        trip=trip, item_type=tshirt, person=leo, quantity=5, status=packed, note="Les fins"
-    )
+    TripItem.objects.create(trip=trip, item_type=tshirt, person=leo, quantity=5, status=packed)
     TripItem.objects.create(trip=trip, item_type=creme, status=packed)
 
     response = client.post(
@@ -954,7 +943,6 @@ def test_duplicating_a_trip_repeats_its_people_and_its_lines_at_the_starting_sta
     assert [entry["person"]["name"] for entry in body["participants"]] == ["Leo"]
     assert [entry["item_type"]["name"] for entry in body["items"]] == ["T-shirt", "Creme solaire"]
     assert body["items"][0]["quantity"] == 5
-    assert body["items"][0]["note"] == "Les fins"
     assert body["items"][0]["person"]["name"] == "Leo"
     assert [entry["position"] for entry in body["items"]] == [0, 1]
     assert {entry["status"]["id"] for entry in body["items"]} == {to_pack.pk}
