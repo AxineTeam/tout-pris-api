@@ -69,3 +69,18 @@ def test_without_any_mail_configuration_the_emails_are_printed(monkeypatch):
     assert (
         settings.MAILERS["default"]["BACKEND"] == "django.core.mail.backends.console.EmailBackend"
     )
+
+
+def test_a_reader_is_not_locked_out_while_another_request_writes(monkeypatch):
+    settings = load_settings(monkeypatch)
+
+    assert settings.DATABASES["default"]["OPTIONS"]["init_command"] == (
+        "PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL;"
+    )
+
+
+def test_a_writer_takes_its_lock_at_once_and_queues_instead_of_failing(monkeypatch):
+    settings = load_settings(monkeypatch)
+
+    assert settings.DATABASES["default"]["OPTIONS"]["transaction_mode"] == "IMMEDIATE"
+    assert settings.DATABASES["default"]["OPTIONS"]["timeout"] == 5

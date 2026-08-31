@@ -74,6 +74,12 @@ ASGI_APPLICATION = "tout_pris.asgi.application"
 
 DATABASES = {"default": dj_database_url.config(default=f"sqlite:///{BASE_DIR / 'tout_pris.db'}")}
 
+DATABASES["default"]["OPTIONS"] = {
+    "init_command": "PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL;",
+    "transaction_mode": "IMMEDIATE",
+    "timeout": 5,
+}
+
 AUTH_USER_MODEL = "accounts.User"
 
 AUTHENTICATION_BACKENDS = [
