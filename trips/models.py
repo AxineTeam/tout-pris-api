@@ -94,6 +94,10 @@ class TripItem(OrderedModelBase):
         db_index=True,
         help_text="Rank in the trip, taken from the kit at instantiation and editable afterwards.",
     )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        help_text="When the line last moved, which lets a client ask only for what changed.",
+    )
 
     class Meta:
         ordering = ["position"]

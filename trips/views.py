@@ -1,6 +1,8 @@
 from django.db import IntegrityError, transaction
+from django.db.models import Count, Max
 from django.shortcuts import get_object_or_404
 from django.utils.functional import cached_property
+from django.utils.http import parse_etags, quote_etag
 from django.utils.translation import gettext_lazy as _
 from drf_spectacular.utils import (
     OpenApiParameter,
@@ -40,6 +42,19 @@ ARCHIVED = OpenApiParameter(
     type=bool,
     default=False,
     description="List the archived trips, most recently archived first, instead of the others.",
+)
+
+IF_NONE_MATCH = OpenApiParameter(
+    name="If-None-Match",
+    type=str,
+    location=OpenApiParameter.HEADER,
+    description=(
+        "Fingerprint the client already holds, sent back to be told whether the lines moved."
+    ),
+)
+
+UNCHANGED = OpenApiResponse(
+    description="No line was added, removed or touched since that fingerprint, and no body is sent."
 )
 
 
@@ -182,6 +197,10 @@ class TripParticipantDestroyView(TripParticipantView, generics.DestroyAPIView):
 
 
 @extend_schema_view(
+    get=extend_schema(
+        parameters=[IF_NONE_MATCH],
+        responses={200: TripItemSerializer(many=True), 304: UNCHANGED},
+    ),
     post=extend_schema(
         request=TripItemCreateSerializer,
         responses={
@@ -189,11 +208,21 @@ class TripParticipantDestroyView(TripParticipantView, generics.DestroyAPIView):
             403: FORBIDDEN,
             409: OpenApiResponse(description=f"{ALREADY_PACKED} {NO_STATUS}"),
         },
-    )
+    ),
 )
 class TripItemListCreateView(TripScopedView, generics.ListCreateAPIView):
     def get_serializer_class(self):
         return TripItemCreateSerializer if self.request.method == "POST" else TripItemSerializer
+
+    def list(self, request, *args, **kwargs):
+        stamp = self.get_queryset().aggregate(last=Max("updated_at"), lines=Count("pk"))
+        etag = quote_etag(f"{stamp['last'].timestamp() if stamp['last'] else 0}:{stamp['lines']}")
+        held = parse_etags(request.headers.get("If-None-Match", ""))
+        unchanged = etag in held or "*" in held
+        response = Response(status=304) if unchanged else super().list(request, *args, **kwargs)
+        response.headers["ETag"] = etag
+        response.headers["Cache-Control"] = "no-cache"
+        return response
 
     def create(self, request, *args, **kwargs):
         trip = self.trip

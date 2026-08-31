@@ -13,7 +13,7 @@ from trips.preparation import packed_lines
 
 pytestmark = pytest.mark.django_db
 
-READING_A_TRIP_LIST_OF_LINES = 7
+READING_A_TRIP_LIST_OF_LINES = 8
 
 
 def trips_url(household):
@@ -783,6 +783,115 @@ def test_the_tags_of_a_trip_cost_the_same_whatever_the_number_of_lines(
 
     with django_assert_num_queries(READING_A_TRIP_LIST_OF_LINES):
         client.get(items_url(household, trip))
+
+
+def fingerprint_of(client, household, trip):
+    return client.get(items_url(household, trip)).headers["ETag"]
+
+
+def test_the_list_of_lines_carries_a_fingerprint_and_asks_the_browser_to_revalidate(
+    client, household, trip, tshirt, to_pack
+):
+    TripItem.objects.create(trip=trip, item_type=tshirt, status=to_pack)
+
+    response = client.get(items_url(household, trip))
+
+    assert response.status_code == 200
+    assert response.headers["ETag"]
+    assert response.headers["Cache-Control"] == "no-cache"
+
+
+def test_sending_back_the_fingerprint_of_lines_that_did_not_move_answers_without_a_body(
+    client, household, trip, tshirt, to_pack
+):
+    TripItem.objects.create(trip=trip, item_type=tshirt, status=to_pack)
+    held = fingerprint_of(client, household, trip)
+
+    response = client.get(items_url(household, trip), headers={"if-none-match": held})
+
+    assert response.status_code == 304
+    assert response.content == b""
+
+
+def test_checking_a_line_off_moves_the_fingerprint(
+    client, household, trip, tshirt, to_pack, packed
+):
+    line = TripItem.objects.create(trip=trip, item_type=tshirt, status=to_pack)
+    held = fingerprint_of(client, household, trip)
+
+    client.patch(
+        item_url(household, trip, line), {"status": packed.pk}, content_type="application/json"
+    )
+
+    assert fingerprint_of(client, household, trip) != held
+
+
+def test_adding_a_line_moves_the_fingerprint(client, household, trip, tshirt, to_pack):
+    held = fingerprint_of(client, household, trip)
+
+    client.post(
+        items_url(household, trip), {"item_type": tshirt.pk}, content_type="application/json"
+    )
+
+    assert fingerprint_of(client, household, trip) != held
+
+
+def test_deleting_a_line_moves_the_fingerprint_even_when_a_more_recent_one_stays(
+    client, household, trip, tshirt, to_pack
+):
+    oldest = TripItem.objects.create(trip=trip, item_type=tshirt, status=to_pack)
+    TripItem.objects.create(
+        trip=trip,
+        item_type=ItemType.objects.create(household=household, name="Creme solaire"),
+        status=to_pack,
+    )
+    held = fingerprint_of(client, household, trip)
+
+    client.delete(item_url(household, trip, oldest))
+
+    assert fingerprint_of(client, household, trip) != held
+
+
+def test_instantiating_a_kit_moves_the_fingerprint(client, household, trip, tshirt, to_pack, rando):
+    KitItem.objects.create(kit=rando, item_type=tshirt)
+    held = fingerprint_of(client, household, trip)
+
+    client.post(kits_url(household, trip), {"kit": rando.pk}, content_type="application/json")
+
+    assert fingerprint_of(client, household, trip) != held
+
+
+def test_a_client_holding_any_version_at_all_is_told_the_lines_did_not_move(
+    client, household, trip, tshirt, to_pack
+):
+    TripItem.objects.create(trip=trip, item_type=tshirt, status=to_pack)
+
+    response = client.get(items_url(household, trip), headers={"if-none-match": "*"})
+
+    assert response.status_code == 304
+
+
+def test_a_fingerprint_left_behind_by_a_new_line_answers_with_the_lines(
+    client, household, trip, tshirt, to_pack
+):
+    held = fingerprint_of(client, household, trip)
+    TripItem.objects.create(trip=trip, item_type=tshirt, status=to_pack)
+
+    response = client.get(items_url(household, trip), headers={"if-none-match": held})
+
+    assert response.status_code == 200
+    assert len(response.json()) == 1
+
+
+def test_the_lines_of_another_household_stay_out_of_reach_of_a_conditional_read(
+    client, stranger_household
+):
+    theirs = Trip.objects.create(household=stranger_household, name="Le leur", date="2026-07-14")
+
+    response = client.get(items_url(stranger_household, theirs), headers={"if-none-match": "*"})
+
+    assert response.status_code == 404
+    assert "ETag" not in response.headers
 
 
 def test_choosing_a_kit_copies_its_lines_into_the_trip_in_its_own_order(
