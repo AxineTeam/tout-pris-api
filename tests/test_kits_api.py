@@ -215,20 +215,53 @@ def test_the_lines_of_a_kit_are_listed_in_preparation_order(client, household, k
     assert [line["position"] for line in listed] == [0, 1]
 
 
-def test_adding_a_line_to_a_kit_appends_it(client, household, kit, bavoir):
-    louis = Person.objects.create(household=household, name="Louis")
+def test_a_new_object_added_to_a_kit_lands_on_top(client, household, kit, bavoir):
+    gourde = ItemType.objects.create(household=household, name="Gourde")
+    chapeau = ItemType.objects.create(household=household, name="Chapeau")
     KitItem.objects.create(kit=kit, item_type=bavoir)
+    KitItem.objects.create(kit=kit, item_type=gourde)
 
     response = client.post(
         kit_items_url(household, kit),
-        {"item_type": bavoir.pk, "person": louis.pk, "quantity": 5},
+        {"item_type": chapeau.pk},
         content_type="application/json",
     )
 
     assert response.status_code == 201
-    assert response.json()["item_type"] == {"id": bavoir.pk, "name": "Bavoir", "description": ""}
+    assert response.json()["position"] == 0
+    listed = client.get(kit_items_url(household, kit)).json()
+    assert [line["item_type"]["name"] for line in listed] == ["Chapeau", "Bavoir", "Gourde"]
+    assert [line["position"] for line in listed] == [0, 1, 2]
+
+
+def test_adding_a_person_on_an_object_of_a_kit_leaves_that_object_where_it_was(
+    client, household, kit, bavoir
+):
+    louis = Person.objects.create(household=household, name="Louis")
+    gourde = ItemType.objects.create(household=household, name="Gourde")
+    chaussures = ItemType.objects.create(household=household, name="Chaussures")
+    KitItem.objects.create(kit=kit, item_type=bavoir)
+    KitItem.objects.create(kit=kit, item_type=gourde)
+    KitItem.objects.create(kit=kit, item_type=chaussures)
+
+    response = client.post(
+        kit_items_url(household, kit),
+        {"item_type": chaussures.pk, "person": louis.pk, "quantity": 5},
+        content_type="application/json",
+    )
+
+    assert response.status_code == 201
+    assert response.json()["item_type"] == {
+        "id": chaussures.pk,
+        "name": "Chaussures",
+        "description": "",
+    }
     assert response.json()["person"]["name"] == "Louis"
-    assert response.json()["position"] == 1
+    assert response.json()["position"] == 2
+    listed = client.get(kit_items_url(household, kit)).json()
+    assert [
+        (line["item_type"]["name"], line["person"] and line["person"]["name"]) for line in listed
+    ] == [("Bavoir", None), ("Gourde", None), ("Chaussures", "Louis"), ("Chaussures", None)]
     assert kit.items.filter(quantity=5, person=louis).exists()
 
 

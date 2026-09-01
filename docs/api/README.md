@@ -180,7 +180,11 @@ La personne est facultative — une ligne sans personne est pour tout le foyer �
 
 ## L'ordre
 
-Un statut, un kit et une ligne de kit portent une `position` dans leur groupe — le foyer pour les deux premiers, le kit pour la troisième. Elle est attribuée à la fin du groupe à la création, et **l'envoyer dans le `PATCH` de la ressource la déplace à ce rang**, les autres se décalant pour lui faire la place. C'est le glisser-déposer du front, transcrit tel quel : il relâche une entrée à un rang, il envoie ce rang.
+Un statut, un kit, une ligne de kit et une ligne de voyage portent une `position` dans leur groupe — le foyer pour les deux premiers, le kit et le voyage pour les deux autres. **L'envoyer dans le `PATCH` de la ressource la déplace à ce rang**, les autres se décalant pour lui faire la place. C'est le glisser-déposer du front, transcrit tel quel : il relâche une entrée à un rang, il envoie ce rang.
+
+**Un statut et un kit naissent à la fin de leur groupe, une ligne naît en tête de son objet.** Ce qu'on vient d'ajouter est ce qu'on veut relire, et une liste de préparation se lit du haut. La ligne ne prend pas la position 0 mais celle de la première ligne du même objet : le front classe les cartes d'après la première ligne de chaque objet, et ajouter une personne sur un objet déjà présent ferait sinon remonter tout l'objet alors que rien n'est arrivé dans la liste. Un objet qui n'a encore aucune ligne n'en a pas de première, sa ligne part donc en tête de la collection.
+
+**Instancier un kit ne passe pas par là** et écrit ses lignes à la suite : chacune passant devant la précédente, le kit arriverait à l'envers.
 
 **Il n'y a pas de route de réordonnancement séparée.** Déplacer une entrée est une modification comme une autre, et une route dédiée ferait un second chemin d'écriture sur la même ressource, avec son cloisonnement et sa résolution de foyer à réécrire.
 
@@ -228,7 +232,7 @@ La lecture d'une ligne coûte donc le même nombre de requêtes quel qu'en soit 
 
 **`POST /api/households/{household_id}/trips/{trip_id}/duplicate/` crée un voyage à partir d'un autre** et répond `201` avec le voyage complet, participants et lignes développés comme le voyage à l'unité. `name` et `date` sont **obligatoires** : l'API ne suffixe aucun nom et ne devine aucune date, la boîte de dialogue du front préremplit les deux. Les règles de la copie sont dans [`docs/model/trips.md`](../model/trips.md), et elles vivent dans `trips/preparation.py` à côté de l'instanciation d'un kit — la vue reçoit, valide, délègue. Un foyer sans aucun statut répond `409` et ne crée rien, pour la même raison qu'il ne peut pas instancier de kit.
 
-Retirer un participant ne touche pas les lignes préparées pour lui : elles restent, et c'est à l'interface de les montrer. `position` est en lecture seule, attribuée à la fin du voyage à la création et reprise de l'ordre du kit à l'instanciation.
+Retirer un participant ne touche pas les lignes préparées pour lui : elles restent, et c'est à l'interface de les montrer. `position` suit les règles de la section « L'ordre », et une ligne instanciée depuis un kit reprend l'ordre du kit.
 
 ## Requêtes conditionnelles
 

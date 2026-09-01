@@ -6,6 +6,7 @@ from rest_framework import generics
 from rest_framework.response import Response
 
 from catalog.item_types import matching_item_type, rename_item_type
+from catalog.ordering import move_to_top_of_its_object
 from catalog.serializers import (
     ItemStatusCreateSerializer,
     ItemStatusSerializer,
@@ -204,7 +205,9 @@ class KitItemListCreateView(KitScopedView, generics.ListCreateAPIView):
         kit = self.kit
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        line = serializer.save(kit=kit)
+        with transaction.atomic():
+            line = serializer.save(kit=kit)
+            move_to_top_of_its_object(line)
         return Response(KitItemSerializer(line).data, status=201)
 
 
