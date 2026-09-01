@@ -14,6 +14,7 @@ from rest_framework import generics, serializers
 from rest_framework.fields import empty
 from rest_framework.response import Response
 
+from catalog.ordering import move_to_top_of_its_object
 from households.views import FORBIDDEN, HouseholdScopedView
 from tout_pris.exceptions import Conflict
 from trips.models import TripParticipant
@@ -250,6 +251,7 @@ class TripItemListCreateView(TripScopedView, generics.ListCreateAPIView):
         try:
             with transaction.atomic():
                 line = serializer.save(trip=trip, status=status)
+                move_to_top_of_its_object(line)
         except IntegrityError:
             raise Conflict(ALREADY_PACKED) from None
         return Response(TripItemSerializer(self.get_queryset().get(pk=line.pk)).data, status=201)

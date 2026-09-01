@@ -176,7 +176,9 @@ def test_a_trip_without_a_departure_date_is_refused(client, household):
 def test_creating_a_trip_embarks_its_people_and_its_kits_in_one_call(
     client, household, leo, tshirt, to_pack, rando
 ):
+    creme = ItemType.objects.create(household=household, name="Creme solaire")
     KitItem.objects.create(kit=rando, item_type=tshirt, person=leo, quantity=5)
+    KitItem.objects.create(kit=rando, item_type=creme)
 
     response = client.post(
         trips_url(household),
@@ -192,7 +194,7 @@ def test_creating_a_trip_embarks_its_people_and_its_kits_in_one_call(
     assert response.status_code == 201
     body = response.json()
     assert [entry["person"]["name"] for entry in body["participants"]] == ["Leo"]
-    assert [entry["item_type"]["name"] for entry in body["items"]] == ["T-shirt"]
+    assert [entry["item_type"]["name"] for entry in body["items"]] == ["T-shirt", "Creme solaire"]
     assert body["items"][0]["person"]["name"] == "Leo"
     assert body["items"][0]["quantity"] == 5
 
@@ -593,6 +595,51 @@ def test_a_line_added_by_hand_starts_on_the_default_status_of_the_household(
     assert response.json()["quantity"] == 1
     assert response.json()["person"] is None
     assert response.json()["kits"] == []
+
+
+def test_a_new_object_added_to_a_trip_lands_on_top(client, household, trip, tshirt, to_pack):
+    creme = ItemType.objects.create(household=household, name="Creme solaire")
+    passeports = ItemType.objects.create(household=household, name="Passeports")
+    TripItem.objects.create(trip=trip, item_type=tshirt, status=to_pack)
+    TripItem.objects.create(trip=trip, item_type=creme, status=to_pack)
+
+    response = client.post(
+        items_url(household, trip), {"item_type": passeports.pk}, content_type="application/json"
+    )
+
+    assert response.status_code == 201
+    assert response.json()["position"] == 0
+    listed = client.get(items_url(household, trip)).json()
+    assert [entry["item_type"]["name"] for entry in listed] == [
+        "Passeports",
+        "T-shirt",
+        "Creme solaire",
+    ]
+    assert [entry["position"] for entry in listed] == [0, 1, 2]
+
+
+def test_adding_a_person_on_an_object_of_a_trip_leaves_that_object_where_it_was(
+    client, household, trip, leo, tshirt, to_pack
+):
+    creme = ItemType.objects.create(household=household, name="Creme solaire")
+    duvet = ItemType.objects.create(household=household, name="Duvet")
+    TripItem.objects.create(trip=trip, item_type=tshirt, status=to_pack)
+    TripItem.objects.create(trip=trip, item_type=creme, status=to_pack)
+    TripItem.objects.create(trip=trip, item_type=duvet, status=to_pack)
+
+    response = client.post(
+        items_url(household, trip),
+        {"item_type": duvet.pk, "person": leo.pk},
+        content_type="application/json",
+    )
+
+    assert response.status_code == 201
+    assert response.json()["position"] == 2
+    listed = client.get(items_url(household, trip)).json()
+    assert [
+        (entry["item_type"]["name"], entry["person"] and entry["person"]["name"])
+        for entry in listed
+    ] == [("T-shirt", None), ("Creme solaire", None), ("Duvet", "Leo"), ("Duvet", None)]
 
 
 def test_a_line_is_added_on_a_chosen_status_for_a_chosen_person(
@@ -1171,6 +1218,25 @@ def test_choosing_a_kit_copies_its_lines_into_the_trip_in_its_own_order(
         {"id": rando.pk, "name": "Affaires de rando", "description": "", "position": 0}
     ]
     assert [line.position for line in trip.items.all()] == [0, 1]
+
+
+def test_choosing_a_kit_keeps_its_own_order_behind_the_lines_already_there(
+    client, household, trip, tshirt, to_pack, rando
+):
+    masque = ItemType.objects.create(household=household, name="Masque")
+    palmes = ItemType.objects.create(household=household, name="Palmes")
+    KitItem.objects.create(kit=rando, item_type=masque)
+    KitItem.objects.create(kit=rando, item_type=palmes)
+    TripItem.objects.create(trip=trip, item_type=tshirt, status=to_pack)
+
+    response = client.post(
+        kits_url(household, trip), {"kit": rando.pk}, content_type="application/json"
+    )
+
+    assert response.status_code == 201
+    listed = client.get(items_url(household, trip)).json()
+    assert [entry["item_type"]["name"] for entry in listed] == ["T-shirt", "Masque", "Palmes"]
+    assert [entry["position"] for entry in listed] == [0, 1, 2]
 
 
 def test_choosing_a_kit_ignores_the_lines_of_someone_who_does_not_go(
