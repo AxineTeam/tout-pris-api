@@ -3,7 +3,12 @@ from django.utils.translation import gettext_lazy as _
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
-from catalog.serializers import ItemStatusSerializer, ItemTypeSerializer, KitSerializer
+from catalog.serializers import (
+    ItemStatusSerializer,
+    ItemTypeSerializer,
+    KitSerializer,
+    ReorderingSerializer,
+)
 from households.serializers import HouseholdScopedRelation, PersonSerializer
 from trips.models import Trip, TripItem, TripParticipant
 
@@ -50,14 +55,14 @@ class TripItemCreateSerializer(serializers.ModelSerializer):
         fields = ["item_type", "person", "quantity", "status"]
 
 
-class TripItemUpdateSerializer(serializers.ModelSerializer):
+class TripItemUpdateSerializer(ReorderingSerializer):
     item_type = HouseholdScopedRelation("item_types", required=False)
     person = HouseholdScopedRelation("persons", required=False, allow_null=True)
     status = HouseholdScopedRelation("item_statuses", required=False)
 
     class Meta:
         model = TripItem
-        fields = ["item_type", "person", "quantity", "status"]
+        fields = ["item_type", "person", "quantity", "status", "position"]
 
 
 class TripSerializer(serializers.ModelSerializer):

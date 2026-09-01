@@ -2129,6 +2129,8 @@ components:
           maxLength: 100
     PatchedTripItemUpdate:
       type: object
+      description: A position moves the entry to that rank, the rest of its group
+        shifting to make room.
       properties:
         item_type:
           type: integer
@@ -2141,6 +2143,8 @@ components:
           minimum: 1
           description: How many of the thing to pack, such as five t-shirts.
         status:
+          type: integer
+        position:
           type: integer
     PatchedTripUpdate:
       type: object
