@@ -905,6 +905,72 @@ def test_the_tags_of_a_trip_cost_the_same_whatever_the_number_of_lines(
         client.get(items_url(household, trip))
 
 
+def packing_order(household, trip, tshirt, to_pack):
+    for name in ["Creme solaire", "Passeports"]:
+        TripItem.objects.create(
+            trip=trip,
+            item_type=ItemType.objects.create(household=household, name=name),
+            status=to_pack,
+        )
+    return TripItem.objects.create(trip=trip, item_type=tshirt, status=to_pack)
+
+
+def test_a_line_moves_to_the_rank_it_is_given(client, household, trip, tshirt, to_pack):
+    last = packing_order(household, trip, tshirt, to_pack)
+
+    response = client.patch(
+        item_url(household, trip, last), {"position": 0}, content_type="application/json"
+    )
+
+    assert response.status_code == 200
+    assert response.json()["position"] == 0
+    listed = client.get(items_url(household, trip)).json()
+    assert [line["item_type"]["name"] for line in listed] == [
+        "T-shirt",
+        "Creme solaire",
+        "Passeports",
+    ]
+    assert [line["position"] for line in listed] == [0, 1, 2]
+
+
+def test_a_line_does_not_move_past_the_end_of_its_trip(client, household, trip, tshirt, to_pack):
+    last = packing_order(household, trip, tshirt, to_pack)
+
+    response = client.patch(
+        item_url(household, trip, last), {"position": 3}, content_type="application/json"
+    )
+
+    assert response.status_code == 400
+    assert response.json()["position"] == ["Give a position from 0 to 2."]
+    last.refresh_from_db()
+    assert last.position == 2
+
+
+def test_a_line_of_a_trip_of_another_household_does_not_move(client, stranger_household):
+    theirs = Trip.objects.create(household=stranger_household, name="Le leur", date="2026-07-14")
+    status = ItemStatus.objects.create(
+        household=stranger_household, name="Le leur", color="#7b8189"
+    )
+    TripItem.objects.create(
+        trip=theirs,
+        item_type=ItemType.objects.create(household=stranger_household, name="Le premier"),
+        status=status,
+    )
+    line = TripItem.objects.create(
+        trip=theirs,
+        item_type=ItemType.objects.create(household=stranger_household, name="Le second"),
+        status=status,
+    )
+
+    response = client.patch(
+        item_url(stranger_household, theirs, line), {"position": 0}, content_type="application/json"
+    )
+
+    assert response.status_code == 404
+    line.refresh_from_db()
+    assert line.position == 1
+
+
 def fingerprint_of(client, household, trip):
     return client.get(items_url(household, trip)).headers["ETag"]
 
@@ -1013,6 +1079,15 @@ def test_renaming_an_item_type_onto_another_moves_the_fingerprint_of_the_absorbe
     client.patch(
         item_type_url(household, tshirt), {"name": "Maillot"}, content_type="application/json"
     )
+
+    assert fingerprint_of(client, household, trip) != held
+
+
+def test_reordering_a_line_moves_the_fingerprint(client, household, trip, tshirt, to_pack):
+    last = packing_order(household, trip, tshirt, to_pack)
+    held = fingerprint_of(client, household, trip)
+
+    client.patch(item_url(household, trip, last), {"position": 0}, content_type="application/json")
 
     assert fingerprint_of(client, household, trip) != held
 
