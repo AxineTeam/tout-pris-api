@@ -250,7 +250,7 @@ La réponse porte aussi `Cache-Control: no-cache`. Sans en-tête de fraîcheur, 
 
 Le calcul se fait dans la vue, après `get_queryset()`, et non par le décorateur `condition` de Django : sa fonction d'empreinte ne reçoit que les morceaux de l'URL, elle devrait donc retrouver le voyage et réappliquer le cloisonnement par foyer elle-même — c'est-à-dire refaire ce que `get_queryset()` fait déjà, en laissant deux endroits qui doivent rester d'accord sur qui a le droit de voir quoi. Le cloisonnement passe avant l'empreinte : un voyage qui n'est pas celui de l'appelant répond `404`, jamais `304`.
 
-**Le piège à connaître est le réordonnancement.** `position` n'est pas exposée par le `PATCH` d'une ligne, les lignes d'un voyage ne se réordonnent donc pas encore ; le jour où elles le feront, django-ordered-model décalera les rangs par un `update()` de queryset, qui ne déclenche pas `auto_now` et laisserait l'empreinte immobile sur un voyage pourtant réordonné.
+**Le réordonnancement déplace l'empreinte**, et c'est le `to()` de django-ordered-model qui le garantit : il décale les voisins par un `update()` de queryset, qui ne déclenche pas `auto_now`, mais il termine par un `save()` sur la ligne déplacée, donc horodatée. Une empreinte fondée sur `MAX(updated_at)` avance dès qu'une seule ligne est horodatée : que les voisins décalés ne le soient pas est sans conséquence.
 
 **Le sondage multiplie les lectures concurrentes**, d'où les options SQLite de `settings.py` : `journal_mode=WAL` pour qu'une écriture ne bloque plus les lecteurs, et `transaction_mode=IMMEDIATE` pour qu'une transaction qui lit puis écrit prenne son verrou à l'ouverture et fasse la queue au lieu de rendre `database is locked`.
 
