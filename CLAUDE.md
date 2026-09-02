@@ -158,6 +158,7 @@ Ces règles valent pour les issues, les descriptions de PR, les revues et les co
 ## Workflow
 
 - Quand je te demande de traiter une issue ou une PR, souscris par défaut aux notifications de la PR concernée (`subscribe_pr_activity`) et suis-la jusqu'au merge
+- Toute PR passe par un agent de revue avant d'être déclarée prête, la tienne comprise : lance-le sur le diff dès que le code est poussé, et traite ses constats. Ta propre relecture ne le remplace pas, c'est le même regard qui vient d'écrire le code
 - Les notifications sont un déclencheur commode, jamais une source de vérité : leur silence ne prouve rien. Sur une PR suivie, lis les commentaires (`get_comments`) en partant du plus récent — c'est là qu'arrive le retour, et des revues vides (`get_reviews`, fils de revue inline) ne veulent pas dire qu'il n'y a rien de neuf
 - Après tout merge ou fermeture de PR, réabonne-toi aux PR encore ouvertes : le désabonnement automatique peut emporter leurs abonnements sans rien signaler
 - Avant de démarrer le traitement d'une issue, si tu as des objections sur ce qui est demandé, commente-les sur l'issue et attends une réponse avant de commencer
