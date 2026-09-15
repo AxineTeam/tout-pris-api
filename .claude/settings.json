@@ -1,7 +1,6 @@
 {
-  "enabledPlugins": {
-    "pyright-lsp@claude-plugins-official": true,
-    "code-simplifier@claude-plugins-official": true,
-    "superpowers@claude-plugins-official": true
-  }
+	"enabledPlugins": {
+		"pyright-lsp@claude-plugins-official": true,
+		"python-skills@local-skills": true
+	}
 }
