@@ -1,5 +1,5 @@
 # Dev image: full uv toolchain + dev dependencies, source mounted from the host,
-# Django runserver with its auto-reloader. See Dockerfile.prod for the shipped image.
+# uvicorn with its auto-reloader. See Dockerfile.prod for the shipped image.
 FROM ghcr.io/astral-sh/uv:python3.12-trixie-slim
 
 WORKDIR /app
@@ -42,4 +42,8 @@ ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 
 EXPOSE 8000
 
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+# uvicorn rather than runserver: runserver only speaks WSGI, so it would hide every
+# async behaviour the production image has. --reload watches /app, which compose binds
+# to the host sources, but only for *.py: the compiled catalogues are included back
+# because gettext caches them, so recompiling messages needs the process to restart.
+CMD ["uvicorn", "tout_pris.asgi:application", "--host", "0.0.0.0", "--port", "8000", "--reload", "--reload-include", "*.mo"]
