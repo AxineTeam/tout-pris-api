@@ -32,9 +32,11 @@ docker compose logs -f mailpit    # follow the mail collector logs
 ### Server
 
 ```bash
-uv run python manage.py runserver 0.0.0.0:8000        # dev server with auto-reload
-uv run python manage.py runserver_plus 0.0.0.0:8000   # same with the Werkzeug debugger (django-extensions)
+uv run uvicorn tout_pris.asgi:application --host 0.0.0.0 --port 8000 --reload   # dev server with auto-reload
+uv run python manage.py runserver_plus 0.0.0.0:8000                             # WSGI, with the Werkzeug debugger (django-extensions)
 ```
+
+Both images serve the ASGI application, so `uvicorn` is what the dev container runs and what reproduces production. `runserver` and `runserver_plus` only speak WSGI: reach for them to get a traceback page, not to check that a change behaves.
 
 ### Database and migrations
 
@@ -209,7 +211,9 @@ The environment variables are named `EMAIL_HOST` and `EMAIL_PORT`, but `settings
 
 ## Production image
 
-The production image is built from `Dockerfile.prod` (multi-stage, [uv recommended practices](https://github.com/astral-sh/uv-docker-example)): uv builds the venv from `uv.lock` in a builder stage, and the final image contains neither uv nor pip, runs as a non-root user, and serves the WSGI application with gunicorn.
+The production image is built from `Dockerfile.prod` (multi-stage, [uv recommended practices](https://github.com/astral-sh/uv-docker-example)): uv builds the venv from `uv.lock` in a builder stage, and the final image contains neither uv nor pip, runs as a non-root user, and serves the ASGI application with gunicorn supervising uvicorn workers.
+
+Two gunicorn workers, and Django gives every in-flight request its own thread, so writes are no longer serialised the way a single sync worker serialised them. SQLite takes the write lock at `BEGIN` (`transaction_mode=IMMEDIATE`) and a second writer waits for it, up to the `sqlite3` default of five seconds, then raises `OperationalError: database is locked` and the request answers 500. Every write view is a short `@transaction.atomic` block and the traffic is overwhelmingly reads, so the wait is in milliseconds; the day a write gets long enough to make five seconds plausible, raise `timeout` in the database `OPTIONS` rather than discover it in production.
 
 CI publishes it to Docker Hub for `linux/amd64` and `linux/arm64` (Raspberry Pi and other ARMv8 boards): every merge on `main` pushes the `dev` tag, and every git tag pushes the matching semver tags plus `latest`.
 
