@@ -17,8 +17,16 @@ services:
       MAIL_FROM_EMAIL: ${MAIL_FROM_EMAIL:-no-reply@tout-pris.app}
       MAIL_FROM_NAME: ${MAIL_FROM_NAME:-Tout Pris}
       FRONTEND_URL: ${FRONTEND_URL:?set the public URL of the front, it is what the email links point to}
+      MEMCACHED_LOCATION: memcached:11211
+      WEB_CONCURRENCY: ${WEB_CONCURRENCY:-2}
     volumes:
       - tout_pris_data:/data
+    depends_on:
+      - memcached
+
+  memcached:
+    image: memcached:alpine
+    command: ["-m", "64"]
 
 volumes:
   tout_pris_data:

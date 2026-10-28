@@ -66,8 +66,8 @@ EXPOSE 8000
 # instead of gunicorn's WSGI worker. It is fed by the same FORWARDED_ALLOW_IPS the
 # deployment already sets, which uvicorn_worker reads from the gunicorn config.
 # Django gives each in-flight request its own thread for the sync view, so there is no
-# --threads to size any more, and concurrency no longer depends on the worker count.
-# One worker: the default cache is a LocMemCache, private to each process, and it holds
-# django-allauth's rate limit counters — a second worker would count them separately and
-# let twice the attempts through.
-CMD ["gunicorn", "tout_pris.asgi:application", "--worker-class", "uvicorn_worker.UvicornWorker", "--workers", "1", "--bind", "0.0.0.0:8000"]
+# --threads to size any more. The worker count is not written here either: gunicorn reads
+# WEB_CONCURRENCY from the environment, so every machine sizes its own processes without
+# republishing the image, and settings.py refuses to start with more than one of them
+# unless MEMCACHED_LOCATION gives the workers a cache to share.
+CMD ["gunicorn", "tout_pris.asgi:application", "--worker-class", "uvicorn_worker.UvicornWorker", "--bind", "0.0.0.0:8000"]
