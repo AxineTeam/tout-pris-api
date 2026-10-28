@@ -71,6 +71,39 @@ def test_without_any_mail_configuration_the_emails_are_printed(monkeypatch):
     )
 
 
+def test_a_memcached_location_shares_the_cache_between_the_workers(monkeypatch):
+    settings = load_settings(monkeypatch, MEMCACHED_LOCATION="memcached:11211", WEB_CONCURRENCY="4")
+
+    assert settings.CACHES["default"] == {
+        "BACKEND": "django.core.cache.backends.memcached.PyMemcacheCache",
+        "LOCATION": ["memcached:11211"],
+        "OPTIONS": {"ignore_exc": True, "connect_timeout": 1, "timeout": 1},
+    }
+
+
+def test_several_memcached_hosts_are_served_as_a_single_cache(monkeypatch):
+    settings = load_settings(monkeypatch, MEMCACHED_LOCATION="first:11211, second:11211")
+
+    assert settings.CACHES["default"]["LOCATION"] == ["first:11211", "second:11211"]
+
+
+def test_a_single_worker_keeps_the_cache_django_gives_by_default(monkeypatch):
+    settings = load_settings(monkeypatch, MEMCACHED_LOCATION="", WEB_CONCURRENCY="1")
+
+    assert not hasattr(settings, "CACHES")
+
+
+def test_several_workers_are_refused_a_cache_they_cannot_share(monkeypatch):
+    with pytest.raises(ImproperlyConfigured):
+        load_settings(monkeypatch, MEMCACHED_LOCATION="", WEB_CONCURRENCY="2")
+
+
+def test_an_empty_worker_count_reads_as_the_single_worker_gunicorn_starts(monkeypatch):
+    settings = load_settings(monkeypatch, MEMCACHED_LOCATION="", WEB_CONCURRENCY="")
+
+    assert settings.WEB_CONCURRENCY == 1
+
+
 def test_the_database_is_configured_to_open_its_journal_in_wal(monkeypatch):
     settings = load_settings(monkeypatch)
 

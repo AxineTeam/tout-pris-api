@@ -81,6 +81,30 @@ DATABASES["default"].setdefault("OPTIONS", {}).update(
     }
 )
 
+MEMCACHED_LOCATION = os.environ.get("MEMCACHED_LOCATION", "")
+
+WEB_CONCURRENCY = int(os.environ.get("WEB_CONCURRENCY") or "1")
+
+if MEMCACHED_LOCATION:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.memcached.PyMemcacheCache",
+            "LOCATION": [host.strip() for host in MEMCACHED_LOCATION.split(",")],
+            # A cache that answers 500 is worse than a cache that answers nothing: without
+            # ignore_exc, a memcached restart raises through allauth and every login,
+            # signup and password reset fails for the minute pymemcache holds the server
+            # dead. The limits degrade instead, which is what they did before this cache
+            # existed. The timeouts are what keeps a silent socket from parking a request
+            # thread for good, and with it the thread Django gave that request.
+            "OPTIONS": {"ignore_exc": True, "connect_timeout": 1, "timeout": 1},
+        }
+    }
+elif WEB_CONCURRENCY > 1:
+    raise ImproperlyConfigured(
+        "MEMCACHED_LOCATION must be set when WEB_CONCURRENCY is above one: the default cache "
+        "is private to each process, and allauth counts its rate limits there"
+    )
+
 AUTH_USER_MODEL = "accounts.User"
 
 AUTHENTICATION_BACKENDS = [

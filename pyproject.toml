@@ -10,6 +10,7 @@ dependencies = [
     "django-extensions>=4.1",
     "dj-database-url>=3.0",
     "gunicorn>=23.0",
+    "pymemcache>=4.0",
     "brevo-python>=5",
     "httpx>=0.27",
     "drf-pydantic>=2.9",
