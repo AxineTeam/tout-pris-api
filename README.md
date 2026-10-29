@@ -184,10 +184,12 @@ Settings are read from the environment. [`.env.example`](.env.example) lists eve
 | `EMAIL_PORT` | `1025` | Port of that SMTP host. |
 | `MAIL_FROM_EMAIL` | `no-reply@tout-pris.app` | Sender address, must be a sender validated in Brevo. |
 | `MAIL_FROM_NAME` | `Tout Pris` | Sender display name. |
+| `ASSISTANT_MODEL` | `mistral:ministral-8b-latest` | Model the assistant runs on, as `<provider>:<model>`. The provider prefix is what selects the provider, so switching provider is this variable plus that provider's key. |
+| `MISTRAL_API_KEY` | empty | Key of the provider named by `ASSISTANT_MODEL`. Another provider reads its own variable — `GROQ_API_KEY`, `GEMINI_API_KEY` — and the agent cannot be built without it. |
 | `APP_VERSION` | `dev` | Git ref the running image was built from — the tag on a release, the branch otherwise. Served by `/api/health/` to every caller, and baked in by the release workflow. |
 | `APP_COMMIT` | empty | Short commit the running image was built from, served by `/api/health/` to an administrator only. |
 
-The Brevo key and the Django secret key are secrets: never commit them, pass them through the environment.
+The Brevo key, the provider key of the assistant and the Django secret key are secrets: never commit them, pass them through the environment.
 
 ## Transactional emails
 
@@ -228,6 +230,7 @@ The production settings live in `docker-compose.prod.yml`: the database is store
 - `households/` — the household domain: `Household`, `HouseholdMember`, `Person` and `Invitation`, their admin and API, the personal household created at signup, and the `seed` and `check_integrity` commands
 - `catalog/` — the item catalog of a household: `ItemType`, `ItemStatus`, `Kit` and `KitItem`, their admin, and the base catalog copied into a new household
 - `trips/` — the trip domain: `Trip`, `TripParticipant` and `TripItem`, the preparation lines a household moves forward, and their admin
+- `assistant/` — the natural-language assistant: the PydanticAI agent, the model read from the environment, and the tools it is allowed to call
 - `.env.example` — every environment variable with a development value
 - `tests/` — pytest-django test suite
 - `docs/api/` — the API conventions: status codes, household scoping, schemas, collections

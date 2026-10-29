@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     "households",
     "catalog",
     "trips",
+    "assistant",
 ]
 
 MIDDLEWARE = [
@@ -195,6 +196,10 @@ MAIL_FROM_EMAIL = os.environ.get("MAIL_FROM_EMAIL", "no-reply@tout-pris.app")
 MAIL_FROM_NAME = os.environ.get("MAIL_FROM_NAME", "Tout Pris")
 
 DEFAULT_FROM_EMAIL = MAIL_FROM_EMAIL
+
+ASSISTANT_MODEL = os.environ.get("ASSISTANT_MODEL", "mistral:ministral-8b-latest")
+
+os.environ.setdefault("PYDANTIC_AI_NO_BANNER", "1")
 
 REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
