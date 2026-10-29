@@ -15,6 +15,8 @@ services:
       MAIL_FROM_EMAIL: ${MAIL_FROM_EMAIL:-no-reply@tout-pris.app}
       MAIL_FROM_NAME: ${MAIL_FROM_NAME:-Tout Pris}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
+      ASSISTANT_MODEL: ${ASSISTANT_MODEL:-mistral:ministral-8b-latest}
+      MISTRAL_API_KEY: ${MISTRAL_API_KEY:-}
       EMAIL_HOST: mailpit
       EMAIL_PORT: "1025"
 
